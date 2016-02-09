@@ -95,9 +95,3 @@ object FileTime {
   def empty: FileTime                   = NoFileTime
   def fromMillis(value: Long): FileTime = jnfa.FileTime fromMillis value
 }
-object Files {
-  def readAllBytes(path: jPath): Array[Byte]                 = jnf.Files.readAllBytes(path)
-  def readAllLines(path: jPath, cs: jCharset): jList[String] = jnf.Files.readAllLines(path, cs)
-  def readAllLines(path: jPath): jList[String]               = readAllLines(path, defaultCharset)
-}
-

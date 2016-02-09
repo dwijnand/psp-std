@@ -1,7 +1,6 @@
 package psp
 package std
 
-
 import api._, all._, StdShow._
 
 /** Motley objects for which a file of residence is not obvious.
@@ -24,6 +23,10 @@ object Partial {
   implicit def liftPartial[A, B](pf: A ?=> B): Partial[A, B] = apply(pf)
   def apply[A, B](pf: A ?=> B): Partial[A, B]                = apply(pf isDefinedAt _, pf apply _)
   def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B]    = new Partial(p, f)
+}
+final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
+  def chars: Array[Char] = scala.io.Codec fromUTF8 bytes
+  def to_s: String       = new String(chars)
 }
 
 object StdEq extends EqOrderInstances
