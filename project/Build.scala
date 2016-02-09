@@ -8,7 +8,7 @@ import scoverage.ScoverageKeys._
 
 object Build extends sbt.Build {
   def isAmmoniteDebug     = sys.env contains "AMMONITE_DEBUG"
-  def ammoniteVersion     = if (isAmmoniteDebug) "0.5.1-SNAPSHOT" else "0.5.0"
+  def ammoniteVersion     = if (isAmmoniteDebug) "0.5.5-SNAPSHOT" else "0.5.4"
   def ammoniteDep         = "com.lihaoyi" % "ammonite-repl" % ammoniteVersion cross CrossVersion.full
   def consoleDependencies = List(jsr305, ammoniteDep)
   def bonusArgs           = wordSeq(sys.env.getOrElse("SCALAC_ARGS", ""))
@@ -70,7 +70,7 @@ object Build extends sbt.Build {
             organization :=  pspOrg,
            scalacOptions ++= scalacOptionsFor(scalaBinaryVersion.value) ++ stdArgs ++ bonusArgs,
         triggeredMessage :=  Watched.clearWhenTriggered,
-              incOptions ~=  (_ withNameHashing false)
+              incOptions ~=  (_ withNameHashing false) // supposedly we can remove this after sbt commit 65f7958898
   ) ++ p.crossSettings
 
   lazy val root = project.root.setup.aggregatesAll.dependsOnAll settings (

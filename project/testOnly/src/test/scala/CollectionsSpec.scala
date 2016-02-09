@@ -141,7 +141,7 @@ class GridSpec extends ScalacheckBundle {
   def showGrid(xss: View2D[Int]): String = {
     val yss   = xss mmap (_.render)
     val width = yss.flatten maxOf (_.length)
-    val fmt   = leftFormatString(width)
+    val fmt   = lformat(width)
 
     (yss mmap fmt map (_ mk_s ' ') joinLines).trimLines
   }

@@ -2,11 +2,12 @@ package psp
 
 import std._, all._, api._, StdShow._
 import ammonite.repl.{ Ref, Repl, Storage }
+import ammonite.repl.Main.defaultAmmoniteHome
 import ammonite.repl.frontend.FrontEnd
 import java.lang.System
 
 object ReplMain {
-  def storage = Ref(Storage(Repl.defaultAmmoniteHome, None))
+  def storage = Ref(Storage(defaultAmmoniteHome, None))
   def initImports = sm"""
     |import psp._, std._, all._, api._
     |import StdShow._, StdEq._, INREPL._
@@ -28,7 +29,7 @@ trait ReplOverrides extends Repl {
   override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
   override val prompt   = Ref("psp> ")
 
-  override def printBanner(): Unit = printer println banner
+  override def printBanner(): Unit = printStream println banner
 }
 
 import ReplMain._
@@ -36,7 +37,7 @@ import ReplMain._
 /** This sets up the ammonite repl with the correct compiler settings
  *  and desired namespace elements and aesthetics.
  */
-object REPL extends Repl(System.in, System.out, storage, "", Nil) with ReplOverrides {
+object REPL extends Repl(System.in, System.out, System.err, storage, "", Nil) with ReplOverrides {
   import interp.replApi._
 
   def start(args: String*): Unit = {
@@ -47,7 +48,7 @@ object REPL extends Repl(System.in, System.out, storage, "", Nil) with ReplOverr
   }
   override def action() = {
     val res = super.action()
-    printer.println("") // Blank line between results.
+    printStream.println("") // Blank line between results.
     res
   }
 }

@@ -100,7 +100,7 @@ trait ShowEach extends ShowEach1 {
 
     def renderLines(implicit z: Show[B]): Vec[String]               = {
       val widths    = columns map (_ map z.show map (_.length) max)
-      val formatFns = widths map leftFormatString
+      val formatFns = widths map lformat
 
       rows map (formatFns zip _ map (_ apply _) mk_s ' ')
     }
