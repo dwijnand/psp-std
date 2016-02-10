@@ -9,12 +9,14 @@ The scala standard library is deficient in many ways. This library is an attempt
 
 ### Usage
 
-Suggested contents for `build.sbt`:
+Suggested contents for a basic `build.sbt` follows. Note that the console transcript as seen requires more project code than this. The standard scala repl can't handle -Yno-imports, so psp-std derives a new console task from ammonite.
 
 ```scala
               scalaVersion :=  "2.11.7"
-       libraryDependencies +=  "org.improving" %% "psp-std" % "0.5.7"
+                 resolvers +=  Opts.resolver.sonatypeReleases
+             scalacOptions ++= Seq("-language:_", "-Yno-predef")
 initialCommands in console :=  "import psp._, std._, all._, api._, StdEq._, StdShow._"
+       libraryDependencies +=  "org.improving" %% "psp-std" % "0.6.1"
 ```
 
 Then `sbt console` and you can look around.
