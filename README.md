@@ -13,7 +13,7 @@ Suggested contents for `build.sbt`:
 
 ```scala
               scalaVersion :=  "2.11.7"
-       libraryDependencies +=  "org.improving" %% "psp-std" % "0.5.6"
+       libraryDependencies +=  "org.improving" %% "psp-std" % "0.5.7"
 initialCommands in console :=  "import psp._, std._, all._, api._, StdEq._, StdShow._"
 ```
 
@@ -21,7 +21,7 @@ Then `sbt console` and you can look around.
 ```scala
 % sbt console
 Using libsbt 0.5.7
-psp-std repl (ammonite 0.5.0, scala 2.11.7, jvm 1.8.0_66)
+psp-std repl (ammonite 0.5.4, scala 2.11.7, jvm 1.8.0_72)
 
 psp> 1 to 20 splitAt 10
 res0: Split[Int] = Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])
