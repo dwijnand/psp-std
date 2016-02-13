@@ -19,7 +19,10 @@ object Build extends sbt.Build {
   def optimizeArgs        = wordSeq("-optimise -Yinline-warnings")
   def stdArgs             = pspArgs ++ warnArgs
 
-  def testDependencies    = Def setting Seq(Deps.scalaReflect.value, scalacheck.copy(configurations = None))
+  def testDependencies    = Seq(
+    "org.scalacheck" %% "scalacheck"      % "1.12.5",
+    "com.novocode"    % "junit-interface" %  "0.11"
+  )
 
   lazy val api = project setup "psp's non-standard api" also spire
   lazy val std = project setup "psp's non-standard standard library" dependsOn api
@@ -76,21 +79,22 @@ object Build extends sbt.Build {
   lazy val root = project.root.setup.aggregatesAll.dependsOnAll settings (
     console in Compile <<=  console in Compile in consoleOnly,
        console in Test <<=  console in Test in consoleOnly,
-          watchSources <++= testOnly.allSources,
+          watchSources <++= testing.allSources,
           watchSources <++= consoleOnly.allSources,
-                  test <<=  test in testOnly
+                  test <<=  test in testing
   ) also addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")
 
   lazy val consoleOnly = ( project.helper.dependsOnAll
-    dependsOn (testOnly % "test->test")
+    dependsOn (testing % "test->test")
          deps (consoleDependencies: _*)
      settings (console in Compile := ammoniteTask.value)
   )
-  lazy val testOnly = project.helper.dependsOnAll.aggregatesAll settings (
-     testOptions in Test  +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
-             logBuffered  :=  false,
-     libraryDependencies  +=  scalacheck,
-     libraryDependencies <++= testDependencies,
-                    test  :=  (run in Test toTask "").value
+  lazy val testing = project.setup dependsOn std settings (
+                   testOptions +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
+                   testOptions +=  Tests.Argument(TestFrameworks.JUnit, "-s"),
+     parallelExecution in Test :=  false,
+                   logBuffered :=  false,
+           libraryDependencies ++= testDependencies :+ Deps.scalaReflect.value,
+                          test <<= test in Test
   )
 }
