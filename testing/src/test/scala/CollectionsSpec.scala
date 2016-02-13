@@ -5,6 +5,11 @@ import scala.collection.immutable.StringOps
 import std._, api._, all._, StdEq._, StdShow._
 import Prop.forAll
 
+class MiscTests {
+  @Test(expected = scala.Predef.classOf[AssertionError])
+  def junitFail(): Unit = junitAssert(false)
+}
+
 class EmptySpec extends ScalacheckBundle {
   def bundle = "Empty"
   class Bippy(val to_s: String) extends ShowSelf

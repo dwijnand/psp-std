@@ -3,7 +3,25 @@ package tests
 
 import std._, all._, StdShow._
 
-object Benchmark2 {
+object Benchmark {
+  def main(args: Array[String]): Unit = {
+    args match {
+      case Array(m, r) => Benchmarker(max = m.toInt, rounds = r.toInt)
+      case Array(m)    => Benchmarker(max = m.toInt)
+      case _           => Benchmarker()
+    }
+  }
+}
+
+class BenchmarkTests {
+  @Test
+  def bench(): Unit = Benchmarker()
+}
+
+object Benchmarker {
+  def apply(max: Int = 5000, rounds: Int = 3): Unit = (new Benchmarker)(max, rounds)
+}
+class Benchmarker {
   var total = 0L
 
   def toDrop(len: Int) = (len / 9 * 10) + 1
@@ -26,12 +44,7 @@ object Benchmark2 {
     sum
   }
 
-  def main(args: Array[String]): Unit = {
-    val (max, rounds) = args match {
-      case Array(m, r) => m.toInt -> r.toInt
-      case Array(m)    => m.toInt -> 1
-      case _           => 5000 -> 1
-    }
+  def apply(max: Int, rounds: Int): Unit = {
     val r1v = 1 to max toVec
     val r2v = r1v.toScalaVector
     var r1, r2 = 0L

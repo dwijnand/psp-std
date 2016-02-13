@@ -36,9 +36,11 @@ package object tests {
   type Buildable[A, C[X]] = org.scalacheck.util.Buildable[A, C[A]]
   type GenParams          = Gen.Parameters
   type TestParams         = Test.Parameters
+  type Test               = org.junit.Test
 
   import Prop._
 
+  def junitAssert(body: => Boolean): Unit = org.junit.Assert assertTrue body
 
   def assert(assertion: => Boolean, msg: => Any)(implicit z: Assertions): Unit =
     Assertions.using(z)(assertion, s"assertion failed: $msg")

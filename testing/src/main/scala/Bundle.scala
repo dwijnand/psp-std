@@ -70,9 +70,13 @@ trait ScalacheckBundle extends Bundle {
     case r             => sideEffect(false, println("- %s  %s\nFalsified after %s passed tests\n%s".format(p.label, fail, r.succeeded, pp(r))))
   }
 
-  def run() = {
+  def run(): Boolean = {
     println("\n" + start)
     props map runOne forall (x => x)
   }
+
+  @Test
+  def runBundle(): Unit = junitAssert(run())
+
   override def toString = bundle
 }
