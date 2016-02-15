@@ -30,6 +30,10 @@ final case class JvmName(value: String) {
   def short: String         = segments.last
 }
 
+object JavaClass {
+  def apply(x: jClass): JavaClass = new JavaClassImpl(x)
+}
+
 trait JavaClass extends Any {
   def clazz: jClass
 

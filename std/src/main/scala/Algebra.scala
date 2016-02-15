@@ -1,8 +1,7 @@
 package psp
 package std
 
-
-import api._, all._
+import api._, exp._
 
 object Algebras {
   final case class Not[A](f: ToBool[A]) extends ToBool[A] with ShowSelf {

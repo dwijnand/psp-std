@@ -1,12 +1,12 @@
 package psp
 package std
 
-import api._, all._, StdShow._
+import api._, exp._, StdShow._
 
 /** Motley objects for which a file of residence is not obvious.
  */
 class FormatFun(val fmt: String) extends (Any => String) with ShowSelf {
-  def apply(x: Any): String = fmt format x
+  def apply(x: Any): String = stringFormat(fmt, x)
   def to_s = fmt
 }
 object sys {

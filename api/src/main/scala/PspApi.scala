@@ -44,6 +44,13 @@ trait PspApi extends ExternalLibs {
   def sideEffect[A](result: A, exprs: Any*): A           = result
   def some[A](x: A): Option[A]                           = scala.Some(x)
 
+  def stringFormat(s: String, args: Any*): String = java.lang.String.format(s, args map unwrapArg: _*)
+
+  private def unwrapArg(arg: Any): AnyRef = arg match {
+    case x: scala.math.ScalaNumber => x.underlying
+    case x: AnyRef                 => x
+  }
+
   def newArray[A: CTag](length: Int): Array[A] = new Array[A](length)
   def copyArray[A: CTag](src: Array[A]): Array[A] = {
     val target = newArray[A](src.length)
