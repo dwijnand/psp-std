@@ -65,6 +65,7 @@ object Build extends sbt.Build {
 
   // updateOptions ~=  (_ withCachedResolution true)
   private def commonSettings(p: Project) = standardSettings ++ Seq(
+    cancelable in Global :=  true,
        externalResolvers :=  Seq(Resolver.defaultLocal, "google" at "http://maven-central.storage.googleapis.com", Resolver.jcenterRepo),
                  version :=  sbtBuildProps.buildVersion,
             scalaVersion :=  scalaVersionLatest,
@@ -85,7 +86,7 @@ object Build extends sbt.Build {
   ) also addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")
 
   lazy val consoleOnly = ( project.helper.dependsOnAll
-    dependsOn (testing % "test->test")
+    dependsOn (testing)
          deps (consoleDependencies: _*)
      settings (console in Compile := ammoniteTask.value)
   )
