@@ -1,7 +1,7 @@
 package psp
 package api
 
-import scala.{ collection => sc }
+import scala.{ Tuple2, collection => sc }
 import psp.ext.ExternalLibs
 
 // Importing from this is necessary to use these aliases within the api package,
@@ -33,15 +33,16 @@ trait PspApi extends ExternalLibs {
   final val ->            = Pair
 
   // A few methods it is convenient to expose at this level.
-  def ?[A](implicit value: A): A               = value
-  def abort(msg: String): Nothing              = runtimeException(msg)
-  def doto[A](x: A)(f: A => Unit): A           = sideEffect(x, f(x))
-  def emptyValue[A](implicit z: Empty[A]): A   = z.empty
-  def identity[A](x: A): A                     = x
-  def none[A](): Option[A]                     = scala.None
-  def show[A](implicit z: Show[A]): Show[A]    = z
-  def sideEffect[A](result: A, exprs: Any*): A = result
-  def some[A](x: A): Option[A]                 = scala.Some(x)
+  def ?[A](implicit value: A): A                         = value
+  def abort(msg: String): Nothing                        = runtimeException(msg)
+  def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
+  def emptyValue[A](implicit z: Empty[A]): A             = z.empty
+  def identity[A](x: A): A                               = x
+  def none[A](): Option[A]                               = scala.None
+  def pair[@fspec A, @fspec B](x: A, y: B): Tuple2[A, B] = new Tuple2(x, y)
+  def show[A](implicit z: Show[A]): Show[A]              = z
+  def sideEffect[A](result: A, exprs: Any*): A           = result
+  def some[A](x: A): Option[A]                           = scala.Some(x)
 
   def newArray[A: CTag](length: Int): Array[A] = new Array[A](length)
   def copyArray[A: CTag](src: Array[A]): Array[A] = {

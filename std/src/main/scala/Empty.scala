@@ -1,8 +1,7 @@
 package psp
 package std
 
-
-import api._, all._
+import api._, exp._
 
 /** Having an Empty[A] instance in scope allows for using methods
  *  like zfold, zreduce, zhead, whereupon the implicit empty value
@@ -29,7 +28,7 @@ trait StdEmpty {
   implicit def emptyJavaSet[A] : Empty[jSet[A]]                       = Empty(new jHashSet[A])
   implicit def emptyOption[A] : Empty.Const[Option[A]]                = Empty const None
   implicit def emptyOptional[A] : Empty[jOptional[A]]                 = Empty(java.util.Optional.empty[A]())
-  implicit def emptyTuple[A: Empty, B: Empty]: Empty[(A, B)]          = Empty(emptyValue[A] -> emptyValue[B])
+  implicit def emptyTuple[A: Empty, B: Empty]: Empty[(A, B)]          = Empty(pair(emptyValue[A], emptyValue[B]))
   implicit def emptyView[A, R] : Empty[AtomicView[A, R]]              = Empty(new LinearView(Pnil))
 
   implicit lazy val emptyDoc: Empty.Const[Doc]               = Empty const Doc.empty
