@@ -6,7 +6,7 @@ import std._, api._, all._, StdEq._, StdShow._
 import Prop.forAll
 
 class MiscTests {
-  @Test(expected = scala.Predef.classOf[AssertionError])
+  @Test(expected = Predef.classOf[AssertionError])
   def junitFail(): Unit = junitAssert(false)
 }
 

@@ -4,7 +4,7 @@ package ops
 
 import java.{ lang => jl }
 
-import api._, all._
+import api._, exp._, all.{ opsInt, opsLong }
 
 final class AnyOps[A](val x: A) extends AnyVal {
   def any_s: String                         = s"$x"
@@ -16,8 +16,7 @@ final class AnyOps[A](val x: A) extends AnyVal {
   def matchOpt[B](pf: A ?=> B): Option[B]   = matchOr(none[B])(pf andThen some)
   def matchOr[B](alt: => B)(pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else alt
   def zmatch[B: Empty](pf: A ?=> B): B      = matchOr[B](emptyValue[B])(pf)
-  def reflect[B](m: jMethod)(args: Any*): B = m.invoke(x, args.m.toRefs.seq: _*).castTo[B]
-  def shortClass: String                    = x.getClass.scalaName.short
+  def shortClass: String                    = JavaClass(x.getClass).scalaName.short
   def toRef: Ref[A]                         = castTo[Ref[A]]
 
   @inline def |>[B](f: A => B): B = f(x)  // The famed forward pipe.
@@ -54,6 +53,6 @@ final class LongOps(val self: Long) extends AnyVal {
     case _       => assert(self.toInt <= MaxInt, s"$self > $MaxInt") ; self.toInt
   }
 
-  def to(end: Long): LongRange    = self.safeInt to end.safeInt map (_.toLong)
-  def until(end: Long): LongRange = self.safeInt until end.safeInt map (_.toLong)
+  def to(end: Long): LongRange    = safeInt to end.safeInt map (_.toLong)
+  def until(end: Long): LongRange = safeInt until end.safeInt map (_.toLong)
 }

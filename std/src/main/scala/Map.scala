@@ -18,7 +18,7 @@ object ExMap {
   def empty[K, V] : ExMap[K, V]                                   = apply(Fun.finite())
   def apply[K, V](f: FiniteDom[K, V]): ExMap[K, V]                = new Impl(f)
   def apply[K, V](keys: ExSet[K], lookup: Fun[K, V]): ExMap[K, V] = apply(FiniteDom(keys, lookup))
-  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]                 = apply[K, V](ExSet fromJava xs.keySet, Opaque[K, V](xs get _)) //   fromScala[K, V](xs.m.toScalaMap)
+  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]                 = apply[K, V](ExSet fromJava xs.keySet, Opaque[K, V](xs get _))
   def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V]               = apply[K, V](xs.keys.byEquals.toSet, Opaque(xs))
 
   def impl[K, V](xs: ExMap[K, V]): Impl[K, V] = xs match {

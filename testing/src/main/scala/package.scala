@@ -18,25 +18,30 @@ package object tests {
 
   implicit def assertions: Assertions = ImmediateTraceAssertions
 
-  type Gen[A]             = org.scalacheck.Gen[A]
   type Arb[A]             = org.scalacheck.Arbitrary[A]
-  val Arb                 = org.scalacheck.Arbitrary
-  val Gen                 = org.scalacheck.Gen
-  val Test                = org.scalacheck.Test
+  type Buildable[A, C[X]] = org.scalacheck.util.Buildable[A, C[A]]
   type Choose[A]          = org.scalacheck.Gen.Choose[A]
-  val Choose              = org.scalacheck.Gen.Choose
+  type Failed             = org.scalacheck.Test.Failed
   type Forall1[-A]        = ToBool[A]
   type Forall2[-A]        = Relation[A]
   type Forall3[-A]        = (A, A, A) => Boolean
-  type Prop               = org.scalacheck.Prop
-  val Prop                = org.scalacheck.Prop
-  val Pretty              = org.scalacheck.util.Pretty
-  type Result             = org.scalacheck.Test.Result
-  type Failed             = org.scalacheck.Test.Failed
-  type Buildable[A, C[X]] = org.scalacheck.util.Buildable[A, C[A]]
   type GenParams          = Gen.Parameters
-  type TestParams         = Test.Parameters
+  type Gen[A]             = org.scalacheck.Gen[A]
+  type Prop               = org.scalacheck.Prop
+  type Result             = org.scalacheck.Test.Result
+  type RunWith            = org.junit.runner.RunWith
   type Test               = org.junit.Test
+  type TestParams         = Test.Parameters
+
+  type SubClassOf[A] = Class[_ <: A]
+
+  val Arb    = org.scalacheck.Arbitrary
+  val Choose = org.scalacheck.Gen.Choose
+  val Gen    = org.scalacheck.Gen
+  val Pretty = org.scalacheck.util.Pretty
+  val Prop   = org.scalacheck.Prop
+  val Test   = org.scalacheck.Test
+  val Predef = scala.Predef
 
   import Prop._
 

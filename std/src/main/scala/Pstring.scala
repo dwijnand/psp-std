@@ -1,7 +1,6 @@
 package psp
 package std
 
-
 import api._, all._, StdShow._, StdEq._
 import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
@@ -41,7 +40,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def charVec: Vec[Char]                            = charSeq.toVec
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
-  def format(args : Any*): String                   = java.lang.String.format(self, args map unwrapArg: _*)
+  def format(args : Any*): String                   = stringFormat(self, args: _*)
   def length: Int                                   = self.length
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
   def mapChars(pf: Char ?=> Char): String           = chars.m mapPartial pf force
@@ -72,7 +71,6 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def toLong: Long          = (self removeFirst "[lL]$".r) |> (s => foldPrefix("0x")(parseLong(s))(parseLong(_, 16)))
 
   private def bs = '\\'
-  private def unwrapArg(arg: Any): AnyRef                                     = arg.matchOr(arg.toRef) { case x: ScalaNumber => x.underlying }
   private def foldRemove[A](r: Regex)(none: => A)(some: String => A): A       = removeFirst(r) match { case `self` => none ; case s => some(s) }
   private def foldPrefix[A](prefix: String)(none: => A)(some: String => A): A = foldRemove(prefix.r.literal.starts)(none)(some)
   private def foldSuffix[A](suffix: String)(none: => A)(some: String => A): A = foldRemove(suffix.r.literal.ends)(none)(some)
