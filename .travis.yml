@@ -7,6 +7,10 @@ cache:
     - $HOME/.sbt
     - $HOME/.cache/pip
 
+before_cache:
+  - find "$HOME/.sbt" -name "*.lock" -print -delete
+  - find "$HOME/.ivy2" -name "ivydata-*.properties" -print -delete
+
 language: scala
 script: project/bin/run-travis
 jdk:
