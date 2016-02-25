@@ -6,10 +6,6 @@ uname="$(uname -a)"
 runTests () {
   sbt -J-Xmx3784m cover || exit 1
   echo "[info] $(date) - finished sbt test"
-
-  # Tricks to avoid unnecessary cache updates
-  find "$HOME/.sbt" -name "*.lock" -print0 | xargs -0 rm
-  find "$HOME/.ivy2" -name "ivydata-*.properties" -print0 | xargs -0 rm
   exit 0
 }
 
