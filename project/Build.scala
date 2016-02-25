@@ -65,6 +65,7 @@ object Build extends sbt.Build {
 
   // updateOptions ~=  (_ withCachedResolution true)
   private def commonSettings(p: Project) = standardSettings ++ Seq(
+         conflictManager :=  ConflictManager.strict,
     cancelable in Global :=  true,
        externalResolvers :=  Seq(Resolver.defaultLocal, "google" at "http://maven-central.storage.googleapis.com", Resolver.jcenterRepo),
                  version :=  sbtBuildProps.buildVersion,
