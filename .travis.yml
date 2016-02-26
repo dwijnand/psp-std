@@ -1,22 +1,21 @@
 # Use Docker-based container (instead of OpenVZ)
 sudo: false
+language: scala
+scala: 2.11.7
+jdk: oraclejdk8
+script: sbt -J-Xmx3784m -batch -no-colors ++2.11.7 cover |& egrep -v '^\[info\] Resolving '
 
 cache:
   directories:
     - $HOME/.ivy2/cache
+    - $HOME/.coursier
     - $HOME/.sbt
     - $HOME/.cache/pip
 
 before_cache:
   - find "$HOME/.sbt" -name "*.lock" -print -delete
   - find "$HOME/.ivy2" -name "ivydata-*.properties" -print -delete
-
-language: scala
-script: project/bin/run-travis
-jdk:
-  - oraclejdk8
-
-scala: 2.11.7
+  - rm -rf "$HOME/.cache/pip/log"
 
 # codecov
 before_install: pip install --user codecov

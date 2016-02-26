@@ -5,6 +5,7 @@ import scala.Predef.{ conforms => _ }
 import sbt._, Keys._, psp.libsbt._, Deps._
 import psp.std._
 import scoverage.ScoverageKeys._
+import coursier.CoursierPlugin.autoImport.coursierVerbosity
 
 object Build extends sbt.Build {
   def isAmmoniteDebug     = sys.env contains "AMMONITE_DEBUG"
@@ -66,7 +67,8 @@ object Build extends sbt.Build {
   // updateOptions ~=  (_ withCachedResolution true)
   private def commonSettings(p: Project) = standardSettings ++ Seq(
          conflictManager :=  ConflictManager.strict,
-    cancelable in Global :=  true,
+       coursierVerbosity :=  0,
+         ivyLoggingLevel :=  UpdateLogging.DownloadOnly,
        externalResolvers :=  Seq(Resolver.defaultLocal, "google" at "http://maven-central.storage.googleapis.com", Resolver.jcenterRepo),
                  version :=  sbtBuildProps.buildVersion,
             scalaVersion :=  scalaVersionLatest,
