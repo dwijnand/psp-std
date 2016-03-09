@@ -9,7 +9,7 @@ import coursier.CoursierPlugin.autoImport.coursierVerbosity
 
 object Build extends sbt.Build {
   def isAmmoniteDebug     = sys.env contains "AMMONITE_DEBUG"
-  def ammoniteVersion     = if (isAmmoniteDebug) "0.5.5-SNAPSHOT" else "0.5.4"
+  def ammoniteVersion     = if (isAmmoniteDebug) "0.5.7-SNAPSHOT" else "0.5.6"
   def ammoniteDep         = "com.lihaoyi" % "ammonite-repl" % ammoniteVersion cross CrossVersion.full
   def consoleDependencies = List(jsr305, ammoniteDep)
   def bonusArgs           = wordSeq(sys.env.getOrElse("SCALAC_ARGS", ""))
@@ -71,7 +71,7 @@ object Build extends sbt.Build {
          ivyLoggingLevel :=  UpdateLogging.DownloadOnly,
        externalResolvers :=  Seq(Resolver.defaultLocal, "google" at "http://maven-central.storage.googleapis.com", Resolver.jcenterRepo),
                  version :=  sbtBuildProps.buildVersion,
-            scalaVersion :=  scalaVersionLatest,
+            scalaVersion :=  "2.11.8",
       crossScalaVersions :=  Seq(scalaVersion.value),
                 licenses :=  pspLicenses,
             organization :=  pspOrg,
@@ -91,7 +91,7 @@ object Build extends sbt.Build {
   lazy val consoleOnly = ( project.helper.dependsOnAll
     dependsOn (testing)
          deps (consoleDependencies: _*)
-     settings (console in Compile := ammoniteTask.value)
+     settings (scalaVersion := "2.11.7", console in Compile := ammoniteTask.value)
   )
   lazy val testing = project.setup dependsOn std settings (
                    testOptions +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),

@@ -12,7 +12,7 @@ The scala standard library is deficient in many ways. This library is an attempt
 Suggested contents for a basic `build.sbt` follows. Note that the console transcript as seen requires more project code than this. The standard scala repl can't handle -Yno-imports, so psp-std derives a new console task from ammonite.
 
 ```scala
-              scalaVersion :=  "2.11.7"
+              scalaVersion :=  "2.11.8"
                  resolvers +=  Opts.resolver.sonatypeReleases
              scalacOptions ++= Seq("-language:_", "-Yno-predef")
 initialCommands in console :=  "import psp._, std._, all._, api._, StdEq._, StdShow._"
@@ -23,7 +23,7 @@ Then `sbt console` and you can look around.
 ```scala
 % sbt console
 Using libsbt 0.5.7
-psp-std repl (ammonite 0.5.4, scala 2.11.7, jvm 1.8.0_72)
+psp-std repl (ammonite 0.5.6, scala 2.11.7, jvm 1.8.0_74)
 
 psp> 1 to 20 splitAt 10
 res0: Split[Int] = Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])
