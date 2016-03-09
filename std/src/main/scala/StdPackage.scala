@@ -1,10 +1,7 @@
 package psp
 package std
 
-import java.nio.file.Paths
-import java.nio.file.{ attribute => jnfa }
 import psp.api._
-import psp.ext.ExternalLibs
 
 trait AllExplicit extends PspApi with PspCreators {
   // Type aliases I don't like enough to have in the API.

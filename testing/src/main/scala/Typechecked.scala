@@ -2,8 +2,6 @@ package psp
 package std
 
 import all._
-import java.util.regex.Pattern
-import scala.reflect.macros.TypecheckException
 import scala.reflect.macros.blackbox.Context
 
 /** TODO - mock the ridiculous scala ast with a clean one with the same structure.

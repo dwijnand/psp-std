@@ -5,7 +5,6 @@ import api._, all._, StdShow._, StdEq._
 import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
 import jl.Integer.parseInt, jl.Long.parseLong, jl.Double.parseDouble, jl.Float.parseFloat
-import scala.math.ScalaNumber
 import scala.reflect.NameTransformer
 
 final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String] with ShowSelf {

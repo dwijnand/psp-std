@@ -2,7 +2,6 @@ package psp
 package std
 
 import api._, all._, StdEq._
-import java.nio.{ file => jnf }
 import java.nio.file.{ attribute => jnfa }
 import java.net.URLClassLoader
 
