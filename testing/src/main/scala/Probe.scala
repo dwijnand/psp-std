@@ -3,7 +3,7 @@ package tests
 
 import psp.std._, all._, api._
 import scala.{ collection => sc }
-import sc.{ mutable => scm, immutable => sci }
+import sc.{ immutable => sci }
 
 object Probe {
   final case class Direct(range: IntRange, counter: RecorderCounter) extends api.Direct[Int] {

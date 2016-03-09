@@ -2,8 +2,6 @@ package psp
 package std
 
 import api._
-import scala.{ collection => sc }
-import scala.math.Numeric
 import psp.std.{ lowlevel => ll }
 import exp._ // no implicit conversions in this file
 
