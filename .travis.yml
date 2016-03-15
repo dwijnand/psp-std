@@ -20,3 +20,7 @@ before_cache:
 # codecov
 before_install: pip install --user codecov
 after_success: codecov
+
+env:
+  global:
+  - COURSIER_NO_TERM=1
