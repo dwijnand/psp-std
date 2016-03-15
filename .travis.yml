@@ -24,3 +24,4 @@ after_success: codecov
 env:
   global:
   - COURSIER_NO_TERM=1
+  - UPDATEIMPACT_API_KEY="hW6KbHXfCJBhbtDGzlkj8pNTTSIlJGTL"
