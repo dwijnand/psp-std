@@ -3,8 +3,6 @@ package tests
 
 import psp.std._, all._, api._, StdShow._, StdEq._
 import org.scalacheck._, Prop.forAll, Gen._
-import scala.{ collection => sc }
-import sc.{ mutable => scm, immutable => sci }
 
 class CollectionResult(viewOp: ViewClass.Op, testedFn: RecorderCounter => ViewClass) extends ShowSelf {
   val counter = new RecorderCounter

@@ -14,5 +14,3 @@ pomExtra in Global := (
     </developer>
   </developers>
 )
-
-com.updateimpact.Plugin.apiKey in ThisBuild := "hW6KbHXfCJBhbtDGzlkj8pNTTSIlJGTL"
