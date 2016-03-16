@@ -3,7 +3,7 @@ sudo: false
 language: scala
 scala: 2.11.8
 jdk: oraclejdk8
-script: sbt -J-Xmx3784m -batch -no-colors ++2.11.8 cover |& egrep -v '^\[info\] Resolving '
+script: ./.ci/run.sh
 
 cache:
   directories:
