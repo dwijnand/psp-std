@@ -410,7 +410,7 @@ class CollectionsSpec extends ScalacheckBundle {
     vec[NamedProp](
       expectTypes[jList[_]](
         jseq map identity build,
-        jseq.m.build,
+        // jseq.m.build,
         jseq.m map identity build,
         jseq.m.map(fst).map(paired).force[jList[_]]
         ),

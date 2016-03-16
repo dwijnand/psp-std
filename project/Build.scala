@@ -1,9 +1,8 @@
 package fbt
 
 import sbt._, Keys._
-import scoverage.ScoverageKeys._
 
-object Build extends sbt.Build with FbtBuild with Ammonite {
+object Build extends sbt.Build with FbtBuild {
   lazy val api = project setup "psp's non-standard api" also spire
   lazy val std = project setup "psp's non-standard standard library" dependsOn api
 
@@ -15,6 +14,16 @@ object Build extends sbt.Build with FbtBuild with Ammonite {
   def macroDebugArgs = wordSeq("-Ymacro-debug-verbose")
   def optimizeArgs   = wordSeq("-optimise -Yinline-warnings")
   def stdArgs        = ammoniteArgs ++ warnArgs
+
+  lazy val ammoniteTask = Def task {
+    val forker    = new Fork("java", Some("psp.ReplMain"))
+    val files     = (fullClasspath in Compile in LocalProject("consoleOnly")).value.files filterNot (_.toString contains "scoverage")
+    val classpath = files mkString ":"
+    val jvmArgs   = Vector(s"-Xbootclasspath/a:$classpath") // boot classpath way faster
+    val forkOpts  = ForkOptions(outputStrategy = Some(StdoutOutput), connectInput = true, runJVMOptions = jvmArgs)
+
+    forker(forkOpts, "-usejavacp" +: ammoniteArgs)
+  }
 
   // updateOptions ~=  (_ withCachedResolution true)
   protected def commonSettings(p: Project) = standardSettings ++ Seq(
