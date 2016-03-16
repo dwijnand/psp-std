@@ -19,7 +19,7 @@ class BenchmarkTests {
 }
 
 object Benchmarker {
-  def apply(max: Int = 5000, rounds: Int = 3): Unit = (new Benchmarker)(max, rounds)
+  def apply(max: Int = 2500, rounds: Int = 4): Unit = (new Benchmarker)(max, rounds)
 }
 class Benchmarker {
   var total = 0L
@@ -48,6 +48,9 @@ class Benchmarker {
     val r1v = 1 to max toVec
     val r2v = r1v.toScalaVector
     var r1, r2 = 0L
+
+    b1(r1v) ; b1(r1v)
+    b2(r2v) ; b2(r2v)
 
     def do1() = total += timed(r2 += _)(b2(r2v))
     def do2() = total += timed(r1 += _)(b1(r1v))
