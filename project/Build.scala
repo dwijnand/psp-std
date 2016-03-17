@@ -1,6 +1,7 @@
 package fbt
 
 import sbt._, Keys._
+import pl.project13.scala.sbt.JmhPlugin
 
 object Build extends sbt.Build with FbtBuild {
   lazy val api = project setup "psp's non-standard api" also spire
@@ -27,23 +28,28 @@ object Build extends sbt.Build with FbtBuild {
 
   // updateOptions ~=  (_ withCachedResolution true)
   protected def commonSettings(p: Project) = standardSettings ++ Seq(
-                    version :=  "0.6.2-SNAPSHOT",
-               scalaVersion :=  "2.11.8",
-               organization :=  "org.improving",
-          coursierVerbosity :=  0,
-                   licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-              scalacOptions ++= stdArgs,
-           triggeredMessage :=  Watched.clearWhenTriggered,
-                 incOptions ~=  (_ withNameHashing false) // supposedly we can remove this after sbt commit 65f7958898
+                  version :=  "0.6.2-SNAPSHOT",
+             scalaVersion :=  "2.11.8",
+             organization :=  "org.improving",
+        coursierVerbosity :=  0,
+                 licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+            scalacOptions ++= stdArgs,
+         triggeredMessage :=  Watched.clearWhenTriggered,
+               incOptions ~=  (_ withNameHashing false) // supposedly we can remove this after sbt commit 65f7958898
   ) ++ p.crossSettings
 
-  lazy val root = project.root.setup.aggregate(projectRefs: _*).dependsOn(classpathDeps: _*) settings (
-    console in Compile <<=  console in Compile in consoleOnly,
-       console in Test <<=  console in Test in consoleOnly,
-          watchSources <++= testing.allSources,
-          watchSources <++= consoleOnly.allSources,
-                  test <<=  test in testing
-  ) also addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")
+  lazy val root = (
+    project.root.setup.aggregate(projectRefs: _*).dependsOn(classpathDeps: _*) settings (
+      console in Compile <<=  console in Compile in consoleOnly,
+         console in Test <<=  console in Test in consoleOnly,
+            watchSources <++= testing.allSources,
+            watchSources <++= consoleOnly.allSources,
+            watchSources <++= benchmark.allSources,
+                    test <<=  test in testing
+    )
+    also addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")
+    also addCommandAlias("bench", "benchmark/jmh:run -f1 -t1")
+  )
 
   lazy val consoleOnly = ( project.helper
     dependsOn (classpathDeps: _*)
@@ -51,7 +57,7 @@ object Build extends sbt.Build with FbtBuild {
          deps (jsr305, ammonite)
      settings (scalaVersion := "2.11.7", console in Compile := ammoniteTask.value) // ammonite == 2.11.7
   )
-  lazy val testing = project.setup dependsOn std settings (
+  lazy val testing = project.noArtifacts.setup dependsOn std settings (
                    testOptions +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
                    testOptions +=  Tests.Argument(TestFrameworks.JUnit, "-s"),
      parallelExecution in Test :=  false,
@@ -63,4 +69,5 @@ object Build extends sbt.Build with FbtBuild {
               "org.scala-lang"  % "scala-reflect"   % "2.11.8"
             )
   )
+  lazy val benchmark = project.noArtifacts.setup dependsOn std enablePlugins JmhPlugin
 }
