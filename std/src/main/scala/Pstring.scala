@@ -5,7 +5,6 @@ import api._, all._, StdShow._, StdEq._
 import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
 import jl.Integer.parseInt, jl.Long.parseLong, jl.Double.parseDouble, jl.Float.parseFloat
-import scala.reflect.NameTransformer
 
 final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String] with ShowSelf {
   private def rebuild(xs: Vec[String]) = new SplitCharView(xs, sep)
@@ -57,9 +56,6 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def stripPrefix(prefix: String): String           = foldPrefix(prefix)(self)(identity)
   def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
   def trimLines: String                             = mapLines(_.trim).trim
-
-  def decodeScala: String = mapSplit('.')(NameTransformer.decode)
-  def encodeScala: String = mapSplit('.')(NameTransformer.encode)
 
   def toBigInt: BigInt      = scala.math.BigInt(self)
   def toDecimal: BigDecimal = scala.math.BigDecimal(self)

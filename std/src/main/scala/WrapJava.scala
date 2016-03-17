@@ -4,6 +4,7 @@ package std
 import api._, all._, StdEq._
 import java.nio.file.{ attribute => jnfa }
 import java.net.URLClassLoader
+import scala.reflect.NameTransformer
 
 /** Wrapper for java.lang.Class/ClassLoader and other java friends.
  */
@@ -50,7 +51,7 @@ trait JavaClass extends Any {
   def isSynthetic      = clazz.isSynthetic
 
   def rawName: JvmName   = new JvmName(clazz.getName)
-  def scalaName: JvmName = new JvmName(clazz.getName.decodeScala)
+  def scalaName: JvmName = new JvmName(clazz.getName.mapSplit('.')(NameTransformer.decode))
 
   def ancestorNames: Vec[JvmName]        = ancestors mapNow (_.rawName)
   def ancestors: Vec[JavaClass]          = transitiveClosure(this)(_.parents).toVec
