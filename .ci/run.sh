@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 #
 
-# set -e
+set -e
+: ${JMH_ARGS:= -f1 -t1 }
 
-sbt -J-Xmx3784m -batch -no-colors ++2.11.8 cover |& egrep -v '^\[info\] Resolving '
+runTests () {
+  sbt -batch -no-colors "benchmark/jmh:run $JMH_ARGS"
+  sbt -batch -no-colors cover
+}
 
-# sbt updateImpactSubmit || true
+runTests \
+  | egrep -v '^\[info\] (Resolving|Waiting|\# Warmup|Generating|\[info\])' \
+  | egrep -v '^(Download|Resolving|Fetching)' \
+  | egrep -v '(nstrumentation|Cobertura|HTML)'

@@ -1,7 +1,6 @@
 package psp
 package tests
 
-import scala.collection.immutable.StringOps
 import std._, api._, all._, StdEq._, StdShow._
 import Prop.forAll
 
@@ -98,6 +97,8 @@ class ADTSpec extends ScalacheckBundle {
 }
 
 class StringExtensions extends ScalacheckBundle {
+  import scala.collection.immutable.StringOps
+
   def bundle = "String Extensions"
 
   def s = "123 monkey dog ^^.* hello mother 456"
@@ -410,7 +411,7 @@ class CollectionsSpec extends ScalacheckBundle {
     vec[NamedProp](
       expectTypes[jList[_]](
         jseq map identity build,
-        // jseq.m.build,
+        jseq.m.build,
         jseq.m map identity build,
         jseq.m.map(fst).map(paired).force[jList[_]]
         ),
@@ -448,7 +449,7 @@ class CollectionsSpec extends ScalacheckBundle {
         pset map identity build,
         pset map fst map paired build,
         pset union pset
-        ),
+      ),
       expectTypes[Vec[_]](
         pvec mapNow identity,
         pvec ++ pvec,
