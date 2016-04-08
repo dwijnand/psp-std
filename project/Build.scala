@@ -3,7 +3,7 @@ package fbt
 import sbt._, Keys._
 import pl.project13.scala.sbt.JmhPlugin
 
-object Build extends sbt.Build with FbtBuild {
+object Build extends FbtBuild {
   lazy val api = project setup "psp's non-standard api" also spire
   lazy val std = project setup "psp's non-standard standard library" dependsOn api
 

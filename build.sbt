@@ -1,3 +1,10 @@
+val root        = fbt.Build.root
+val api         = fbt.Build.api
+val std         = fbt.Build.std
+val consoleOnly = fbt.Build.consoleOnly
+val testing     = fbt.Build.testing
+val benchmark   = fbt.Build.benchmark
+
 // To sync with Maven central, you need to supply the following information:
 pomExtra in Global := (
   <url>https://github.com/paulp/psp-std</url>

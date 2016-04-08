@@ -3,8 +3,6 @@ package fbt
 import sbt._, Keys._
 
 trait FbtBuild {
-  self: sbt.Build =>
-
   def subprojects: List[sbt.Project]
   protected def commonSettings(p: Project): Seq[Setting[_]]
 
