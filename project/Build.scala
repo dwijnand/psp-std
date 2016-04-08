@@ -55,7 +55,7 @@ object Build extends sbt.Build with FbtBuild {
     dependsOn (classpathDeps: _*)
     dependsOn (testing)
          deps (jsr305, ammonite)
-     settings (scalaVersion := "2.11.7", console in Compile := ammoniteTask.value) // ammonite == 2.11.7
+     settings (console in Compile := ammoniteTask.value)
   )
   lazy val testing = project.noArtifacts.setup dependsOn std settings (
                    testOptions +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
