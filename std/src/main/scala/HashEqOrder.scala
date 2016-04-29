@@ -34,14 +34,14 @@ object Eq {
 }
 
 object Order {
-  import Cmp._
+  // import Cmp._
 
-  def order[A: Order] : Order[A] = ?
-  def fold(xs: Cmp*): Cmp        = xs.m findOr (_ != EQ, EQ)
+  // def order[A: Order] : Order[A] = ?
+  // def fold(xs: Cmp*): Cmp        = xs.m findOr (_ != EQ, EQ)
 
-  def create[A](z: Comparator[A]): Order[A]              = new FromComparator[A](z)
+  // def create[A](z: Comparator[A]): Order[A]              = new FromComparator[A](z)
   def comparator[A](implicit z: Order[A]): Comparator[A] = new ToOrdering(z)
-  def ordering[A](implicit z: Order[A]): Ordering[A]     = new ToOrdering(z)
+  // def ordering[A](implicit z: Order[A]): Ordering[A]     = new ToOrdering(z)
 
   private def longCmp(diff: Long): Cmp = (
     if (diff < 0) Cmp.LT
