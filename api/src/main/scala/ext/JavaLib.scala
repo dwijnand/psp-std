@@ -17,30 +17,30 @@ trait JavaLib {
   def indexOutOfBoundsException(msg: Any): Nothing        = throw new IndexOutOfBoundsException(s"$msg")
   def noSuchElementException(msg: String): Nothing        = throw new NoSuchElementException(msg)
   def runtimeException(msg: String): Nothing              = throw new RuntimeException(msg)
-  def unsupportedOperationException(msg: String): Nothing = throw new UnsupportedOperationException(msg)
+  // def unsupportedOperationException(msg: String): Nothing = throw new UnsupportedOperationException(msg)
 
   // A selection of popular static methods from javaland.
-  def contextClassLoader: ClassLoader = currentThread.getContextClassLoader
-  def currentThread: Thread           = jl.Thread.currentThread
-  def defaultCharset: Charset         = Charset.defaultCharset
-  def fileSeparator: String           = jio.File.separator
-  def milliTime: Long                 = jl.System.currentTimeMillis
+  // def contextClassLoader: ClassLoader = currentThread.getContextClassLoader
+  // def currentThread: Thread           = jl.Thread.currentThread
+  // def defaultCharset: Charset         = Charset.defaultCharset
+  // def fileSeparator: String           = jio.File.separator
+  // def milliTime: Long                 = jl.System.currentTimeMillis
   def nanoTime: Long                  = jl.System.nanoTime
-  def systemClassLoader: ClassLoader  = jl.ClassLoader.getSystemClassLoader
-  def threadSleep(ms: Long): Unit     = jl.Thread.sleep(ms)
+  // def systemClassLoader: ClassLoader  = jl.ClassLoader.getSystemClassLoader
+  // def threadSleep(ms: Long): Unit     = jl.Thread.sleep(ms)
   def threadYield(): Unit             = jl.Thread.`yield`
-  def utf8Charset: Charset            = Charset forName "UTF-8"
+  // def utf8Charset: Charset            = Charset forName "UTF-8"
 
   // A selection of creators for commonly required java types.
   def jFile(path: String): jFile = new jFile(path)
   def jPath(path: String): jPath = jnf.Paths get path
   def jUri(x: String): jUri      = java.net.URI create x
-  def jUrl(x: String): jUrl      = jUri(x).toURL
+  // def jUrl(x: String): jUrl      = jUri(x).toURL
 
   // A few operations involving time and date.
-  def formattedDate(format: String)(date: jDate): String = new java.text.SimpleDateFormat(format) format date
-  def dateTime(): String                                 = formattedDate("yyyyMMdd-HH-mm-ss")(new jDate)
-  def now(): FileTime                                    = jnf.attribute.FileTime fromMillis milliTime
+  // def formattedDate(format: String)(date: jDate): String = new java.text.SimpleDateFormat(format) format date
+  // def dateTime(): String                                 = formattedDate("yyyyMMdd-HH-mm-ss")(new jDate)
+  // def now(): FileTime                                    = jnf.attribute.FileTime fromMillis milliTime
 
   // Exceptions and Throwables.
   type AssertionError                = jl.AssertionError
