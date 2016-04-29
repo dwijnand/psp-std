@@ -107,10 +107,10 @@ trait ShowEach extends ShowEach1 {
     def render(implicit z: Show[B]): String = renderLines.joinLines
   }
 
-  // private def tabular[A](xs: View[A])(columns: ToString[A]*): String =
-  //   if (xs.nonEmpty && columns.nonEmpty) FunctionGrid(xs.toVec, columns.m).render(inheritShow) else ""
+  private def tabular[A](xs: View[A])(columns: ToString[A]*): String =
+    if (xs.nonEmpty && columns.nonEmpty) FunctionGrid(xs.toVec, columns.m).render(inheritShow) else ""
 
-  // implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]        = Show(xs => tabular(xs.entries.pairs)(_.render))
+  implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]        = Show(xs => tabular(xs.entries.pairs)(_.render))
   implicit def showZipped[A1: Show, A2: Show] : Show[ZipView[A1, A2]] = showBy[ZipView[A1, A2]](_.pairs)
   implicit def showArray[A: Show] : Show[Array[A]]                    = showBy[Array[A]](_.toVec)
   // implicit def showJavaEnum[A <: jEnum[A]] : Show[jEnum[A]]           = inheritShow

@@ -63,11 +63,11 @@ final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
   // def +:(elem: A): View[A] = view(elem) ++ xs
   // def :+(elem: A): View[A] = xs ++ view(elem)
 
-  // def cross[B](ys: View[B]): View[A -> B]                      = for (x <- xs ; y <- ys) yield x -> y
+  def cross[B](ys: View[B]): View[A -> B]                      = for (x <- xs ; y <- ys) yield x -> y
   def findOr(p: ToBool[A], alt: => A): A                       = find(p) | alt
   // def gather[B](p: Partial[A, View[B]]): View[B]               = xs flatMap p.zapply
   // def intersperse(ys: View[A]): View[A]                        = Split(xs, ys).intersperse
-  // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C] = groupBy[B](f) map g // Probably this should be groupBy
+  def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C] = groupBy[B](f) map g // Probably this should be groupBy
   def mapIf(pf: Partial[A, A]): View[A]                        = xs map (x => pf.applyOr(x, x))
   def maxOf[B: Order](f: A => B): B                            = xs map f max
   def memo: Indexed.Memo[A]                                    = new Indexed.Memo(xs)
@@ -157,8 +157,8 @@ class HasHash[A](xs: View[A])(implicit z: Hash[A]) extends HasEq[A](xs)(z) {
 }
 final class HasOrder[A](xs: View[A])(implicit z: Order[A]) extends HasEq[A](xs) {
   def max: A          = xs reducel (_ max _)
-  // def min: A          = xs reducel (_ min _)
-  // def sorted: View[A] = xs.toRefArray.inPlace.sort
+  // def min: A       = xs reducel (_ min _)
+  def sorted: View[A] = xs.toRefArray.inPlace.sort
 }
 final class HasEmpty[A](xs: View[A])(implicit z: Empty[A]) {
   // def zfind(p: ToBool[A]): A = xs.findOr(p, emptyValue)

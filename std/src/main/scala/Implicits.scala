@@ -88,9 +88,9 @@ trait StdOps2 extends StdOps1 {
   // We buried Predef's {un,}augmentString in favor of these.
   implicit def opsWrapString(x: String): Pstring                                       = new Pstring(x)
   implicit def opsAlreadyView[A](x: View[A]): ops.IViewOps[A]                          = new ops.IViewOps(x)
-  // implicit def opsReprView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.IViewOps[A] = new ops.IViewOps(new DirectView(ev(xs)))
+  implicit def opsReprView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.IViewOps[A] = new ops.IViewOps(new DirectView(ev(xs)))
   implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                       = new ops.OrderOps[A](x)
-  // implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                         = new ops.HasHash(x)
+  // implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                      = new ops.HasHash(x)
   implicit def opsView2D[A](x: View2D[A]): ops.View2DOps[A]                            = new ops.View2DOps(x)
   implicit def opsSize(x: Size): ops.SizeOps                                           = new ops.SizeOps(x)
 }
