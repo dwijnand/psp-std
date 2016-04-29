@@ -49,11 +49,11 @@ trait StdImplicits extends scala.AnyRef
   self =>
 
   implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]       = Cleaver[A -> B, A, B](((_, _)), fst, snd)
-  implicit def typeclassPlistSplit[A] : Splitter[Plist[A], A, Plist[A]] = Splitter(_.head, _.tail)
-  implicit def scalaListSplit[A] : Splitter[sciList[A], A, sciList[A]]  = Splitter(_.head, _.tail)
+  // implicit def typeclassPlistSplit[A] : Splitter[Plist[A], A, Plist[A]] = Splitter(_.head, _.tail)
+  // implicit def scalaListSplit[A] : Splitter[sciList[A], A, sciList[A]]  = Splitter(_.head, _.tail)
 
   implicit def convertViewEach[A](xs: View[A]): Each[A]    = Each(xs foreach _)
-  implicit def opsSplitView[A](xs: SplitView[A]): Split[A] = Split(xs.left, xs.right)
+  // implicit def opsSplitView[A](xs: SplitView[A]): Split[A] = Split(xs.left, xs.right)
   implicit def opsBuildsTypeClass[Elem, To](z: Builds[Elem, To]): ops.BuildsTypeClassOps[Elem, To] = new ops.BuildsTypeClassOps(z)
 
   // Promotion of the api type (which has as few methods as possible) to the
@@ -64,7 +64,7 @@ trait StdImplicits extends scala.AnyRef
   implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]            = ExMap impl x
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]]             = viewImpl[A](xs)
   implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]         = Zip impl xs
-  implicit def promoteApiUnbuilds[A, R](x: UnbuildsAs[A, R]): Unbuilds.Impl[A, R] = Unbuilds impl x
+  // implicit def promoteApiUnbuilds[A, R](x: UnbuildsAs[A, R]): Unbuilds.Impl[A, R] = Unbuilds impl x
 
   private def viewImpl[A](xs: api.View[A]): AtomicView[A, View[A]] = xs match {
     case xs: AtomicView[_, _] => xs.castTo
@@ -88,9 +88,9 @@ trait StdOps2 extends StdOps1 {
   // We buried Predef's {un,}augmentString in favor of these.
   implicit def opsWrapString(x: String): Pstring                                       = new Pstring(x)
   implicit def opsAlreadyView[A](x: View[A]): ops.IViewOps[A]                          = new ops.IViewOps(x)
-  implicit def opsReprView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.IViewOps[A] = new ops.IViewOps(new DirectView(ev(xs)))
+  // implicit def opsReprView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.IViewOps[A] = new ops.IViewOps(new DirectView(ev(xs)))
   implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                       = new ops.OrderOps[A](x)
-  implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                         = new ops.HasHash(x)
+  // implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                         = new ops.HasHash(x)
   implicit def opsView2D[A](x: View2D[A]): ops.View2DOps[A]                            = new ops.View2DOps(x)
   implicit def opsSize(x: Size): ops.SizeOps                                           = new ops.SizeOps(x)
 }
@@ -107,7 +107,7 @@ trait StdOps3 extends StdOps2 {
   implicit def opsHasEmpty[A: Empty](x: View[A]): ops.HasEmpty[A]             = new ops.HasEmpty[A](x)
   implicit def opsHasEqInfix[A: Eq](x: A): ops.EqOps[A]                       = new ops.EqOps[A](x)
   implicit def opsHasOrder[A: Order](x: View[A]): ops.HasOrder[A]             = new ops.HasOrder(x)
-  implicit def opsInputStream(x: InputStream): ops.InputStreamOps             = new ops.InputStreamOps(x)
+  // implicit def opsInputStream(x: InputStream): ops.InputStreamOps             = new ops.InputStreamOps(x)
   implicit def opsInt(x: Int): ops.IntOps                                     = new ops.IntOps(x)
   implicit def opsLong(x: Long): ops.LongOps                                  = new ops.LongOps(x)
   implicit def opsOption[A](x: Option[A]): ops.OptionOps[A]                   = new ops.OptionOps[A](x)
@@ -121,7 +121,7 @@ trait StdOps3 extends StdOps2 {
 
 trait StdOps extends StdOps3 {
   implicit def opsStringContext(sc: StringContext): ShowInterpolator                      = new ShowInterpolator(sc)
-  implicit def convertPredicateStreamFilter[A](p: ToBool[A]): DirectoryStreamFilter[A]    = new DirectoryStreamFilter[A] { def accept(entry: A) = p(entry) }
+  // implicit def convertPredicateStreamFilter[A](p: ToBool[A]): DirectoryStreamFilter[A]    = new DirectoryStreamFilter[A] { def accept(entry: A) = p(entry) }
   implicit def opsViewConversions[A](xs: View[A]): Conversions[A]                         = new Conversions(xs)
   implicit def unbuildableConv[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Conversions[A] = new Conversions[A](inView[A](z unbuild xs foreach _))
 
@@ -136,10 +136,10 @@ trait StdUniversal0 {
 }
 trait StdUniversal extends StdUniversal0 {
   final implicit def arrowAssocInt(x: Int): ll.ArrowAssocInt             = new ll.ArrowAssocInt(x)
-  final implicit def arrowAssocLong(x: Long): ll.ArrowAssocLong          = new ll.ArrowAssocLong(x)
-  final implicit def arrowAssocDouble(x: Double): ll.ArrowAssocDouble    = new ll.ArrowAssocDouble(x)
-  final implicit def arrowAssocChar(x: Char): ll.ArrowAssocChar          = new ll.ArrowAssocChar(x)
-  final implicit def arrowAssocBoolean(x: Boolean): ll.ArrowAssocBoolean = new ll.ArrowAssocBoolean(x)
+  // final implicit def arrowAssocLong(x: Long): ll.ArrowAssocLong          = new ll.ArrowAssocLong(x)
+  // final implicit def arrowAssocDouble(x: Double): ll.ArrowAssocDouble    = new ll.ArrowAssocDouble(x)
+  // final implicit def arrowAssocChar(x: Char): ll.ArrowAssocChar          = new ll.ArrowAssocChar(x)
+  // final implicit def arrowAssocBoolean(x: Boolean): ll.ArrowAssocBoolean = new ll.ArrowAssocBoolean(x)
 }
 
 /*** The builder/unbuilder/view hierarchy.
@@ -158,7 +158,7 @@ trait PspBuilds0 {
   implicit def unbuiltPspView0[A] : UnbuildsAs[A, View[A]]           = Unbuilds[A, View[A]](xs => xs)
 }
 trait PspBuilds extends PspBuilds0 {
-  implicit def unbuiltPspView1[A, R] : UnbuildsAs[A, BaseView[A, R]] = Unbuilds[A, BaseView[A, R]](xs => xs)
+  // implicit def unbuiltPspView1[A, R] : UnbuildsAs[A, BaseView[A, R]] = Unbuilds[A, BaseView[A, R]](xs => xs)
   implicit def buildPspSet[A: Eq]: Builds[A, ExSet[A]]               = Builds.exSet[A]
   implicit def buildPspMap[K: Eq, V]: Builds[K -> V, ExMap[K, V]]    = Builds.exMap[K, V]
 }
