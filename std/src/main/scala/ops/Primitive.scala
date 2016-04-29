@@ -9,7 +9,7 @@ import api._, exp._, all.{ opsInt, opsLong }
 final class AnyOps[A](val x: A) extends AnyVal {
   def any_s: String                         = s"$x"
   def castTo[U] : U                         = x.asInstanceOf[U]
-  def collectSelf(pf: A ?=> A): A           = matchOr(x)(pf)
+  // def collectSelf(pf: A ?=> A): A           = matchOr(x)(pf)
   def id_## : Int                           = java.lang.System.identityHashCode(x)
   def id_==(y: Any): Boolean                = x.asInstanceOf[AnyRef] eq y.asInstanceOf[AnyRef]  // Calling eq on Anys.
   def isClass[A: CTag]                      = classOf[A] isAssignableFrom x.getClass
