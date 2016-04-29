@@ -2,13 +2,12 @@ package psp
 package std
 package ops
 
-
 import api._, all._
-import spire.math.Sorting
+// import spire.math.Sorting
 
 final class ArrayClassTagOps[A: CTag](val xs: Array[A]) {
-  def mergeSort(implicit z: Order[A]): Array[A] =
-    sideEffect(xs, Sorting.mergeSort[A](xs)(z, ?))
+  // def mergeSort(implicit z: Order[A]): Array[A] =
+  //   sideEffect(xs, Sorting.mergeSort[A](xs)(z, ?))
 
   def ++(that: Array[A]): Array[A] = {
     val arr = newArray[A](xs.length + that.length)
