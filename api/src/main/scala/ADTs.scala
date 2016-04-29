@@ -53,15 +53,15 @@ object Finite extends (Long => Precise) {
 }
 
 object Size {
-  private val MaxInt = scala.Int.MaxValue.toLong
+  // private val MaxInt = scala.Int.MaxValue.toLong
   val Zero           = new Precise(0)
   val One            = new Precise(1)
   val Unknown        = Bounded(Zero, Infinite)
   val NonEmpty       = Bounded(One, Infinite)
 
-  object Int {
-    def unapply(x: Precise): Option[Int] = if (x.get <= MaxInt) some(x.getInt) else none()
-  }
+  // object Int {
+  //   def unapply(x: Precise): Option[Int] = if (x.get <= MaxInt) some(x.getInt) else none()
+  // }
 
   def min(lhs: Size, rhs: Size): Size = (lhs, rhs) match {
     case (Finite(x), Finite(y))                   => if (x <= y) lhs else rhs
