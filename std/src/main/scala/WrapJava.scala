@@ -13,13 +13,13 @@ object NullInputStream extends InputStream { def read(): Int = -1 }
 
 final class JavaClassImpl(val clazz: jClass) extends AnyVal with ShowSelf with JavaClass
 final class JavaClassLoaderImpl(val loader: jClassLoader) extends AnyVal with ShowSelf with JavaClassLoader
-final case class JavaMapEntry[K, V](pair: K -> V) extends jMapEntry[K, V] with (K -> V) {
-  def _1                = fst(pair)
-  def _2                = snd(pair)
-  def getKey            = _1
-  def getValue          = _2
-  def setValue(x: V): V = unsupportedOperationException("setValue")
-}
+// final case class JavaMapEntry[K, V](pair: K -> V) extends jMapEntry[K, V] with (K -> V) {
+//   def _1                = fst(pair)
+//   def _2                = snd(pair)
+//   def getKey            = _1
+//   def getValue          = _2
+//   def setValue(x: V): V = unsupportedOperationException("setValue")
+// }
 
 class JavaEnumeration[A](enum: jEnumeration[A]) {
   def iterator: BiIterator[A] = BiIterator enumeration enum

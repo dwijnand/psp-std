@@ -111,7 +111,7 @@ trait StdOps3 extends StdOps2 {
   implicit def opsInt(x: Int): ops.IntOps                                     = new ops.IntOps(x)
   implicit def opsLong(x: Long): ops.LongOps                                  = new ops.LongOps(x)
   implicit def opsOption[A](x: Option[A]): ops.OptionOps[A]                   = new ops.OptionOps[A](x)
-  implicit def opsPath(x: jPath): ops.PathOps                                 = new ops.PathOps(x)
+  // implicit def opsPath(x: jPath): ops.PathOps                                 = new ops.PathOps(x)
   implicit def opsPrecise(x: Precise): ops.PreciseOps                         = new ops.PreciseOps(x)
   implicit def opsTry[A](x: Try[A]): ops.TryOps[A]                            = new ops.TryOps[A](x)
 
