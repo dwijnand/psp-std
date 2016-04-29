@@ -6,7 +6,7 @@ import api._, all._ // , StdEq._
 final case class Split[A](left: View[A], right: View[A]) extends api.SplitView[A] {
   def onRight[B](f: View[A] => B): B            = f(right)
   // def onLeft[B](f: View[A] => B): B             = f(left)
-  // def mapLeft(f: View[A] => View[A]): Split[A]  = copy(left = f(left))
+  def mapLeft(f: View[A] => View[A]): Split[A]  = copy(left = f(left))
   // def mapRight(f: View[A] => View[A]): Split[A] = copy(right = f(right))
   def rejoin: View[A]                           = left ++ right
   def zipped: Zip.Impl[A, A]                    = Zip.zip2(left, right)

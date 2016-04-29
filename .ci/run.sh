@@ -5,6 +5,7 @@ set -e
 : ${JMH_ARGS:= -f1 -t1 }
 
 runTests () {
+  sbt -batch console # just making sure it compiles
   sbt -batch -no-colors "benchmark/jmh:run $JMH_ARGS"
   sbt -batch -no-colors cover
 }
