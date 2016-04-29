@@ -41,7 +41,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def format(args : Any*): String                   = stringFormat(self, args: _*)
   def length: Int                                   = self.length
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
-  def mapChars(pf: Char ?=> Char): String           = chars.m mapPartial pf force
+  def mapChars(pf: Char ?=> Char): String           = chars.m mapIf pf force
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f mk_s ch
   def processEscapes: String                        = StringContext processEscapes self
   def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
