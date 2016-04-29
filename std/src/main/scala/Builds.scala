@@ -26,10 +26,10 @@ object Builds {
   import Java._
 
   def array[A: CTag]: Builds[A, Array[A]]                                                    = apply(xs => doto(Array.newBuilder[A])(_ ++= xs.trav).result)
-  def direct[A](): Builds[A, Vec[A]]                                                         = new Vec.Builder[A]
+  // def direct[A](): Builds[A, Vec[A]]                                                         = new Vec.Builder[A]
   def exMap[K : Eq, V] : Builds[K -> V, ExMap[K, V]]                                         = ?[K->V, jMap[K, V]] map (ExMap fromJava _)
   def exSet[A : Eq]: Builds[A, ExSet[A]]                                                     = ?[A, jSet[A]] map (ExSet fromJava _)
-  def list[A](): Builds[A, Plist[A]]                                                         = new Plist.Builder[A]
+  // def list[A](): Builds[A, Plist[A]]                                                         = new Plist.Builder[A]
   def sCollection[A, That](implicit z: CanBuild[A, That]): Builds[A, That]                   = apply(xs => doto(z())(b => xs foreach (b += _)) result)
   def sMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] = apply(xs => doto(z())(b => xs foreach (x => b += (fst(x) -> snd(x)))) result)
   def string(): Builds[Char, String]                                                         = apply(xs => doto(new StringBuilder)(b => xs foreach (c => b append c)) toString)
@@ -53,6 +53,6 @@ class MakeHelper[R] {
 class MakeHelper1[CC[_]] {
   def apply[A](expr: => View[A])(implicit z: Builds[A, CC[A]]): CC[A] = z build expr
 }
-class MakeHelper2[CC[_, _]] {
-  def apply[K, V](expr: => ZipView[K, V])(implicit z: Builds[K->V, CC[K, V]]): CC[K, V] = z build expr.pairs
-}
+// class MakeHelper2[CC[_, _]] {
+//   def apply[K, V](expr: => ZipView[K, V])(implicit z: Builds[K->V, CC[K, V]]): CC[K, V] = z build expr.pairs
+// }

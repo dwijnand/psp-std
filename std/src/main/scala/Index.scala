@@ -21,14 +21,14 @@ trait VindexImpl extends Any with ShowSelf {
   def sizeExcluding: Precise = Size(indexValue)
   def sizeIncluding: Precise = Size(nthValue)
 
-  def to(that: This): Consecutive[This]    = indexValue to that.indexValue map create
+  // def to(that: This): Consecutive[This]    = indexValue to that.indexValue map create
   def until(that: This): Consecutive[This] = indexValue until that.indexValue map create
-  def %(size: Precise): This               = mapLong(_ % sizeIncluding.getLong)
+  // def %(size: Precise): This               = mapLong(_ % sizeIncluding.getLong)
   def +(n: Long): This                     = mapLong(_ + n)
   def -(n: Long): This                     = mapLong(_ - n)
-  def /(size: Precise): This               = mapLong(_ / sizeIncluding.getLong)
+  // def /(size: Precise): This               = mapLong(_ / sizeIncluding.getLong)
   def next: This                           = this + 1
-  def prev: This                           = this - 1
+  // def prev: This                           = this - 1
 }
 
 /** A valid index is always non-negative. All negative indices are
@@ -39,7 +39,7 @@ trait VindexImpl extends Any with ShowSelf {
  */
 object Index extends (Long => Index) {
   def invalid: Index                   = new Impl(-1)
-  def zero: Index                      = new Impl(0)
+  // def zero: Index                      = new Impl(0)
   def apply(value: Long): Index        = if (value < 0) invalid else new Impl(value)
   def unapply(x: Vindex): Option[Long] = if (x.isEmpty) none() else some(x.indexValue)
   def impl(x: Vindex): Impl            = new Impl(x.indexValue)
@@ -57,7 +57,7 @@ object Nth extends (Long => Nth) {
   def invalid: Nth                     = new Impl(-1)
   def apply(value: Long): Nth          = if (value <= 0) invalid else new Impl(value - 1)
   def unapply(x: Vindex): Option[Long] = if (x.isEmpty) none() else some(x.nthValue)
-  def impl(x: Nth): Impl               = new Impl(x.indexValue)
+  // def impl(x: Nth): Impl               = new Impl(x.indexValue)
 
   final class Impl private[std] (val indexValue: Long) extends AnyVal with api.Nth with VindexImpl {
     type This                         = Nth

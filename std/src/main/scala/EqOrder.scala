@@ -5,12 +5,12 @@ import api._, all._
 
 trait PrimitiveInstances {
   implicit def boolOrder: Order[Bool]   = orderBy[Bool](x => if (x) 1 else 0)
-  implicit def byteOrder: Order[Byte]   = Order.fromInt(_ - _)
+  // implicit def byteOrder: Order[Byte]   = Order.fromInt(_ - _)
   implicit def charOrder: Order[Char]   = Order.fromInt[Char](_ - _)
-  implicit def shortOrder: Order[Short] = Order.fromInt[Short](_ - _)
+  // implicit def shortOrder: Order[Short] = Order.fromInt[Short](_ - _)
   implicit def intOrder: Order[Int]     = Order.fromInt[Int](_ - _)
   implicit def longOrder: Order[Long]   = Order.fromLong[Long](_ - _)
-  implicit def unitOrder: Order[Unit]   = Order.fromInt[Unit]((x, y) => 0)
+  // implicit def unitOrder: Order[Unit]   = Order.fromInt[Unit]((x, y) => 0)
 }
 
 trait EqOrderInstances0 {
@@ -50,10 +50,10 @@ trait EqOrderInstances extends EqOrderInstances1 {
   implicit def preciseOrder: Order[Precise]                                 = orderBy[Precise](_.get)
   implicit def stringOrder: Order[String]                                   = Order.fromLong[String](_ compareTo _)
   implicit def tuple2Order[A: Order, B: Order] : Order[(A, B)]              = orderBy[(A, B)](fst) | snd
-  implicit def tuple3Order[A: Order, B: Order, C: Order] : Order[(A, B, C)] = orderBy[(A, B, C)](_._1) | (_._2) | (_._3)
+  // implicit def tuple3Order[A: Order, B: Order, C: Order] : Order[(A, B, C)] = orderBy[(A, B, C)](_._1) | (_._2) | (_._3)
 
-  implicit def docEq: Hash[Doc]                = inheritEq
-  implicit def classWrapperEq: Hash[JavaClass] = inheritEq
+  // implicit def docEq: Hash[Doc]                = inheritEq
+  // implicit def classWrapperEq: Hash[JavaClass] = inheritEq
   implicit def classEq: Hash[Class[_]]         = inheritEq
   // implicit def pathEq: Eq[jPath]               = shownEq[jPath](inheritShow)
   implicit def sizeEq: Hash[Size]              = inheritEq

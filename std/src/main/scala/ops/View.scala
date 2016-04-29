@@ -157,8 +157,8 @@ class HasHash[A](xs: View[A])(implicit z: Hash[A]) extends HasEq[A](xs)(z) {
 }
 final class HasOrder[A](xs: View[A])(implicit z: Order[A]) extends HasEq[A](xs) {
   def max: A          = xs reducel (_ max _)
-  def min: A          = xs reducel (_ min _)
-  def sorted: View[A] = xs.toRefArray.inPlace.sort
+  // def min: A          = xs reducel (_ min _)
+  // def sorted: View[A] = xs.toRefArray.inPlace.sort
 }
 final class HasEmpty[A](xs: View[A])(implicit z: Empty[A]) {
   // def zfind(p: ToBool[A]): A = xs.findOr(p, emptyValue)
