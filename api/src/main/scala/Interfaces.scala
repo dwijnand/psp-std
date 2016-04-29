@@ -76,7 +76,7 @@ trait SplitView[@fspec +A] extends Any {
  *  There may be two underlying views being zipped, or one view holding pairs.
  */
 trait ZipView[@fspec +A1, @fspec +A2] extends Any {
-  def relativeSize: Option[Long]
+  // def relativeSize: Option[Long]
   def lefts: View[A1]        // the left element of each pair. Moral equivalent of pairs map fst.
   def rights: View[A2]       // the right element of each pair. Moral equivalent of pairs map snd.
   def pairs: View[A1 -> A2]  // the pairs. Moral equivalent of lefts zip rights.
