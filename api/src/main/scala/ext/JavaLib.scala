@@ -6,9 +6,9 @@ import scala.annotation.unchecked.{ uncheckedVariance => uV }
 import java.{ lang => jl }
 import java.{ util => ju }
 import java.{ io => jio }
-import java.util.{ function => juf }
+// import java.util.{ function => juf }
 import java.nio.{ file => jnf }
-import java.nio.charset.Charset
+// import java.nio.charset.Charset
 
 trait JavaLib {
   // Exceptional factories.
@@ -55,16 +55,16 @@ trait JavaLib {
   type UnsupportedOperationException = jl.UnsupportedOperationException
 
   // java types which I acknowledge as victors in the battle for simple names.
-  type ClassLoader              = jl.ClassLoader
+  // type ClassLoader              = jl.ClassLoader
   type Class[A]                 = jl.Class[A]
   type Comparable[A]            = jl.Comparable[A]
   type Comparator[-A]           = ju.Comparator[A @uV]
-  type DirectoryStreamFilter[A] = jnf.DirectoryStream.Filter[A]
-  type DirectoryStream[A]       = jnf.DirectoryStream[A]
+  // type DirectoryStreamFilter[A] = jnf.DirectoryStream.Filter[A]
+  // type DirectoryStream[A]       = jnf.DirectoryStream[A]
   type FileTime                 = jnf.attribute.FileTime
   type InputStream              = jio.InputStream
   type OutputStream             = jio.OutputStream
-  type PrintStream              = jio.PrintStream
+  // type PrintStream              = jio.PrintStream
   type String                   = jl.String
   type StringBuilder            = jl.StringBuilder
   type Thread                   = jl.Thread
