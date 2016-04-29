@@ -2,7 +2,7 @@ package psp
 package std
 package ops
 
-import api._, all._, StdShow._, StdEq._
+import api._, all._, /* StdShow._, */ StdEq._
 
 trait ViewOps[+A] extends Any {
   def xs: View[A]

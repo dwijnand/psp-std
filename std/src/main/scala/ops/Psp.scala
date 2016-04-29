@@ -2,9 +2,7 @@ package psp
 package std
 package ops
 
-
-import api._, all._, StdEq._, StdShow._
-import java.io.BufferedInputStream
+import api._, all._, StdEq._
 
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def head: A = apply(0)
