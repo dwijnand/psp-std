@@ -13,7 +13,7 @@ object Eq {
 
   def apply[A](e: Relation[A]): Eq[A]               = new EqImpl[A](e)
   def hash[A](e: Relation[A])(h: ToInt[A]): Hash[A] = new HashImpl[A](e, h)
-  def reference[A](): Hash[Ref[A]]                  = Reference
+  // def reference[A](): Hash[Ref[A]]                  = Reference
   def inherit[A](): Hash[A]                         = Inherited
 
   final class HashImpl[A](e: Relation[A], h: ToInt[A]) extends EqImpl[A](e) with api.Hash[A] {
@@ -25,23 +25,23 @@ object Eq {
   class EqComparator[A: Eq]() extends Comparator[A] {
     def compare(x: A, y: A): Int = if (x === y) 0 else x.id_## - y.id_##
   }
-  object RefComparator extends Comparator[AnyRef] {
-    def compare(x: AnyRef, y: AnyRef): Int = if (x eq y) 0 else x.id_## - y.id_##
-  }
+  // object RefComparator extends Comparator[AnyRef] {
+  //   def compare(x: AnyRef, y: AnyRef): Int = if (x eq y) 0 else x.id_## - y.id_##
+  // }
 
   def eqComparator[A: Eq](): Comparator[A] = new EqComparator[A]
-  def refComparator: Comparator[AnyRef]    = RefComparator
+  // def refComparator: Comparator[AnyRef]    = RefComparator
 }
 
 object Order {
-  import Cmp._
+  // import Cmp._
 
-  def order[A: Order] : Order[A] = ?
-  def fold(xs: Cmp*): Cmp        = xs.m findOr (_ != EQ, EQ)
+  // def order[A: Order] : Order[A] = ?
+  // def fold(xs: Cmp*): Cmp        = xs.m findOr (_ != EQ, EQ)
 
-  def create[A](z: Comparator[A]): Order[A]              = new FromComparator[A](z)
+  // def create[A](z: Comparator[A]): Order[A]              = new FromComparator[A](z)
   def comparator[A](implicit z: Order[A]): Comparator[A] = new ToOrdering(z)
-  def ordering[A](implicit z: Order[A]): Ordering[A]     = new ToOrdering(z)
+  // def ordering[A](implicit z: Order[A]): Ordering[A]     = new ToOrdering(z)
 
   private def longCmp(diff: Long): Cmp = (
     if (diff < 0) Cmp.LT

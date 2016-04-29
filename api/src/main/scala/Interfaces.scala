@@ -13,9 +13,9 @@ sealed trait Vindex extends Any with Opt[Long] { def indexValue: Long }
 trait Index             extends Any with Vindex { type This <: Index }
 trait Nth               extends Any with Vindex { type This <: Nth }
 
-sealed trait MaybeView extends Any                { def isView: Boolean      }
-trait IsView           extends Any with MaybeView { final def isView = true  }
-trait NotView          extends Any with MaybeView { final def isView = false }
+// sealed trait MaybeView extends Any                { def isView: Boolean      }
+// trait IsView           extends Any with MaybeView { final def isView = true  }
+// trait NotView          extends Any with MaybeView { final def isView = false }
 
 /** Foreach is the common parent of View and Each.
  *
@@ -30,14 +30,14 @@ trait Foreach[+A] extends Any {
   def foreach(f: A => Unit): Unit
 }
 
-trait Each[@fspec +A]    extends Any with Foreach[A] with NotView
+trait Each[@fspec +A]    extends Any with Foreach[A] /*with NotView*/
 trait Indexed[@fspec +A] extends Any with Each[A]                 { def elemAt(i: Vindex): A }
 trait Direct[@fspec +A]  extends Any with Indexed[A]              { def size: Precise        }
 
 trait ExSet[A]     extends Any with Each[A] { def apply(x: A): Boolean    }
 trait ExMap[K, +V] extends Any              { def lookup: FiniteDom[K, V] }
 
-trait View[@fspec +A] extends Any with Foreach[A] with IsView {
+trait View[@fspec +A] extends Any with Foreach[A] /*with IsView*/ {
   /** Contiguous operations share the property that the result is always
    *  a (possibly empty) uninterrupted subsequence of the elements of the
    *  target collection.
@@ -76,7 +76,7 @@ trait SplitView[@fspec +A] extends Any {
  *  There may be two underlying views being zipped, or one view holding pairs.
  */
 trait ZipView[@fspec +A1, @fspec +A2] extends Any {
-  def relativeSize: Option[Long]
+  // def relativeSize: Option[Long]
   def lefts: View[A1]        // the left element of each pair. Moral equivalent of pairs map fst.
   def rights: View[A2]       // the right element of each pair. Moral equivalent of pairs map snd.
   def pairs: View[A1 -> A2]  // the pairs. Moral equivalent of lefts zip rights.

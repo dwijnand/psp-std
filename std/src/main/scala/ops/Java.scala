@@ -2,7 +2,7 @@ package psp
 package std
 
 import api._, all._
-import java.util.stream.Stream.{ builder => jStreamBuilder }
+// import java.util.stream.Stream.{ builder => jStreamBuilder }
 
 object Java extends JavaCollections
 
@@ -13,15 +13,15 @@ trait StdJava0 {
 }
 trait StdJava extends StdJava0 {
   implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]        = Unbuilds[A, CC[A]](Each java _)
-  implicit def unbuildJavaMap[K, V, CC[K, V] <: jMap[K, V]] : UnbuildsAs[K -> V, CC[K, V]] = Unbuilds[K -> V, CC[K, V]](Each javaMap _)
+  // implicit def unbuildJavaMap[K, V, CC[K, V] <: jMap[K, V]] : UnbuildsAs[K -> V, CC[K, V]] = Unbuilds[K -> V, CC[K, V]](Each javaMap _)
 
   implicit def opsJavaIterator[A](x: jIterator[A]): ops.JavaIteratorOps[A] = new ops.JavaIteratorOps(x)
-  implicit def opsJavaStream[A](x: jStream[A]): ops.JavaStreamOps[A]       = new ops.JavaStreamOps(x)
-  implicit def opsJavaOptional[A](x: jOptional[A]): ops.OptionOps[A]       = new ops.OptionOps[A](cond(x.isPresent, Some(x.get), None)) // XXX
+  // implicit def opsJavaStream[A](x: jStream[A]): ops.JavaStreamOps[A]       = new ops.JavaStreamOps(x)
+  // implicit def opsJavaOptional[A](x: jOptional[A]): ops.OptionOps[A]       = new ops.OptionOps[A](cond(x.isPresent, Some(x.get), None)) // XXX
 
-  implicit def convertToJavaPredicate[A](p: ToBool[A]): jPredicate[A]      = new jPredicate[A] { def test(x: A) = p(x) }
-  implicit def convertToJavaFunction[A, B](f: A => B): jFunction[A, B]     = new jFunction[A, B] { def apply(x: A): B = f(x) }
-  implicit def convertToJavaConsumer[A](f: A => Unit): jConsumer[A]        = new jConsumer[A] { def accept(x: A): Unit = f(x) }
+  // implicit def convertToJavaPredicate[A](p: ToBool[A]): jPredicate[A]      = new jPredicate[A] { def test(x: A) = p(x) }
+  // implicit def convertToJavaFunction[A, B](f: A => B): jFunction[A, B]     = new jFunction[A, B] { def apply(x: A): B = f(x) }
+  // implicit def convertToJavaConsumer[A](f: A => Unit): jConsumer[A]        = new jConsumer[A] { def accept(x: A): Unit = f(x) }
 }
 
 trait JavaBuilders0 {
@@ -32,20 +32,20 @@ trait JavaBuilders0 {
   implicit def javaSetBuilder[A]: Builds[A, jSet[A]]            = genericJavaSetBuilder(new jHashSet[A])
   implicit def javaListBuilder[A]: Builds[A, jList[A]]          = genericJavaListBuilder(new jArrayList[A])
   implicit def javaMapBuilder[K, V]: Builds[K -> V, jMap[K, V]] = genericJavaMapBuilder(new jHashMap[K, V])
-  implicit def javaStreamBuilder[A]: Builds[A, jStream[A]]      = Builds(xs => doto(jStreamBuilder[A]())(xs foreach _.add).build)
+  // implicit def javaStreamBuilder[A]: Builds[A, jStream[A]]      = Builds(xs => doto(jStreamBuilder[A]())(xs foreach _.add).build)
 }
 trait JavaBuilders extends JavaBuilders0 {
   implicit def javaSortedSetBuilder[A: Order]: Builds[A, jSortedSet[A]]            = genericJavaSetBuilder(new jTreeSet[A](Order.comparator[A]))
   implicit def javaSortedMapBuilder[K: Order, V]: Builds[K -> V, jSortedMap[K, V]] = genericJavaMapBuilder(new jTreeMap[K, V](Order.comparator[K]))
 }
 trait JavaCollections extends JavaBuilders {
-  def ConcurrentMap[K: Eq, V](xs: (K -> V)*): jConcurrentMap[K, V] = Built(xs)(genericJavaMapBuilder(new jConcurrentHashMap[K, V]))
-  def SortedMap[K: Order, V](xs: (K -> V)*): jSortedMap[K, V]      = Built(xs)
+  // def ConcurrentMap[K: Eq, V](xs: (K -> V)*): jConcurrentMap[K, V] = Built(xs)(genericJavaMapBuilder(new jConcurrentHashMap[K, V]))
+  // def SortedMap[K: Order, V](xs: (K -> V)*): jSortedMap[K, V]      = Built(xs)
   def List[A](xs: A*): jList[A]                                    = Built(xs)
   def Map[K, V](xs: (K -> V)*): jMap[K, V]                         = Built(xs)
   def Set[A](xs: A*): jSet[A]                                      = Built(xs)
-  def SortedSet[A: Order](xs: A*): jSortedSet[A]                   = Built(xs)
-  def Stream[A](xs: A*): jStream[A]                                = Built(xs)
+  // def SortedSet[A: Order](xs: A*): jSortedSet[A]                   = Built(xs)
+  // def Stream[A](xs: A*): jStream[A]                                = Built(xs)
 }
 
 package ops {
@@ -58,13 +58,13 @@ package ops {
   }
 
   final class JavaStreamOps[A](xs: jStream[A]) {
-    def slice(n: VindexRange): jStream[A] = xs drop n.startInt take n.size.getInt
-    def take(n: Precise): jStream[A]      = xs limit n.getInt
-    def drop(n: Precise): jStream[A]      = xs skip n.getInt
-    def forall(p: ToBool[A]): Bool        = xs allMatch p
-    def exists(p: ToBool[A]): Bool        = xs anyMatch p
-    def foreach(f: A => Unit): Unit       = xs forEach f
-    def zhead(implicit z: Empty[A]): A    = xs.findFirst.zget
+    // def slice(n: VindexRange): jStream[A] = xs drop n.startInt take n.size.getInt
+    // def take(n: Precise): jStream[A]      = xs limit n.getInt
+    // def drop(n: Precise): jStream[A]      = xs skip n.getInt
+    // def forall(p: ToBool[A]): Bool        = xs allMatch p
+    // def exists(p: ToBool[A]): Bool        = xs anyMatch p
+    // def foreach(f: A => Unit): Unit       = xs forEach f
+    // def zhead(implicit z: Empty[A]): A    = xs.findFirst.zget
 
     // def forEachOrdered(x$1: java.util.function.Consumer[_ >: A]): Unit = ???
     // def close(): Unit = ???

@@ -18,7 +18,7 @@ final class Consecutive[+A] private (val startInt: Int, val lastInt: Int, f: Int
   def elemAt(index: Vindex): A          = f(startInt + index.getInt)
   def foreach(g: A => Unit): Unit       = if (!isEmpty) lowlevel.ll.foreachConsecutive(startInt, lastInt, f andThen g)
   def containsInt(n: Int): Bool         = startInt <= n && n <= lastInt
-  def containsIndex(index: Vindex)      = size containsIndex index
+  // def containsIndex(index: Vindex)      = size containsIndex index
   def map[B](g: A => B): Consecutive[B] = new Consecutive(startInt, lastInt, f andThen g)
   def asIndices: IndexRange             = startInt to lastInt map (i => Index(i))
 

@@ -9,12 +9,14 @@ object Build extends FbtBuild {
 
   def subprojects = List[sbt.Project](api, std)
 
-  def ammoniteArgs   = wordSeq("-encoding utf8 -language:_ -Yno-predef -Yno-imports -Yno-adapted-args")
-  def warnArgs       = wordSeq("-deprecation -unchecked -Xfuture -Ywarn-unused -Ywarn-unused-import")
-  def noisyArgs      = wordSeq("-Xlint -Ywarn-dead-code -Ywarn-numeric-widen -Ywarn-value-discard")
-  def macroDebugArgs = wordSeq("-Ymacro-debug-verbose")
-  def optimizeArgs   = wordSeq("-optimise -Yinline-warnings")
-  def stdArgs        = ammoniteArgs ++ warnArgs
+  def ammoniteArgs     = wordSeq("-encoding utf8 -language:_ -Yno-predef -Yno-imports -Yno-adapted-args")
+  def warnArgs         = wordSeq("-deprecation -unchecked -Xfuture -Ywarn-unused -Ywarn-unused-import")
+  def noisyArgs        = wordSeq("-Xlint -Ywarn-dead-code -Ywarn-numeric-widen -Ywarn-value-discard")
+  def macroDebugArgs   = wordSeq("-Ymacro-debug-verbose")
+  def optimizeArgs     = wordSeq("-optimise -Yinline-warnings")
+  def stdArgs          = ammoniteArgs ++ warnArgs
+  def jmhAnnotations   = "org.openjdk.jmh" % "jmh-generator-annprocess" % "1.12"
+  def scoverageRuntime = "org.scoverage" %% "scalac-scoverage-runtime" % "1.1.1"
 
   lazy val ammoniteTask = Def task {
     val forker    = new Fork("java", Some("psp.ReplMain"))
@@ -28,6 +30,7 @@ object Build extends FbtBuild {
 
   // updateOptions ~=  (_ withCachedResolution true)
   protected def commonSettings(p: Project) = standardSettings ++ Seq(
+      libraryDependencies += jmhAnnotations,
                   version :=  "0.6.2-SNAPSHOT",
              scalaVersion :=  "2.11.8",
              organization :=  "org.improving",
@@ -47,7 +50,8 @@ object Build extends FbtBuild {
             watchSources <++= benchmark.allSources,
                     test <<=  test in testing
     )
-    also addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")
+    also addCommandAlias("bench-min", "benchmark/jmh:run -i 1 -wi 1 -f1 -t1")
+    also addCommandAlias("cover", "; clean ; coverage ; bench-min ; test ; coverageReport")
     also addCommandAlias("bench", "benchmark/jmh:run -f1 -t1")
   )
 
@@ -69,5 +73,5 @@ object Build extends FbtBuild {
               "org.scala-lang"  % "scala-reflect"   % "2.11.8"
             )
   )
-  lazy val benchmark = project.noArtifacts.setup dependsOn std enablePlugins JmhPlugin
+  lazy val benchmark = project.noArtifacts.setup dependsOn std also scoverageRuntime enablePlugins JmhPlugin
 }

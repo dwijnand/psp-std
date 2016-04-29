@@ -7,8 +7,20 @@ import Api._
 
 /** The classic type classes for encoding value equivalence and hash codes.
  */
-trait Eq[-A]   extends Any            { def eqv(x: A, y: A): Boolean }
-trait Hash[-A] extends Any with Eq[A] { def hash(x: A): Int          }
+// trait KEq[M[X], A] extends Any            { def eqv(x: M[A], y: M[A]): M[Boolean] }
+// trait Eq[-A]       extends Any            { def eqv(x: A, y: A): Boolean          }
+
+trait Hash[-A]     extends Any with Eq[A] { def hash(x: A): Int                   }
+
+trait Eq[-A] extends Any with MEq[A] {
+  type M[+X] = X
+  def eqv(x: A, y: A): Boolean
+}
+
+trait MEq[-A] extends Any {
+  type M[+X]
+  def eqv(x: M[A], y: M[A]): M[Boolean]
+}
 
 /** The classic type class for turning typed values into string representations.
  */

@@ -2,13 +2,12 @@ package psp
 package std
 package ops
 
-
 import api._, all._
-import spire.math.Sorting
+// import spire.math.Sorting
 
 final class ArrayClassTagOps[A: CTag](val xs: Array[A]) {
-  def mergeSort(implicit z: Order[A]): Array[A] =
-    sideEffect(xs, Sorting.mergeSort[A](xs)(z, ?))
+  // def mergeSort(implicit z: Order[A]): Array[A] =
+  //   sideEffect(xs, Sorting.mergeSort[A](xs)(z, ?))
 
   def ++(that: Array[A]): Array[A] = {
     val arr = newArray[A](xs.length + that.length)
@@ -19,9 +18,9 @@ final class ArrayClassTagOps[A: CTag](val xs: Array[A]) {
 }
 
 final class ArraySpecificOps[A](val xs: Array[A]) extends AnyVal {
-  def size: Precise                          = Size(xs.length)
-  def apply(idx: Index): A                   = xs(idx.getInt)
-  def updated(idx: Index, value: A): xs.type = sideEffect(xs, xs(idx.getInt) = value)
+  // def size: Precise                          = Size(xs.length)
+  // def apply(idx: Index): A                   = xs(idx.getInt)
+  // def updated(idx: Index, value: A): xs.type = sideEffect(xs, xs(idx.getInt) = value)
   def inPlace: InPlace[A]                    = new InPlace[A](xs)
 }
 
@@ -46,14 +45,14 @@ final class InPlace[A](val xs: Array[A]) extends AnyVal {
     case xs: Array[Long]   => java.util.Arrays.sort(xs)
     case xs: Array[Double] => java.util.Arrays.sort(xs)
     case xs: Array[Float]  => java.util.Arrays.sort(xs)
-    case xs: Array[AnyRef] => java.util.Arrays.sort[AnyRef](xs, Eq.refComparator)
-    case _                 =>
+    // case xs: Array[AnyRef] => java.util.Arrays.sort[AnyRef](xs, Eq.refComparator)
+    case _                 => ???
   }
 
-  def insertionSort(implicit z: Order[A]): Array[A] = sideEffect(xs, Sorting.insertionSort[A](xs)(z, null))
-  def quickSort(implicit z: Order[A]): Array[A]     = sideEffect(xs, Sorting.quickSort[A](xs)(z, null))
+  // def insertionSort(implicit z: Order[A]): Array[A] = sideEffect(xs, Sorting.insertionSort[A](xs)(z, null))
+  // def quickSort(implicit z: Order[A]): Array[A]     = sideEffect(xs, Sorting.quickSort[A](xs)(z, null))
   def sort(implicit z: Order[A]): Array[A]          = sideEffect(xs, if (isReference) sortRef(Order.comparator) else sortInPlace(xs))
-  def sortBy[B: Order](f: A => B): Array[A]         = sort(orderBy[A](f))
+  // def sortBy[B: Order](f: A => B): Array[A]         = sort(orderBy[A](f))
 
   def map(f: ToSelf[A]): Array[A] = sideEffect(xs, 0 to lastIndex foreach (i => xs(i) = f(xs(i))))
   def reverse(): Array[A]         = sideEffect(xs, 0 until midpoint foreach (i => swap(i, lastIndex - i)))
