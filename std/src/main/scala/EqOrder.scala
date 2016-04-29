@@ -55,7 +55,7 @@ trait EqOrderInstances extends EqOrderInstances1 {
   implicit def docEq: Hash[Doc]                = inheritEq
   implicit def classWrapperEq: Hash[JavaClass] = inheritEq
   implicit def classEq: Hash[Class[_]]         = inheritEq
-  implicit def pathEq: Eq[jPath]               = shownEq[jPath](inheritShow)
+  // implicit def pathEq: Eq[jPath]               = shownEq[jPath](inheritShow)
   implicit def sizeEq: Hash[Size]              = inheritEq
 
   implicit def tryEq[A](implicit z1: Eq[A], z2: Eq[Throwable]): Eq[Try[A]] = Eq {
