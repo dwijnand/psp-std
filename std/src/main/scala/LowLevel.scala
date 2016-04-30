@@ -2,10 +2,9 @@ package psp
 package std
 package lowlevel
 
-
-import api._, all._, StdEq._
+import api._, all._ //, StdEq._
 import scala.Tuple2
-import java.nio.ByteBuffer
+// import java.nio.ByteBuffer
 import java.io.{ ByteArrayOutputStream, BufferedInputStream }
 
 object ll {
@@ -67,11 +66,11 @@ object ll {
     xs foreach (x => res = f(res, x))
     res
   }
-  final def foldLeftIndexed[@fspec A, @fspec B](xs: Each[A], initial: B, f: (B, A, Index) => B): B = {
-    var res = initial
-    xs.zipIndex foreach ((x, i) => res = f(res, x, i))
-    res
-  }
+  // final def foldLeftIndexed[@fspec A, @fspec B](xs: Each[A], initial: B, f: (B, A, Index) => B): B = {
+  //   var res = initial
+  //   xs.zipIndex foreach ((x, i) => res = f(res, x, i))
+  //   res
+  // }
   final def foldRight[@fspec A, @fspec B](xs: Each[A], initial: B, f: (A, B) => B): B = {
     val arr: Array[Ref[A]] = doto(xs.toRefArray)(_.inPlace.reverse)
     var res: B = initial
@@ -82,21 +81,21 @@ object ll {
 
 /** Hand specialized on the left, @specialized on the right, value classes for tuple creation.
  */
-final class ArrowAssocInt(val self: Int) extends AnyVal {
-  @inline def -> [@fspec B](y: B): Tuple2[Int, B] = Tuple2(self, y)
-}
-final class ArrowAssocLong(val self: Long) extends AnyVal {
-  @inline def -> [@fspec B](y: B): Tuple2[Long, B] = Tuple2(self, y)
-}
-final class ArrowAssocDouble(val self: Double) extends AnyVal {
-  @inline def -> [@fspec B](y: B): Tuple2[Double, B] = Tuple2(self, y)
-}
-final class ArrowAssocChar(val self: Char) extends AnyVal {
-  @inline def -> [@fspec B](y: B): Tuple2[Char, B] = Tuple2(self, y)
-}
-final class ArrowAssocBoolean(val self: Boolean) extends AnyVal {
-  @inline def -> [@fspec B](y: B): Tuple2[Boolean, B] = Tuple2(self, y)
-}
+// final class ArrowAssocInt(val self: Int) extends AnyVal {
+//   @inline def -> [@fspec B](y: B): Tuple2[Int, B] = Tuple2(self, y)
+// }
+// final class ArrowAssocLong(val self: Long) extends AnyVal {
+//   @inline def -> [@fspec B](y: B): Tuple2[Long, B] = Tuple2(self, y)
+// }
+// final class ArrowAssocDouble(val self: Double) extends AnyVal {
+//   @inline def -> [@fspec B](y: B): Tuple2[Double, B] = Tuple2(self, y)
+// }
+// final class ArrowAssocChar(val self: Char) extends AnyVal {
+//   @inline def -> [@fspec B](y: B): Tuple2[Char, B] = Tuple2(self, y)
+// }
+// final class ArrowAssocBoolean(val self: Boolean) extends AnyVal {
+//   @inline def -> [@fspec B](y: B): Tuple2[Boolean, B] = Tuple2(self, y)
+// }
 final class ArrowAssocRef[A](val self: A) extends AnyVal {
   @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
 }
@@ -120,21 +119,22 @@ final class CircularBuffer[@fspec A](capacity: Precise) extends Direct[A] {
   def += (x: A): this.type           = sideEffect(this, setHead(x))
   def push(x: A): A                  = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
 }
-final class ByteBufferInputStream(b: ByteBuffer) extends InputStream {
-  private def empty = !b.hasRemaining
+// final class ByteBufferInputStream(b: ByteBuffer) extends InputStream {
+//   private def empty = !b.hasRemaining
 
-  override def read()                                       = if (empty) -1 else b.get & 0xFF
-  override def read(bytes: Array[Byte], off: Int, len: Int) = if (empty) -1 else doto(len min b.remaining)(b.get(bytes, off, _))
-}
+//   override def read()                                       = if (empty) -1 else b.get & 0xFF
+//   override def read(bytes: Array[Byte], off: Int, len: Int) = if (empty) -1 else doto(len min b.remaining)(b.get(bytes, off, _))
+// }
 
-final class ByteBufferOutputStream(b: ByteBuffer) extends OutputStream {
-  override def write(x: Int)                                 = b put x.toByte
-  override def write(bytes: Array[Byte], off: Int, len: Int) = b.put(bytes, off, len)
-}
+// final class ByteBufferOutputStream(b: ByteBuffer) extends OutputStream {
+//   override def write(x: Int)                                 = b put x.toByte
+//   override def write(bytes: Array[Byte], off: Int, len: Int) = b.put(bytes, off, len)
+// }
 
-object ArrowAssoc {
-  val Types = new scala.Specializable.Group((scala.Int, scala.Long, scala.Double, scala.Char, scala.Boolean))
-}
+// object ArrowAssoc {
+//   val Types = new scala.Specializable.Group((scala.Int, scala.Long, scala.Double, scala.Char, scala.Boolean))
+// }
+
 object CircularBuffer {
   def builder[@fspec A](capacity: Precise): Builds[A, CircularBuffer[A]] = Builds(xs => CircularBuffer[A](capacity) ++= xs)
   def apply[@fspec A](capacity: Precise): CircularBuffer[A]              = new CircularBuffer[A](capacity)

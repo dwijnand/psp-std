@@ -135,7 +135,7 @@ trait StdUniversal0 {
   final implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A] = new ll.ArrowAssocRef(x)
 }
 trait StdUniversal extends StdUniversal0 {
-  final implicit def arrowAssocInt(x: Int): ll.ArrowAssocInt             = new ll.ArrowAssocInt(x)
+  // final implicit def ac(x: Int): ll.ArrowAssocInt             = new ll.ArrowAssocInt(x)
   // final implicit def arrowAssocLong(x: Long): ll.ArrowAssocLong          = new ll.ArrowAssocLong(x)
   // final implicit def arrowAssocDouble(x: Double): ll.ArrowAssocDouble    = new ll.ArrowAssocDouble(x)
   // final implicit def arrowAssocChar(x: Char): ll.ArrowAssocChar          = new ll.ArrowAssocChar(x)
