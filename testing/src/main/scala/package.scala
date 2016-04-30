@@ -14,7 +14,7 @@ package object tests {
    */
   type InvariantPredicate[A] = A => Bool
 
-  lazy val isTestDebug = sys.props contains "psp.test.debug"
+  lazy val isTestDebug = scala.sys.props contains "psp.test.debug"
 
   implicit def assertions: Assertions = ImmediateTraceAssertions
 

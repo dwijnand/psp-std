@@ -70,12 +70,12 @@ trait AllExplicit extends PspApi with PspCreators {
     loop(view(root), view())
   }
 
-  @inline def timed[A](elapsed: Long => Unit)(body: => A): A = {
-    val start = nanoTime
-    val result = body
-    elapsed(nanoTime - start)
-    result
-  }
+  // @inline def timed[A](elapsed: Long => Unit)(body: => A): A = {
+  //   val start = nanoTime
+  //   val result = body
+  //   elapsed(nanoTime - start)
+  //   result
+  // }
 
   def assert(assertion: => Boolean, msg: => Any): Unit =
     if (!assertion) runtimeException("" + msg)
@@ -89,7 +89,7 @@ trait AllExplicit extends PspApi with PspCreators {
   def optMap[A, B](x: A)(f: A => B): Option[B]     = if (x == null) None else Some(f(x))
   // def option[A](p: Boolean, x: => A): Option[A]    = if (p) Some(x) else None
   def randomPosInt(max: Int): Int                  = scala.util.Random.nextInt(max + 1)
-  def utf8(xs: Array[Byte]): Utf8                  = new Utf8(xs)
+  // def utf8(xs: Array[Byte]): Utf8                  = new Utf8(xs)
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
   def make0[R] : MakeHelper[R]         = new MakeHelper[R]
