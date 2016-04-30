@@ -70,7 +70,7 @@ final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
   def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C] = groupBy[B](f) map g // Probably this should be groupBy
   def mapIf(pf: Partial[A, A]): View[A]                        = xs map (x => pf.applyOr(x, x))
   def maxOf[B: Order](f: A => B): B                            = xs map f max
-  def memo: Indexed.Memo[A]                                    = new Indexed.Memo(xs)
+  // def memo: Indexed.Memo[A]                                    = new Indexed.Memo(xs)
   // def minOf[B: Order](f: A => B): B                            = xs map f min
   def product(implicit z: MultiplicativeMonoid[A]): A          = z prod xs.trav
   // def quotientSet(implicit z: Eq[A]): View[ExSet[A]]           = groupBy[A](identity).values map (_.toExSet)
@@ -104,7 +104,7 @@ final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
     res.m.toMap[ExMap]
   }
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
-    inView[View[A]](mf => xs.toEach partition p(memo) match {
+    inView[View[A]](mf => xs.toEach partition p(xs) match {
       case Split(xs, ys) =>
         mf(xs)
         ys mpartition p foreach mf
