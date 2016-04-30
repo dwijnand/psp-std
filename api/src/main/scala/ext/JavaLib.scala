@@ -25,7 +25,7 @@ trait JavaLib {
   // def defaultCharset: Charset         = Charset.defaultCharset
   // def fileSeparator: String           = jio.File.separator
   // def milliTime: Long                 = jl.System.currentTimeMillis
-  def nanoTime: Long                  = jl.System.nanoTime
+  // def nanoTime: Long                  = jl.System.nanoTime
   // def systemClassLoader: ClassLoader  = jl.ClassLoader.getSystemClassLoader
   // def threadSleep(ms: Long): Unit     = jl.Thread.sleep(ms)
   def threadYield(): Unit             = jl.Thread.`yield`
