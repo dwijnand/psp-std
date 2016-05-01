@@ -1,7 +1,7 @@
 package psp
 package ext
 
-import scala.{ Any, Long, Nothing, StringContext, Unit }
+import scala.{ Any, /* Long */ Nothing, StringContext, Unit }
 import scala.annotation.unchecked.{ uncheckedVariance => uV }
 import java.{ lang => jl }
 import java.{ util => ju }

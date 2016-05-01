@@ -62,13 +62,13 @@ trait AllExplicit extends PspApi with PspCreators {
   def classTag[A: CTag] : CTag[A]            = ?[CTag[A]]
   def classFilter[A: CTag] : Partial[Any, A] = Partial(x => aops(x).isClass[A], x => aops(x).castTo[A])
 
-  def transitiveClosure[A: Eq](root: A)(expand: A => Foreach[A]): View[A] = inView { f =>
-    def loop(in: View[A], seen: View[A]): Unit = new ops.IViewOps(in) filterNot (new ops.HasEq(seen) contains _) match {
-      case Each() => ()
-      case in     => in foreach f ; loop(in flatMap expand, new DirectView((new Conversions(seen) toVec) ++ (new Conversions(in) toVec)))
-    }
-    loop(view(root), view())
-  }
+  // def transitiveClosure[A: Eq](root: A)(expand: A => Foreach[A]): View[A] = inView { f =>
+  //   def loop(in: View[A], seen: View[A]): Unit = new ops.IViewOps(in) filterNot (new ops.HasEq(seen) contains _) match {
+  //     case Each() => ()
+  //     case in     => in foreach f ; loop(in flatMap expand, new DirectView((new Conversions(seen) toVec) ++ (new Conversions(in) toVec)))
+  //   }
+  //   loop(view(root), view())
+  // }
 
   // @inline def timed[A](elapsed: Long => Unit)(body: => A): A = {
   //   val start = nanoTime
