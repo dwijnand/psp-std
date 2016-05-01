@@ -1,10 +1,15 @@
+comment:
+  layout: header, changes, diff
 coverage:
   ignore:
-    - "testing/*"
-
+    - testing
   status:
-    changes:                   # if there are any unexpected changes in coverage
-      enabled: false           # must be yes|true to enable this status
-
-comment:
-  layout: header, diff, changes, sunburst, uncovered
+    changes:
+      enabled: false
+  notify:
+    gitter:
+      default:
+        branches:
+        - master
+        threshold: 0
+        url: https://webhooks.gitter.im/e/0334e6f55c6dfb45637c
