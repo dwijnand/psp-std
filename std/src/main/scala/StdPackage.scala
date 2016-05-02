@@ -8,8 +8,8 @@ trait AllExplicit extends PspApi with PspCreators {
   type Bag[A]               = ExMap[A, Precise]
   type Bool                 = Boolean
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
-  type VindexRange          = Consecutive[api.Vindex]
-  type IndexRange           = Consecutive[api.Index]
+  type VindexRange          = Consecutive[Vdex]
+  type IndexRange           = Consecutive[Index]
   type IntRange             = Consecutive[Int]
   type LongRange            = Consecutive[Long]
   type Renderer             = Show[Doc]
@@ -62,13 +62,13 @@ trait AllExplicit extends PspApi with PspCreators {
   def classTag[A: CTag] : CTag[A]            = ?[CTag[A]]
   def classFilter[A: CTag] : Partial[Any, A] = Partial(x => aops(x).isClass[A], x => aops(x).castTo[A])
 
-  def transitiveClosure[A: Eq](root: A)(expand: A => Foreach[A]): View[A] = inView { f =>
-    def loop(in: View[A], seen: View[A]): Unit = new ops.IViewOps(in) filterNot (new ops.HasEq(seen) contains _) match {
-      case Each() => ()
-      case in     => in foreach f ; loop(in flatMap expand, new DirectView((new Conversions(seen) toVec) ++ (new Conversions(in) toVec)))
-    }
-    loop(view(root), view())
-  }
+  // def transitiveClosure[A: Eq](root: A)(expand: A => Foreach[A]): View[A] = inView { f =>
+  //   def loop(in: View[A], seen: View[A]): Unit = new ops.IViewOps(in) filterNot (new ops.HasEq(seen) contains _) match {
+  //     case Each() => ()
+  //     case in     => in foreach f ; loop(in flatMap expand, new DirectView((new Conversions(seen) toVec) ++ (new Conversions(in) toVec)))
+  //   }
+  //   loop(view(root), view())
+  // }
 
   // @inline def timed[A](elapsed: Long => Unit)(body: => A): A = {
   //   val start = nanoTime
@@ -77,8 +77,8 @@ trait AllExplicit extends PspApi with PspCreators {
   //   result
   // }
 
-  def assert(assertion: => Boolean, msg: => Any): Unit =
-    if (!assertion) runtimeException("" + msg)
+  // def assert(assertion: => Boolean, msg: => Any): Unit =
+  //   if (!assertion) runtimeException("" + msg)
 
   // def abortTrace(msg: String): Nothing             = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
   def bufferMap[A, B: Empty](): scmMap[A, B]       = scmMap[A, B]() withDefaultValue emptyValue[B]

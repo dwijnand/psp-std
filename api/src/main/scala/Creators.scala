@@ -12,18 +12,18 @@ trait PspCreators {
   def zip[A, B](xs: (A->B)*): ZipView[A, B]
 }
 
-trait PspOptionType {
-  type Opt[X]
+// trait PspOptionType {
+//   type Opt[X]
 
-  def apply[A](x: A): Opt[A]
-  def empty[A] : Opt[A]
-  def join[A](x: Opt[Opt[A]]): Opt[A]
+//   def apply[A](x: A): Opt[A]
+//   def empty[A] : Opt[A]
+//   def join[A](x: Opt[Opt[A]]): Opt[A]
 
-  abstract class Ops[A](x: Opt[A]) {
-    def isEmpty: Boolean
-    def fold[B](e: => B, f: A => B): B
-    def map[B](f: A => B): Opt[B]
-    def flatMap[B](f: A => Opt[B]): Opt[B]
-    def filter(p: A => Boolean): Opt[A]
-  }
-}
+//   abstract class Ops[A](x: Opt[A]) {
+//     def isEmpty: Boolean
+//     def fold[B](e: => B, f: A => B): B
+//     def map[B](f: A => B): Opt[B]
+//     def flatMap[B](f: A => Opt[B]): Opt[B]
+//     def filter(p: A => Boolean): Opt[A]
+//   }
+// }

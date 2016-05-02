@@ -1,7 +1,6 @@
 package psp
 package std
 
-
 import api._, all._, Java._
 
 final class Conversions[A](val xs: View[A]) extends AnyVal with ConversionsImpl[A]

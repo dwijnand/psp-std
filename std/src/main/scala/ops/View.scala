@@ -101,7 +101,7 @@ final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
       buf(idx) :+= x
     }
     val res = buf.toMap map { case (k, v) => seen(k) -> v.m }
-    res.m.toMap[ExMap]
+    res.m.toExMap
   }
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
     inView[View[A]](mf => xs.toEach partition p(xs) match {

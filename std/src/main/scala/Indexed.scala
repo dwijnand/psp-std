@@ -5,7 +5,7 @@ import api._, all._ //, StdEq._
 // import java.util.concurrent.LinkedBlockingQueue
 
 object indices {
-  def all: Indexed[Index]                      = Indexed(i => i)
+  def all: Indexed[Index]                      = Indexed(i => i.toIndex)
   def from(start: SafeLong): Indexed[SafeLong] = Indexed(i => start + i.get)
   def from(start: BigInt): Indexed[BigInt]     = Indexed(i => start + i.get)
   def from(start: Long): Indexed[Long]         = Indexed(i => start + i.get)
@@ -17,12 +17,12 @@ object indices {
  *  We can memoize an Each into an Indexed.
  */
 object Indexed {
-  def apply[A](f: Index => A): Pure[A] = Pure(f)
+  def apply[A](f: Vdex => A): Pure[A] = Pure(f)
 
-  final case class Pure[A](f: Index => A) extends Indexed[A] {
-    def size                 = Infinite // ...sometimes infinite via overflow, but hey
-    def isEmpty              = false
-    def elemAt(i: Vindex): A = f(i)
+  final case class Pure[A](f: Vdex => A) extends Indexed[A] {
+    def size               = Infinite // ...sometimes infinite via overflow, but hey
+    def isEmpty            = false
+    def elemAt(i: Vdex): A = f(i)
     @inline def foreach(f: A => Unit): Unit = {
       var current: Long = 0L
       while (true) { f(elemAt(Index(current))) ; current += 1 }

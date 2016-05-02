@@ -40,8 +40,8 @@ final class LinearView[A, Repr](underlying: Each[A]) extends AtomicView[A, Repr]
   @inline def foreach(f: A => Unit): Unit = underlying foreach f
   def foreachSlice(range: VindexRange)(f: A => Unit): Unit = {
     if (range.isEmpty) return
-    val start   = range.head.get
-    val last    = range.last.get
+    val start   = range.head.indexValue
+    val last    = range.last.indexValue
     var current = 0L
 
     underlying foreach { x =>
@@ -56,7 +56,7 @@ final class DirectView[A, Repr](underlying: Direct[A]) extends AtomicView[A, Rep
   type This = DirectView[A, Repr]
 
   def size: Precise                                        = underlying.size
-  def elemAt(i: Vindex): A                                 = underlying(i)
+  def elemAt(i: Vdex): A                                   = underlying elemAt i
   def foreach(f: A => Unit): Unit                          = size.indices foreach (i => f(elemAt(i)))
   def foreachSlice(range: VindexRange)(f: A => Unit): Unit = size.indices slice range foreach (i => f(elemAt(i)))
 }
@@ -109,7 +109,7 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
         case Joined(xs, ys)           => loop(xs)(f) ; loop(ys)(f)
         case DroppedR(xs, n: Precise) => foreachDropRight(xs, f, n)
         case TakenR(xs, n: Precise)   => foreachTakeRight(xs, f, n)
-        case Dropped(xs, Finite(n))   => foreachSlice(xs, Index(n) until Index(MaxLong), f)
+        case Dropped(xs, Finite(n))   => foreachSlice(xs, n until MaxLong map Index, f)
         case Taken(xs, n: Precise)    => foreachSlice(xs, n.indices, f)
         case xs: View[_]              => xs foreach f
         case _                        => abort(pp"Unexpected view class ${xs.shortClass}")

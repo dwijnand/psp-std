@@ -17,15 +17,15 @@ trait AllImplicit extends scala.AnyRef
   import StdShow._
 
   // Ugh. XXX
-  implicit def promoteSize(x: Long): Precise                     = Size(x)
-  implicit def promoteIndex(x: Long): Index                      = Index(x)
-  implicit def wrapClass(x: jClass): JavaClass                   = new JavaClassImpl(x)
-  implicit def conforms[A] : (A <:< A)                           = new conformance[A]
-  implicit def defaultRenderer: FullRenderer                     = new FullRenderer
-  implicit def constantPredicate[A](value: Boolean): ToBool[A]   = if (value) ConstantTrue else ConstantFalse
-  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
-  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]     = new ops.DirectOps(xs)
-  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
+  implicit def promoteSize(x: Long): Precise                      = Size(x)
+  implicit def promoteIndex(x: Long): Index                       = Index(x)
+  implicit def wrapClass(x: jClass): JavaClass                    = new JavaClassImpl(x)
+  implicit def conforms[A] : (A <:< A)                            = new conformance[A]
+  implicit def defaultRenderer: FullRenderer                      = new FullRenderer
+  // implicit def constantPredicate[A](value: Boolean): ToBool[A] = if (value) ConstantTrue else ConstantFalse
+  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B  = f.toPartial
+  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]      = new ops.DirectOps(xs)
+  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]   = new ops.ForeachOps(xs)
 
   implicit final class DocSeqOps(xs: Direct[Doc]) {
     def joinLines: String = xs mapNow (x => render(x)) mk_s EOL
@@ -58,12 +58,11 @@ trait StdImplicits extends scala.AnyRef
 
   // Promotion of the api type (which has as few methods as possible) to the
   // concrete type which has all the other ones.
-  implicit def promoteApiVindex(x: Vindex): Index.Impl                            = Index impl Index(x.indexValue)
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]                     = Order impl z
-  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]                     = ExSet impl x
-  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]            = ExMap impl x
-  implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]]             = viewImpl[A](xs)
-  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]         = Zip impl xs
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]                        = Order impl z
+  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]                        = ExSet impl x
+  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]               = ExMap impl x
+  implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]]                = viewImpl[A](xs)
+  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]            = Zip impl xs
   // implicit def promoteApiUnbuilds[A, R](x: UnbuildsAs[A, R]): Unbuilds.Impl[A, R] = Unbuilds impl x
 
   private def viewImpl[A](xs: api.View[A]): AtomicView[A, View[A]] = xs match {
@@ -103,17 +102,17 @@ trait StdOps3 extends StdOps2 {
   implicit def opsChar(x: Char): ops.CharOps                                  = new ops.CharOps(x)
   implicit def opsCmpEnum(x: Cmp): ops.CmpEnumOps                             = new ops.CmpEnumOps(x)
   implicit def opsFun[A, B](f: Fun[A, B]): ops.FunOps[A, B]                   = new ops.FunOps(f)
-  implicit def opsHasAlgebraInfix[A: BooleanAlgebra](x: A): ops.AlgebraOps[A] = new ops.AlgebraOps[A](x)
-  implicit def opsHasEmpty[A: Empty](x: View[A]): ops.HasEmpty[A]             = new ops.HasEmpty[A](x)
-  implicit def opsHasEqInfix[A: Eq](x: A): ops.EqOps[A]                       = new ops.EqOps[A](x)
+  implicit def opsHasAlgebraInfix[A: BooleanAlgebra](x: A): ops.AlgebraOps[A] = new ops.AlgebraOps(x)
+  implicit def opsHasEmpty[A: Empty](x: View[A]): ops.HasEmpty[A]             = new ops.HasEmpty(x)
+  implicit def opsHasEqInfix[A: Eq](x: A): ops.EqOps[A]                       = new ops.EqOps(x)
   implicit def opsHasOrder[A: Order](x: View[A]): ops.HasOrder[A]             = new ops.HasOrder(x)
   // implicit def opsInputStream(x: InputStream): ops.InputStreamOps             = new ops.InputStreamOps(x)
   implicit def opsInt(x: Int): ops.IntOps                                     = new ops.IntOps(x)
   implicit def opsLong(x: Long): ops.LongOps                                  = new ops.LongOps(x)
-  implicit def opsOption[A](x: Option[A]): ops.OptionOps[A]                   = new ops.OptionOps[A](x)
+  implicit def opsOption[A](x: Option[A]): ops.OptionOps[A]                   = new ops.OptionOps(x)
   // implicit def opsPath(x: jPath): ops.PathOps                                 = new ops.PathOps(x)
   implicit def opsPrecise(x: Precise): ops.PreciseOps                         = new ops.PreciseOps(x)
-  implicit def opsTry[A](x: Try[A]): ops.TryOps[A]                            = new ops.TryOps[A](x)
+  implicit def opsTry[A](x: Try[A]): ops.TryOps[A]                            = new ops.TryOps(x)
 
   implicit def opsPairSplit[R, A, B](xs: Foreach[R])(implicit splitter: Splitter[R, A, B]): Paired[R, A, B] =
     new Paired[R, A, B](Each(xs foreach _))

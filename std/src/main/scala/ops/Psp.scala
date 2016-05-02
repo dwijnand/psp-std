@@ -11,13 +11,13 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   // def init    = xs.dropRight(1)
 
   def reverse: Direct[A]  = Direct reversed xs
-  def apply(i: Index): A  = xs elemAt i
+  def apply(i: Vdex): A   = xs elemAt i
   def indices: IndexRange = indexRange(0, xs.size.getInt)
   def lastIndex: Index    = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
   def containsIndex(index: Index): Boolean = indices containsInt index.getInt
 
-  @inline def foreachIndex(f: Index => Unit): Unit  = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
+  @inline def foreachIndex(f: Vdex => Unit): Unit  = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
   // @inline def foreachIntIndex(f: Int => Unit): Unit = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, f)
 }
 
@@ -75,14 +75,14 @@ final class PreciseOps(val size: Precise) {
   // @inline def foreachIntIndex(f: Int => Unit): Unit = if (size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, f)
 }
 
-final class InputStreamOps(val in: InputStream) extends AnyVal {
-  // def buffered: BufferedInputStream = in match {
-  //   case in: BufferedInputStream => in
-  //   case _                       => new BufferedInputStream(in)
-  // }
-  // def slurp(): Array[Byte]             = lowlevel.Streams slurp buffered
-  // def slurp(len: Precise): Array[Byte] = lowlevel.Streams.slurp(buffered, len)
-}
+// final class InputStreamOps(val in: InputStream) extends AnyVal {
+//   def buffered: BufferedInputStream = in match {
+//     case in: BufferedInputStream => in
+//     case _                       => new BufferedInputStream(in)
+//   }
+//   def slurp(): Array[Byte]             = lowlevel.Streams slurp buffered
+//   def slurp(len: Precise): Array[Byte] = lowlevel.Streams.slurp(buffered, len)
+// }
 
 final class SizeOps(val lhs: Size) extends AnyVal {
   import Size._, StdEq._
@@ -152,8 +152,8 @@ final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
     .   mapIn[A] { x => in(x) ; x }
     .  mapOut[B] { x => out(x) ; x }
   )
-  def memoized: Fun[A, B] = {
-    val cache = scala.collection.mutable.Map[A, B]()
-    Opaque[A, B](x => cache.getOrElseUpdate(x, f(x))) filterIn (x => (cache contains x) || (f isDefinedAt x))
-  }
+  // def memoized: Fun[A, B] = {
+  //   val cache = scala.collection.mutable.Map[A, B]()
+  //   Opaque[A, B](x => cache.getOrElseUpdate(x, f(x))) filterIn (x => (cache contains x) || (f isDefinedAt x))
+  // }
 }

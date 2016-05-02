@@ -73,11 +73,11 @@ trait ShowInstances extends ShowEach {
   implicit def showString: Show[String]       = inheritShow
   // implicit def showThrowable: Show[Throwable] = inheritShow
 
-  implicit def showClass: Show[jClass]                                  = Show(_.shortName)
-  implicit def showDirect: Show[ShowDirect]                             = Show(_.to_s)
-  implicit def showIndex: Show[Index]                                   = showBy(_.get)
-  implicit def showOption[A: Show] : Show[Option[A]]                    = Show(_.fold("-")(_.render))
-  implicit def showPair[A: Show, B: Show] : Show[A -> B]                = Show(x => x._1 ~ " -> " ~ x._2 render)
+  implicit def showClass: Show[jClass]                                     = Show(_.shortName)
+  implicit def showDirect: Show[ShowDirect]                                = Show(_.to_s)
+  implicit def showIndex: Show[Vdex]                                       = showBy(_.indexValue)
+  implicit def showOption[A: Show] : Show[Option[A]]                       = Show(_.fold("-")(_.render))
+  implicit def showPair[A: Show, B: Show] : Show[A -> B]                   = Show(x => x._1 ~ " -> " ~ x._2 render)
   // implicit def showStackTraceElement: Show[java.lang.StackTraceElement] = Show(x => s"\tat$x\n")
 
   implicit def showSize: Show[Size] = Show[Size] {

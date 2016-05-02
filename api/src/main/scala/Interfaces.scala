@@ -3,20 +3,6 @@ package api
 
 import Api._
 
-/** Name-based extractor methods. These interfaces aren't necessary
- *  for it (thus "name-based") but provide helpful structure when used.
- */
-trait IsEmpty extends Any              { def isEmpty: Boolean }
-trait Opt[+A] extends Any with IsEmpty { def get: A           }
-
-sealed trait Vindex extends Any with Opt[Long] { def indexValue: Long }
-trait Index             extends Any with Vindex { type This <: Index }
-trait Nth               extends Any with Vindex { type This <: Nth }
-
-// sealed trait MaybeView extends Any                { def isView: Boolean      }
-// trait IsView           extends Any with MaybeView { final def isView = true  }
-// trait NotView          extends Any with MaybeView { final def isView = false }
-
 /** Foreach is the common parent of View and Each.
  *
  *  A View always wraps an indeterminate number of Views
@@ -30,14 +16,14 @@ trait Foreach[+A] extends Any {
   def foreach(f: A => Unit): Unit
 }
 
-trait Each[@fspec +A]    extends Any with Foreach[A] /*with NotView*/
-trait Indexed[@fspec +A] extends Any with Each[A]                 { def elemAt(i: Vindex): A }
-trait Direct[@fspec +A]  extends Any with Indexed[A]              { def size: Precise        }
+trait Each[@fspec +A]    extends Any with Foreach[A]
+trait Indexed[@fspec +A] extends Any with Each[A]    { def elemAt(i: Vdex): A }
+trait Direct[@fspec +A]  extends Any with Indexed[A] { def size: Precise      }
 
 trait ExSet[A]     extends Any with Each[A] { def apply(x: A): Boolean    }
 trait ExMap[K, +V] extends Any              { def lookup: FiniteDom[K, V] }
 
-trait View[@fspec +A] extends Any with Foreach[A] /*with IsView*/ {
+trait View[@fspec +A] extends Any with Foreach[A] {
   /** Contiguous operations share the property that the result is always
    *  a (possibly empty) uninterrupted subsequence of the elements of the
    *  target collection.

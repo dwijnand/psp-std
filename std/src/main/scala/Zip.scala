@@ -75,8 +75,8 @@ object Zip {
     // def toMap(implicit z: Eq[A1]): ExMap[A1, A2]          = to[ExMap[A1, A2]]
     // def toScalaMap: sciMap[A1, A2]                        = to[sciMap[A1, A2]]
     // def toSortedMap(implicit z: Order[A1]): ExMap[A1, A2] = toMap // TODO
-    // def to[R](implicit z: Builds[Both, R]): R             = force[R]
 
+    def to[R](implicit z: Builds[Both, R]): R    = force[R]
     def force[R](implicit z: Builds[Both, R]): R = z build pairs
   }
 

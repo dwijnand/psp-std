@@ -26,7 +26,7 @@ final class Vec[@fspec A](private val underlying: sciVector[A]) extends AnyVal w
   def length: Int   = underlying.length
   def size: Precise = Size(length)
 
-  def updated(i: Vindex, elem: A): Vec[A] = new Vec[A](underlying.updated(i.getInt, elem))
+  def updated(i: Vdex, elem: A): Vec[A] = new Vec[A](underlying.updated(i.getInt, elem))
   def :+(elem: A): Vec[A] = new Vec[A](underlying :+ elem)
   def +:(elem: A): Vec[A] = new Vec[A](elem +: underlying)
   def ++(that: Vec[A]): Vec[A] = (
@@ -40,12 +40,12 @@ final class Vec[@fspec A](private val underlying: sciVector[A]) extends AnyVal w
     }
   )
 
-  def applyInt(index: Int): A      = underlying(index)
-  def drop(n: Vindex): Vec[A]      = new Vec[A](underlying drop n.getInt)
-  def dropRight(n: Vindex): Vec[A] = new Vec[A](underlying dropRight n.getInt)
-  def elemAt(i: Vindex): A         = underlying(i.getInt)
-  def take(n: Vindex): Vec[A]      = new Vec[A](underlying take n.getInt)
-  def takeRight(n: Vindex): Vec[A] = new Vec[A](underlying takeRight n.getInt)
+  def applyInt(index: Int): A    = underlying(index)
+  def drop(n: Vdex): Vec[A]      = new Vec[A](underlying drop n.getInt)
+  def dropRight(n: Vdex): Vec[A] = new Vec[A](underlying dropRight n.getInt)
+  def elemAt(i: Vdex): A         = underlying(i.getInt)
+  def take(n: Vdex): Vec[A]      = new Vec[A](underlying take n.getInt)
+  def takeRight(n: Vdex): Vec[A] = new Vec[A](underlying takeRight n.getInt)
 
   @inline def foreach(f: A => Unit): Unit = {
     if (!isEmpty)

@@ -195,8 +195,8 @@ class ViewBasic extends ScalacheckBundle {
   val s4 = new Bippy("def", 3)
   val strs = sciVector(s1, s2, s3, s4)
 
-  def closure              = transitiveClosure(parray)(x => view(x.init.force, x.tail.force))
-  def closureBag           = closure flatMap (x => x) toBag // That's my closure bag, baby
+  // def closure              = transitiveClosure(parray)(x => view(x.init.force, x.tail.force))
+  // def closureBag           = closure flatMap (x => x) toBag // That's my closure bag, baby
   def xxNumbers: View[Int] = (indices from 0).m grep """^(.*)\1""".r
 
   def props = miscProps ++ vecProps ++ rangeProps
@@ -257,7 +257,7 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray.m ++ parray.m force),
     showsAs("[ 1, 2, 3, ... ]", punfold),
     // showsAs("[ 1, 2, 3 ], [ 1, 2 ], [ 1 ], [  ], [ 2 ], [ 2, 3 ], [ 3 ]", closure mk_s ", "),
-    // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries mk_s ", "),
+    // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries.to[Vec[Int -> Precise]] mk_s ", "),
     seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.m.indexed map (i => x => x -> i)),
     seqShows("11, 22, 33, 44", indexRange(1, 50) grep """(.)\1""".r),
     seqShows("99, 1010, 1111", xxNumbers slice (8 takeNext 3).asIndices),
@@ -369,6 +369,15 @@ class CollectionsSpec extends ScalacheckBundle {
       arr.m flatMap (x => view(x)) build,
       arr.flatMap(x => view(x)).force[Array[Int]],
       arr.m.flatMap(x => vec(x)).force[Array[Int]]
+    ),
+    expectTypes[Array[Long]](
+      make0[Array[Long]](1L to 10L),
+      make0[Array[Long]](1L to 10L m),
+      make0[Array[Long]](1L to 10L toVec),
+      make1[Array](1L to 10L),
+      make1[Array](1L to 10L m),
+      make1[Array](1L to 10L toVec),
+      arr.map(_.toLong).to[Array].inPlace.reverse
     )
   )
 
