@@ -8,7 +8,7 @@ import sc.{ immutable => sci }
 object Probe {
   final case class Direct(range: IntRange, counter: RecorderCounter) extends api.Direct[Int] {
     def size                          = range.size
-    def elemAt(i: Vindex)             = counter record range(i)
+    def elemAt(i: Vdex)               = counter record range(i)
     def foreach(f: Int => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
     def isEmpty                       = range.isEmpty
     def view                          = new DirectView(this)

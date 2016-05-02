@@ -17,15 +17,15 @@ trait AllImplicit extends scala.AnyRef
   import StdShow._
 
   // Ugh. XXX
-  implicit def promoteSize(x: Long): Precise                     = Size(x)
-  implicit def promoteIndex(x: Long): Index                      = Index(x)
-  implicit def wrapClass(x: jClass): JavaClass                   = new JavaClassImpl(x)
-  implicit def conforms[A] : (A <:< A)                           = new conformance[A]
-  implicit def defaultRenderer: FullRenderer                     = new FullRenderer
-  // implicit def constantPredicate[A](value: Boolean): ToBool[A]   = if (value) ConstantTrue else ConstantFalse
-  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
-  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]     = new ops.DirectOps(xs)
-  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
+  implicit def promoteSize(x: Long): Precise                      = Size(x)
+  implicit def promoteIndex(x: Long): Index                       = Index(x)
+  implicit def wrapClass(x: jClass): JavaClass                    = new JavaClassImpl(x)
+  implicit def conforms[A] : (A <:< A)                            = new conformance[A]
+  implicit def defaultRenderer: FullRenderer                      = new FullRenderer
+  // implicit def constantPredicate[A](value: Boolean): ToBool[A] = if (value) ConstantTrue else ConstantFalse
+  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B  = f.toPartial
+  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]      = new ops.DirectOps(xs)
+  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]   = new ops.ForeachOps(xs)
 
   implicit final class DocSeqOps(xs: Direct[Doc]) {
     def joinLines: String = xs mapNow (x => render(x)) mk_s EOL
@@ -58,12 +58,11 @@ trait StdImplicits extends scala.AnyRef
 
   // Promotion of the api type (which has as few methods as possible) to the
   // concrete type which has all the other ones.
-  implicit def promoteApiVindex(x: Vindex): Index.Impl                            = Index impl Index(x.indexValue)
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]                     = Order impl z
-  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]                     = ExSet impl x
-  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]            = ExMap impl x
-  implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]]             = viewImpl[A](xs)
-  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]         = Zip impl xs
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]                        = Order impl z
+  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]                        = ExSet impl x
+  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]               = ExMap impl x
+  implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]]                = viewImpl[A](xs)
+  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]            = Zip impl xs
   // implicit def promoteApiUnbuilds[A, R](x: UnbuildsAs[A, R]): Unbuilds.Impl[A, R] = Unbuilds impl x
 
   private def viewImpl[A](xs: api.View[A]): AtomicView[A, View[A]] = xs match {

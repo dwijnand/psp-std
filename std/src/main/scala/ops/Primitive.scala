@@ -3,8 +3,7 @@ package std
 package ops
 
 import java.{ lang => jl }
-
-import api._, exp._, all.{ opsInt, opsLong }
+import api._, exp._, all.opsInt
 
 final class AnyOps[A](val x: A) extends AnyVal {
   def any_s: String                         = s"$x"
@@ -43,16 +42,6 @@ final class IntOps(val self: Int) extends AnyVal {
 }
 
 final class LongOps(val self: Long) extends AnyVal {
-  /** Safe in the senses that it won't silently truncate values,
-   *  and will translate MaxLong to MaxInt instead of -1.
-   *  Note that we depend on this.
-   */
-  def safeInt: Int = self match {
-    case MaxLong => MaxInt
-    case MinLong => MinInt
-    case _       => assert(self.toInt <= MaxInt, s"$self > $MaxInt") ; self.toInt
-  }
-
-  def to(end: Long): LongRange    = safeInt to end.safeInt map (_.toLong)
-  def until(end: Long): LongRange = safeInt until end.safeInt map (_.toLong)
+  def to(end: Long): LongRange    = safeLongToInt(self) to safeLongToInt(end) map (_.toLong)
+  def until(end: Long): LongRange = safeLongToInt(self) until safeLongToInt(end) map (_.toLong)
 }

@@ -113,7 +113,7 @@ final class CircularBuffer[@fspec A](capacity: Precise) extends Direct[A] {
   @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
 
   def isFull                         = seen >= cap
-  def elemAt(index: Vindex): A       = buffer((readPointer + index.getInt) % cap).castTo[A]
+  def elemAt(index: Vdex): A         = buffer((readPointer + index.getInt) % cap).castTo[A]
   def size: Precise                  = capacity min Size(seen)
   def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
   def += (x: A): this.type           = sideEffect(this, setHead(x))

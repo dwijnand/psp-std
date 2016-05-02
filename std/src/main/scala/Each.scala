@@ -13,16 +13,16 @@ object Direct extends Constructions[Direct] {
     @inline final def foreach(f: A => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
   }
   final case class WrapString(xs: String) extends AnyVal with Common[Char] {
-    def size              = Size(xs.length)
-    def elemAt(i: Vindex) = xs charAt i.getInt
+    def size            = Size(xs.length)
+    def elemAt(i: Vdex) = xs charAt i.getInt
   }
   final case class WrapArray[A](val xs: Array[_]) extends AnyVal with Common[A] {
-    def size                 = Size(xs.length)
-    def elemAt(i: Vindex): A = xs(i.getInt).castTo[A]
+    def size               = Size(xs.length)
+    def elemAt(i: Vdex): A = xs(i.getInt).castTo[A]
   }
   final class Reversed[A](val xs: Direct[A]) extends AnyVal with Common[A] {
-    def size              = xs.size
-    def elemAt(i: Vindex) = xs elemAt xs.lastIndex - i.get
+    def size            = xs.size
+    def elemAt(i: Vdex) = xs elemAt xs.lastIndex - i.get
   }
 }
 

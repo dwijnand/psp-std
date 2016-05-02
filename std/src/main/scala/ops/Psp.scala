@@ -11,13 +11,13 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   // def init    = xs.dropRight(1)
 
   def reverse: Direct[A]  = Direct reversed xs
-  def apply(i: Index): A  = xs elemAt i
+  def apply(i: Vdex): A   = xs elemAt i
   def indices: IndexRange = indexRange(0, xs.size.getInt)
   def lastIndex: Index    = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
   def containsIndex(index: Index): Boolean = indices containsInt index.getInt
 
-  @inline def foreachIndex(f: Index => Unit): Unit  = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
+  @inline def foreachIndex(f: Vdex => Unit): Unit  = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
   // @inline def foreachIntIndex(f: Int => Unit): Unit = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, f)
 }
 

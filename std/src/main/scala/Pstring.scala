@@ -9,17 +9,17 @@ import jl.Integer.parseInt // , jl.Long.parseLong, jl.Double.parseDouble, jl.Flo
 final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String] with ShowSelf {
   // private def rebuild(xs: Vec[String]) = new SplitCharView(xs, sep)
 
-  def build(): String                               = xs mk_s sep
+  def build(): String                                  = xs mk_s sep
   // def collect(pf: String ?=> String): SplitCharView = rebuild(xs collect pf)
-  def elemAt(idx: Vindex)                           = xs(idx.getInt)
+  def elemAt(idx: Vdex)                                = xs(idx.getInt)
   // def filter(p: ToBool[String]): SplitCharView      = rebuild(xs filter p)
-  def foreach(f: String => Unit): Unit              = xs foreach f
+  def foreach(f: String => Unit): Unit                 = xs foreach f
   // def grep(r: Regex): SplitCharView                 = rebuild(xs filter r.isMatch)
   // def isEmpty: Bool                                 = xs.isEmpty
   // def map(f: String => String): SplitCharView       = rebuild(xs map f)
-  def size: Precise                                 = xs.size
-  def toVec: Vec[String]                            = xs
-  def to_s: String                                  = build
+  def size: Precise                                    = xs.size
+  def toVec: Vec[String]                               = xs
+  def to_s: String                                     = build
 }
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {

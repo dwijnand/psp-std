@@ -32,6 +32,10 @@ trait PspApi extends ExternalLibs {
   final val ConstantFalse = (x: scala.Any) => false
   final val ->            = Pair
 
+  type Vdex  = Vindex[_]
+  type Index = Vindex[Vindex.Zero.type]
+  type Nth   = Vindex[Vindex.One.type]
+
   // A few methods it is convenient to expose at this level.
   def ?[A](implicit value: A): A                         = value
   def abort(msg: String): Nothing                        = runtimeException(msg)
@@ -44,7 +48,19 @@ trait PspApi extends ExternalLibs {
   def sideEffect[A](result: A, exprs: Any*): A           = result
   def some[A](x: A): Option[A]                           = scala.Some(x)
 
+  def assert(assertion: => Boolean, msg: => Any): Unit = if (!assertion) runtimeException("" + msg)
+
   def stringFormat(s: String, args: Any*): String = java.lang.String.format(s, args map unwrapArg: _*)
+
+  /** Safe in the senses that it won't silently truncate values,
+   *  and will translate MaxLong to MaxInt instead of -1.
+   *  Note that we depend on this.
+   */
+  def safeLongToInt(value: Long): Int = value match {
+    case MaxLong => MaxInt
+    case MinLong => MinInt
+    case _       => assert(MinInt <= value && value <= MaxInt, s"$value out of range") ; value.toInt
+  }
 
   private def unwrapArg(arg: Any): AnyRef = arg match {
     case x: scala.math.ScalaNumber => x.underlying

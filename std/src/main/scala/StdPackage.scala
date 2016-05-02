@@ -8,8 +8,8 @@ trait AllExplicit extends PspApi with PspCreators {
   type Bag[A]               = ExMap[A, Precise]
   type Bool                 = Boolean
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
-  type VindexRange          = Consecutive[api.Vindex]
-  type IndexRange           = Consecutive[api.Index]
+  type VindexRange          = Consecutive[Vdex]
+  type IndexRange           = Consecutive[Index]
   type IntRange             = Consecutive[Int]
   type LongRange            = Consecutive[Long]
   type Renderer             = Show[Doc]
@@ -77,8 +77,8 @@ trait AllExplicit extends PspApi with PspCreators {
   //   result
   // }
 
-  def assert(assertion: => Boolean, msg: => Any): Unit =
-    if (!assertion) runtimeException("" + msg)
+  // def assert(assertion: => Boolean, msg: => Any): Unit =
+  //   if (!assertion) runtimeException("" + msg)
 
   // def abortTrace(msg: String): Nothing             = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
   def bufferMap[A, B: Empty](): scmMap[A, B]       = scmMap[A, B]() withDefaultValue emptyValue[B]
