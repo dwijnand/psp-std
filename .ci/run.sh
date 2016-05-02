@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 
+set pipefail
 set -e
 : ${JMH_ARGS:= -f1 -t1 }
 
@@ -11,6 +12,6 @@ runTests () {
 }
 
 runTests \
-  | egrep -v '^\[info\] (Resolving|Waiting|\# Warmup|Generating|\[info\])' \
-  | egrep -v '^(Download|Resolving|Fetching)' \
-  | egrep -v '(nstrumentation|Cobertura|HTML)'
+  |& egrep -v --line-buffered '^\[info\] (Resolving|Waiting|\# Warmup|Generating|\[info\])' \
+  |  egrep -v --line-buffered '^(Download|Resolving|Fetching|Resolution[ ]done|Bye[!])' \
+  |  egrep -v --line-buffered '(nstrumentation|Cobertura|HTML)'
