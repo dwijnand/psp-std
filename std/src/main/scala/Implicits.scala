@@ -17,8 +17,8 @@ trait AllImplicit extends scala.AnyRef
   import StdShow._
 
   // Ugh. XXX
+
   implicit def promoteSize(x: Long): Precise                      = Size(x)
-  implicit def wrapClass(x: jClass): JavaClass                    = new JavaClassImpl(x)
   implicit def conforms[A] : (A <:< A)                            = new conformance[A]
   implicit def defaultRenderer: FullRenderer                      = new FullRenderer
   // implicit def constantPredicate[A](value: Boolean): ToBool[A] = if (value) ConstantTrue else ConstantFalse

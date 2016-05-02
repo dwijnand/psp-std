@@ -52,11 +52,10 @@ trait EqOrderInstances extends EqOrderInstances1 {
   implicit def tuple2Order[A: Order, B: Order] : Order[(A, B)]                 = orderBy[(A, B)](fst) | snd
   // implicit def tuple3Order[A: Order, B: Order, C: Order] : Order[(A, B, C)] = orderBy[(A, B, C)](_._1) | (_._2) | (_._3)
 
-  // implicit def docEq: Hash[Doc]                = inheritEq
-  // implicit def classWrapperEq: Hash[JavaClass] = inheritEq
-  implicit def classEq: Hash[Class[_]]         = inheritEq
-  // implicit def pathEq: Eq[jPath]               = shownEq[jPath](inheritShow)
-  implicit def sizeEq: Hash[Size]              = inheritEq
+  // implicit def docEq: Hash[Doc]     = inheritEq
+  implicit def classEq: Hash[Class[_]] = inheritEq
+  // implicit def pathEq: Eq[jPath]    = shownEq[jPath](inheritShow)
+  implicit def sizeEq: Hash[Size]      = inheritEq
 
   implicit def tryEq[A](implicit z1: Eq[A], z2: Eq[Throwable]): Eq[Try[A]] = Eq {
     case (Success(x), Success(y)) => x === y

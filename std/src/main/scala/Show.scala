@@ -73,7 +73,7 @@ trait ShowInstances extends ShowEach {
   implicit def showString: Show[String]       = inheritShow
   // implicit def showThrowable: Show[Throwable] = inheritShow
 
-  implicit def showClass: Show[jClass]                                     = Show(_.shortName)
+  implicit def showClass: Show[jClass]                                     = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]                                = Show(_.to_s)
   implicit def showIndex: Show[Vdex]                                       = showBy(_.indexValue)
   implicit def showOption[A: Show] : Show[Option[A]]                       = Show(_.fold("-")(_.render))

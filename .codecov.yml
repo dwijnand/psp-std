@@ -2,10 +2,7 @@ comment:
   layout: header, changes, diff
 coverage:
   ignore:
-    - testing
-  status:
-    changes:
-      enabled: false
+  - testing
   notify:
     gitter:
       default:

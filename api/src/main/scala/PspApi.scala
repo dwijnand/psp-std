@@ -13,7 +13,7 @@ trait PspApi extends ExternalLibs {
   type ->[+A, +B]      = scala.Product2[A, B]        // A less overconstrained product type.
   type ?=>[-A, +B]     = scala.PartialFunction[A, B] // Less clumsy syntax for the all-important partial function.
   type GTOnce[+A]      = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
-  type Id[X]           = X                           // The identity type constructor.
+  type Id[+X]          = X                           // The identity type constructor.
   type Ref[+A]         = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
   type sCollection[+A] = sc.GenTraversable[A]        // named analogously to jCollection.
 

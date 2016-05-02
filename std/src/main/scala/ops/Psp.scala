@@ -36,14 +36,8 @@ final class DocOps(val lhs: Doc) extends AnyVal {
   // def <+>(rhs: Doc): Doc = if (lhs.isEmpty) rhs else if (rhs.isEmpty) lhs else lhs ~ " " ~ rhs
 }
 
-final class TimesBuilder(val times: Precise) {
-  def const[A](elem: A): Each[A]   = Each const elem take times
-  // def eval[A](body: => A): Each[A] = Each continually body take times
-}
-
 final class PreciseOps(val size: Precise) {
   def toInt: Int         = size.getInt
-  def times              = new TimesBuilder(size)
   def indices: VdexRange = indexRange(0, size.getInt)
   def lastIndex: Index   = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
