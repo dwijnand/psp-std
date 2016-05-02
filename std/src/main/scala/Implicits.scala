@@ -18,7 +18,6 @@ trait AllImplicit extends scala.AnyRef
 
   // Ugh. XXX
   implicit def promoteSize(x: Long): Precise                      = Size(x)
-  implicit def promoteIndex(x: Long): Index                       = Index(x)
   implicit def wrapClass(x: jClass): JavaClass                    = new JavaClassImpl(x)
   implicit def conforms[A] : (A <:< A)                            = new conformance[A]
   implicit def defaultRenderer: FullRenderer                      = new FullRenderer

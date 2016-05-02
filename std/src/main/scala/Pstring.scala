@@ -11,7 +11,7 @@ final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String]
 
   def build(): String                                  = xs mk_s sep
   // def collect(pf: String ?=> String): SplitCharView = rebuild(xs collect pf)
-  def elemAt(idx: Vdex)                                = xs(idx.getInt)
+  def elemAt(idx: Vdex)                                = xs elemAt idx
   // def filter(p: ToBool[String]): SplitCharView      = rebuild(xs filter p)
   def foreach(f: String => Unit): Unit                 = xs foreach f
   // def grep(r: Regex): SplitCharView                 = rebuild(xs filter r.isMatch)

@@ -5,15 +5,15 @@ package ops
 import api._, all._, StdEq._
 
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
-  def head: A = apply(0)
+  def head: A = apply(Index(0))
   def last: A = apply(lastIndex)
   def tail    = xs.drop(1)
   // def init    = xs.dropRight(1)
 
-  def reverse: Direct[A]  = Direct reversed xs
-  def apply(i: Vdex): A   = xs elemAt i
-  def indices: IndexRange = indexRange(0, xs.size.getInt)
-  def lastIndex: Index    = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
+  def reverse: Direct[A]   = Direct reversed xs
+  def apply(i: Vdex): A    = xs elemAt i
+  def indices: VdexRange = indexRange(0, xs.size.getInt)
+  def lastIndex: Index     = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
   def containsIndex(index: Index): Boolean = indices containsInt index.getInt
 
@@ -59,10 +59,10 @@ final class TimesBuilder(val times: Precise) {
 }
 
 final class PreciseOps(val size: Precise) {
-  def toInt: Int          = size.getInt
-  def times               = new TimesBuilder(size)
-  def indices: IndexRange = indexRange(0, size.getInt)
-  def lastIndex: Index    = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
+  def toInt: Int           = size.getInt
+  def times                = new TimesBuilder(size)
+  def indices: VdexRange = indexRange(0, size.getInt)
+  def lastIndex: Index     = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
   // def + (n: Precise): Precise              = size + n.get
   def - (n: Precise): Precise              = size - n.get
@@ -101,7 +101,7 @@ final class SizeOps(val lhs: Size) extends AnyVal {
     case x: Atomic      => x
   }
 
-  // def slice(range: VindexRange): Size = (this - range.startInt) min range.size
+  // def slice(range: VdexRange): Size = (this - range.startInt) min range.size
 
   /** For instance taking the union of two sets. The new size is
    *  at least the size of the larger operand, but at most the sum

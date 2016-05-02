@@ -36,7 +36,8 @@ object StdShow extends ShowInstances {
 }
 object Unsafe {
   // implicit def inheritedEq[A] : Hash[A]       = inheritEq
-  implicit def inheritedShow[A] : Show[A]     = inheritShow
+  implicit def promoteIndex(x: Long): Index      = Index(x)
+  implicit def inheritedShow[A] : Show[A]        = inheritShow
   // implicit def shownOrder[A: Show] : Order[A] = orderBy[A](render[A])
 }
 

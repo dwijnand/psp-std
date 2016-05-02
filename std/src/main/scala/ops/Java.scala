@@ -7,7 +7,7 @@ import api._, all._
 object Java extends JavaCollections
 
 trait StdJava0 {
-  implicit def viewJavaStream[A, CC[X] <: jStream[X]](xs: CC[A]): AtomicView[A, CC[A]]               = new StreamView(xs)
+  // implicit def viewJavaStream[A, CC[X] <: jStream[X]](xs: CC[A]): AtomicView[A, CC[A]]               = new StreamView(xs)
   implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
   implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
 }
@@ -58,7 +58,7 @@ package ops {
   }
 
   final class JavaStreamOps[A](xs: jStream[A]) {
-    // def slice(n: VindexRange): jStream[A] = xs drop n.startInt take n.size.getInt
+    // def slice(n: VdexRange): jStream[A] = xs drop n.startInt take n.size.getInt
     // def take(n: Precise): jStream[A]      = xs limit n.getInt
     // def drop(n: Precise): jStream[A]      = xs skip n.getInt
     // def forall(p: ToBool[A]): Bool        = xs allMatch p
