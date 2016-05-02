@@ -55,13 +55,13 @@ final class LinearView[A, Repr](underlying: Each[A]) extends AtomicView[A, Repr]
 final class DirectView[A, Repr](underlying: Direct[A]) extends AtomicView[A, Repr] {
   type This = DirectView[A, Repr]
 
-  def size: Precise                                        = underlying.size
-  def elemAt(i: Vdex): A                                   = underlying elemAt i
-  def foreach(f: A => Unit): Unit                          = size.indices foreach (i => f(elemAt(i)))
+  def size: Precise                                      = underlying.size
+  def elemAt(i: Vdex): A                                 = underlying elemAt i
+  def foreach(f: A => Unit): Unit                        = size.indices foreach (i => f(elemAt(i)))
   def foreachSlice(range: VdexRange)(f: A => Unit): Unit = size.indices slice range foreach (i => f(elemAt(i)))
 }
 
-sealed trait BaseView[+A, Repr] extends AnyRef with View[A] with ops.ViewOps[A] {
+sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
   def foreach(f: A => Unit): Unit
   def toEach: Each[A] = Each(foreach)
 

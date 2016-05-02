@@ -67,7 +67,7 @@ final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
   def findOr(p: ToBool[A], alt: => A): A                       = find(p) | alt
   // def gather[B](p: Partial[A, View[B]]): View[B]               = xs flatMap p.zapply
   // def intersperse(ys: View[A]): View[A]                        = Split(xs, ys).intersperse
-  def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C] = groupBy[B](f) map g // Probably this should be groupBy
+  // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C] = groupBy[B](f) map g // Probably this should be groupBy
   def mapIf(pf: Partial[A, A]): View[A]                        = xs map (x => pf.applyOr(x, x))
   def maxOf[B: Order](f: A => B): B                            = xs map f max
   // def memo: Indexed.Memo[A]                                    = new Indexed.Memo(xs)
@@ -89,20 +89,20 @@ final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
    *  We need to not be using scala's map because it will always compare keys based
    *  on the inherited equals.
    */
-  def groupBy[B: Eq](f: A => B): ExMap[B, View[A]] = {
-    var seen: Vec[B] = vec()
-    val buf = bufferMap[Index, Vec[A]]()
-    xs foreach { x =>
-      val fx: B = f(x)
-      val idx: Index = seen.m indexOf fx match {
-        case NoIndex => seen = seen :+ fx ; seen.lastIndex
-        case idx     => idx
-      }
-      buf(idx) :+= x
-    }
-    val res = buf.toMap map { case (k, v) => seen(k) -> v.m }
-    res.m.toExMap
-  }
+  // def groupBy[B: Eq](f: A => B): ExMap[B, View[A]] = {
+  //   var seen: Vec[B] = vec()
+  //   val buf = bufferMap[Index, Vec[A]]()
+  //   xs foreach { x =>
+  //     val fx: B = f(x)
+  //     val idx: Index = seen.m indexOf fx match {
+  //       case NoIndex => seen = seen :+ fx ; seen.lastIndex
+  //       case idx     => idx
+  //     }
+  //     buf(idx) :+= x
+  //   }
+  //   val res = buf.toMap map { case (k, v) => seen(k) -> v.m }
+  //   res.m.toExMap
+  // }
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
     inView[View[A]](mf => xs.toEach partition p(xs) match {
       case Split(xs, ys) =>
@@ -147,7 +147,7 @@ class HasEq[A](xs: View[A])(implicit z: Eq[A]) {
   def indexOf(x: A): Index                        = xs indexWhere (_ === x)
   // def indicesOf(x: A): View[Index]                = xs indicesWhere (_ === x)
   // def mapOnto[B](f: A => B): ExMap[A, B]          = toSet mapOnto f
-  def toBag: Bag[A]                               = xs groupBy identity map (_.size.getInt)
+  // def toBag: Bag[A]                               = xs groupBy identity map (_.size.getInt)
   def toSet: ExSet[A]                             = xs.toExSet
   // def without(x: A): View[A]                      = xs filterNot (_ === x)
   // def withoutEmpty(implicit z: Empty[A]): View[A] = this without z.empty

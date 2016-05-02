@@ -85,8 +85,8 @@ trait AllExplicit extends PspApi with PspCreators {
   def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
   def lformat[A](n: Int): FormatFun                 = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
   def noNull[A](value: A, orElse: => A): A          = if (value == null) orElse else value
-  def nullAs[A] : A                                 = null.asInstanceOf[A]
-  def optMap[A, B](x: A)(f: A => B): Option[B]      = if (x == null) None else Some(f(x))
+  // def nullAs[A] : A                                 = null.asInstanceOf[A]
+  // def optMap[A, B](x: A)(f: A => B): Option[B]      = if (x == null) None else Some(f(x))
   // def option[A](p: Boolean, x: => A): Option[A]  = if (p) Some(x) else None
   def randomPosInt(max: Int): Int                   = scala.util.Random.nextInt(max + 1)
   // def utf8(xs: Array[Byte]): Utf8                = new Utf8(xs)
