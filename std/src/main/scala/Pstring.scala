@@ -9,17 +9,18 @@ import jl.Integer.parseInt // , jl.Long.parseLong, jl.Double.parseDouble, jl.Flo
 final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String] with ShowSelf {
   // private def rebuild(xs: Vec[String]) = new SplitCharView(xs, sep)
 
-  def build(): String                                  = xs mk_s sep
   // def collect(pf: String ?=> String): SplitCharView = rebuild(xs collect pf)
-  def elemAt(idx: Vdex)                                = xs elemAt idx
   // def filter(p: ToBool[String]): SplitCharView      = rebuild(xs filter p)
-  def foreach(f: String => Unit): Unit                 = xs foreach f
   // def grep(r: Regex): SplitCharView                 = rebuild(xs filter r.isMatch)
   // def isEmpty: Bool                                 = xs.isEmpty
   // def map(f: String => String): SplitCharView       = rebuild(xs map f)
-  def size: Precise                                    = xs.size
-  def toVec: Vec[String]                               = xs
-  def to_s: String                                     = build
+
+  def build(): String                  = xs mk_s sep
+  def elemAt(idx: Vdex)                = xs elemAt idx
+  def foreach(f: String => Unit): Unit = xs foreach f
+  def size: Precise                    = xs.size
+  def toVec: Vec[String]               = xs
+  def to_s: String                     = build
 }
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
@@ -27,26 +28,27 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
 
   def r: Regex               = Regex(self)
   def to_s: String           = self
-  def * (n: Precise): String = n.times const self join_s
+  def * (n: Precise): String = Each const self take n join_s
 
   def lines: SplitCharView               = splitView('\n')
   def splitView(ch: Char): SplitCharView = new SplitCharView(splitChar(ch), ch)
 
+  // def bytes: Array[Byte]                      = self.getBytes
+  // def charVec: Vec[Char]                      = charSeq.toVec
+  // def length: Int                             = self.length
+  // def replaceChar(pair: Char -> Char): String = self.replace(pair._1, pair._2)
+
   def append(that: String): String                  = self + that   /** Note to self: don't touch this `+`. */
-  // def bytes: Array[Byte]                            = self.getBytes
   def capitalize: String                            = applyIfNonEmpty[String](self)(s => s.head.toUpper.to_s append s.tail.force)
-  // def charVec: Vec[Char]                            = charSeq.toVec
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args : Any*): String                   = stringFormat(self, args: _*)
-  // def length: Int                                   = self.length
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
   def mapChars(pf: Char ?=> Char): String           = chars.m mapIf pf force
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f mk_s ch
   def processEscapes: String                        = StringContext processEscapes self
   def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
   def removeAll(regex: Regex): String               = regex matcher self replaceAll ""
-  // def replaceChar(pair: Char -> Char): String       = self.replace(pair._1, pair._2)
   def reverseChars: String                          = new String(chars.inPlace.reverse)
   def sanitize: String                              = mapChars { case x if x.isControl => '?' }
   def splitChar(ch: Char): Vec[String]              = splitRegex(Regex quote ch.any_s)
@@ -57,13 +59,14 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
   def trimLines: String                             = mapLines(_.trim).trim
 
-  def toBigInt: BigInt      = scala.math.BigInt(self)
   // def toDecimal: BigDecimal = scala.math.BigDecimal(self)
-  def toSafeLong: SafeLong  = SafeLong(self removeAll """\s+""".r toBigInt) // spire allows spaces in their literal syntax
   // def toDouble: Double      = parseDouble(self removeFirst "[dD]$".r)
   // def toFloat: Float        = parseFloat(self removeFirst "[fF]$".r)
-  def toInt: Int            = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
   // def toLong: Long          = (self removeFirst "[lL]$".r) |> (s => foldPrefix("0x")(parseLong(s))(parseLong(_, 16)))
+
+  def toSafeLong: SafeLong = SafeLong(self removeAll """\s+""".r toBigInt) // spire allows spaces in their literal syntax
+  def toBigInt: BigInt     = scala.math.BigInt(self)
+  def toInt: Int           = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
 
   private def bs = '\\'
   private def foldRemove[A](r: Regex)(none: => A)(some: String => A): A       = removeFirst(r) match { case `self` => none ; case s => some(s) }

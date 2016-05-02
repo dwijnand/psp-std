@@ -8,14 +8,14 @@ import api._, exp._, all.opsInt
 final class AnyOps[A](val x: A) extends AnyVal {
   def any_s: String                         = s"$x"
   def castTo[U] : U                         = x.asInstanceOf[U]
-  // def collectSelf(pf: A ?=> A): A           = matchOr(x)(pf)
+  // def collectSelf(pf: A ?=> A): A        = matchOr(x)(pf)
   def id_## : Int                           = java.lang.System.identityHashCode(x)
   def id_==(y: Any): Boolean                = x.asInstanceOf[AnyRef] eq y.asInstanceOf[AnyRef]  // Calling eq on Anys.
   def isClass[A: CTag]                      = classOf[A] isAssignableFrom x.getClass
   def matchOpt[B](pf: A ?=> B): Option[B]   = matchOr(none[B])(pf andThen some)
   def matchOr[B](alt: => B)(pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else alt
-  // def zmatch[B: Empty](pf: A ?=> B): B      = matchOr[B](emptyValue[B])(pf)
-  def shortClass: String                    = JavaClass(x.getClass).scalaName.short
+  // def zmatch[B: Empty](pf: A ?=> B): B   = matchOr[B](emptyValue[B])(pf)
+  def shortClass: String                    = JvmName asScala x.getClass short
   def toRef: Ref[A]                         = castTo[Ref[A]]
 
   @inline def |>[B](f: A => B): B = f(x)  // The famed forward pipe.

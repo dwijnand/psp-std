@@ -12,6 +12,7 @@ import Api._
 
 trait Hash[-A]     extends Any with Eq[A] { def hash(x: A): Int                   }
 
+
 trait Eq[-A] extends Any with MEq[A] {
   type M[+X] = X
   def eqv(x: A, y: A): Boolean
