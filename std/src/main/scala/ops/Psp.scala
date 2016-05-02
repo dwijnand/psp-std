@@ -10,12 +10,12 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def tail    = xs.drop(1)
   // def init    = xs.dropRight(1)
 
-  def reverse: Direct[A]   = Direct reversed xs
-  def apply(i: Vdex): A    = xs elemAt i
+  def reverse: Direct[A] = Direct reversed xs
+  def apply(i: Vdex): A  = xs elemAt i
   def indices: VdexRange = indexRange(0, xs.size.getInt)
-  def lastIndex: Index     = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
+  def lastIndex: Index   = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
-  def containsIndex(index: Index): Boolean = indices containsInt index.getInt
+  def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
 
   @inline def foreachIndex(f: Vdex => Unit): Unit  = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
   // @inline def foreachIntIndex(f: Int => Unit): Unit = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, f)
@@ -35,23 +35,6 @@ final class DocOps(val lhs: Doc) extends AnyVal {
   // def <>(rhs: Doc): Doc  = if (lhs.isEmpty) rhs else if (rhs.isEmpty) lhs else lhs ~ rhs
   // def <+>(rhs: Doc): Doc = if (lhs.isEmpty) rhs else if (rhs.isEmpty) lhs else lhs ~ " " ~ rhs
 }
-final class ExMapOps[K, V](xs: ExMap[K, V]) {
-  type Entry = K -> V
-
-  def keys: View[K]          = keySet.m
-  // def values: View[V]        = keyVector map xs.lookup
-  def keySet: ExSet[K]       = xs.lookup.keys
-  def keyVector: Vec[K]      = keys.toVec
-  def entries: ZipView[K, V] = keyVector mapZip xs.lookup
-
-  // def filterValues(p: ToBool[V]): ExMap[K, V] = xs filterKeys (k => p(xs(k)))
-}
-final class ExSetOps[A](xs: ExSet[A]) {
-  // def add(x: A): ExSet[A]                = xs + x
-  def filter(p: ToBool[A]): ExSet[A]     = ExSet.Filtered(xs, p)
-  def union(that: ExSet[A]): ExSet[A]    = ExSet.Union(xs, that)
-  // def mapOnto[B](f: A => B): ExMap[A, B] = ExMap(xs, Fun(f))
-}
 
 final class TimesBuilder(val times: Precise) {
   def const[A](elem: A): Each[A]   = Each const elem take times
@@ -59,14 +42,14 @@ final class TimesBuilder(val times: Precise) {
 }
 
 final class PreciseOps(val size: Precise) {
-  def toInt: Int           = size.getInt
-  def times                = new TimesBuilder(size)
+  def toInt: Int         = size.getInt
+  def times              = new TimesBuilder(size)
   def indices: VdexRange = indexRange(0, size.getInt)
-  def lastIndex: Index     = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
+  def lastIndex: Index   = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
-  // def + (n: Precise): Precise              = size + n.get
-  def - (n: Precise): Precise              = size - n.get
-  def containsIndex(index: Index): Boolean = indices containsInt index.getInt
+  // def + (n: Precise): Precise         = size + n.get
+  def - (n: Precise): Precise            = size - n.get
+  def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
 
   def min(rhs: Precise): Precise = if (size <= rhs) size else rhs
   // def max(rhs: Precise): Precise = if (size >= rhs) size else rhs
