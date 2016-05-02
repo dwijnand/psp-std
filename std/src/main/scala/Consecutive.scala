@@ -20,14 +20,14 @@ final class Consecutive[+A] private (val startInt: Int, val lastInt: Int, f: Int
   def containsInt(n: Int): Bool         = startInt <= n && n <= lastInt
   // def containsIndex(index: Vindex)   = size containsIndex index
   def map[B](g: A => B): Consecutive[B] = new Consecutive(startInt, lastInt, f andThen g)
-  def asIndices: IndexRange             = startInt to lastInt map (i => Index(i))
+  def asIndices: VdexRange            = startInt to lastInt map (i => Index(i))
 
   def drop(n: Precise): Consecutive[A]        = create(startInt + n.toInt, size - n)
   def dropRight(n: Precise): Consecutive[A]   = create(startInt, size - n)
   def take(n: Precise): Consecutive[A]        = create(startInt, size min n)
   def takeRight(n: Precise): Consecutive[A]   = (size min n) |> (s => create(exclusiveEnd - s.toInt, s))
   def slice(s: Long, e: Long): Consecutive[A] = if (s < 0) slice(0, e) else if (e <= 0 || e <= s) empty else this drop s take e - s
-  def slice(r: VindexRange): Consecutive[A]   = slice(r.startInt, r.exclusiveEnd)
+  def slice(r: VdexRange): Consecutive[A]   = slice(r.startInt, r.exclusiveEnd)
 
   /** Shift the whole range to the left. */
   def << (n: Int): Consecutive[A] = create(startInt - n, size)

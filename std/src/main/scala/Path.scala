@@ -70,7 +70,7 @@ package ops {
     // def /(p: jPath): jPath  = path resolve p
 
     def attrs[A <: BasicFileAttributes : CTag](opts: LinkOption*): A = Files.readAttributes(path, classOf[A], opts: _*)
-    def lastModified: FileTime                                       = optMap(attrs[BasicFileAttributes]())(_.lastModifiedTime).zget
+    // def lastModified: FileTime                                       = optMap(attrs[BasicFileAttributes]())(_.lastModifiedTime).zget
     // def walk(visitor: PathVisitor): Unit                             = Files.walkFileTree(path, visitor)
     // def foreach(f: Path => Unit): Unit                               = walk(PathVisitor simple f)
 

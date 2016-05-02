@@ -8,8 +8,8 @@ trait AllExplicit extends PspApi with PspCreators {
   type Bag[A]               = ExMap[A, Precise]
   type Bool                 = Boolean
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
-  type VindexRange          = Consecutive[Vdex]
-  type IndexRange           = Consecutive[Index]
+  type VdexRange          = Consecutive[Vdex]
+  // type IndexRange           = Consecutive[Index]
   type IntRange             = Consecutive[Int]
   type LongRange            = Consecutive[Long]
   type Renderer             = Show[Doc]
@@ -80,16 +80,16 @@ trait AllExplicit extends PspApi with PspCreators {
   // def assert(assertion: => Boolean, msg: => Any): Unit =
   //   if (!assertion) runtimeException("" + msg)
 
-  // def abortTrace(msg: String): Nothing             = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
-  def bufferMap[A, B: Empty](): scmMap[A, B]       = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def indexRange(start: Int, end: Int): IndexRange = Consecutive.until(start, end) map (x => Index(x))
-  def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
-  def noNull[A](value: A, orElse: => A): A         = if (value == null) orElse else value
-  def nullAs[A] : A                                = null.asInstanceOf[A]
-  def optMap[A, B](x: A)(f: A => B): Option[B]     = if (x == null) None else Some(f(x))
-  // def option[A](p: Boolean, x: => A): Option[A]    = if (p) Some(x) else None
-  def randomPosInt(max: Int): Int                  = scala.util.Random.nextInt(max + 1)
-  // def utf8(xs: Array[Byte]): Utf8                  = new Utf8(xs)
+  // def abortTrace(msg: String): Nothing           = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
+  def bufferMap[A, B: Empty](): scmMap[A, B]        = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
+  def lformat[A](n: Int): FormatFun                 = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def noNull[A](value: A, orElse: => A): A          = if (value == null) orElse else value
+  // def nullAs[A] : A                                 = null.asInstanceOf[A]
+  // def optMap[A, B](x: A)(f: A => B): Option[B]      = if (x == null) None else Some(f(x))
+  // def option[A](p: Boolean, x: => A): Option[A]  = if (p) Some(x) else None
+  def randomPosInt(max: Int): Int                   = scala.util.Random.nextInt(max + 1)
+  // def utf8(xs: Array[Byte]): Utf8                = new Utf8(xs)
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
   def make0[R] : MakeHelper[R]         = new MakeHelper[R]
