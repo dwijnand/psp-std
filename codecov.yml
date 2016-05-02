@@ -2,9 +2,10 @@ comment:
   layout: header, changes, diff
 coverage:
   ignore:
-  - std/src/main/scala/Vec.scala
-  - std/src/main/scala/vecutil.scala
-  - project/testOnly
+  - testing
+  status:
+    changes:
+      enabled: false
   notify:
     gitter:
       default:
@@ -12,4 +13,3 @@ coverage:
         - master
         threshold: 0
         url: https://webhooks.gitter.im/e/0334e6f55c6dfb45637c
-  
