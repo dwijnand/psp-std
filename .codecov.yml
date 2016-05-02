@@ -3,9 +3,6 @@ comment:
 coverage:
   ignore:
   - testing
-  status:
-    changes:
-      enabled: false
   notify:
     gitter:
       default:
