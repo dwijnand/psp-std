@@ -62,7 +62,12 @@ trait Order[@fspec -A] extends Any with Eq[A] {
  *  as "to divide into two parts by a cutting blow".
  */
 
+trait Indexer[-R, +A] extends Any {
+  def apply(x: R, idx: Vdex): A
+}
 trait Splitter[-R, +A, +B] extends Any {
+  def head(x: R): A
+  def tail(x: R): B
   def split(x: R): A -> B
 }
 trait Joiner[+R, -A, -B]  extends Any {
@@ -73,17 +78,24 @@ trait Cleaver[R, A, B] extends Any with Joiner[R, A, B] with Splitter[R, A, B]
 
 object Cleaver {
   def apply[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] = new Cleaver[R, A, B] {
+    def head(x: R): A       = l(x)
+    def tail(x: R): B       = r(x)
     def split(x: R): A -> B = (l(x), r(x))
     def join(x: A, y: B): R = f(x, y)
     def join(x: A -> B): R  = f(x._1, x._2)
   }
 }
 object Splitter {
-  def apply[R, A, B](f: R => (A -> B)): Splitter[R, A, B] =
-    new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
-
-  def apply[R, A, B](l: R => A, r: R => B): Splitter[R, A, B] =
-    new Splitter[R, A, B] { def split(x: R): A -> B = (l(x), r(x)) }
+  def apply[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] {
+    def head(x: R): A       = fst(f(x))
+    def tail(x: R): B       = snd(f(x))
+    def split(x: R): A -> B = f(x)
+  }
+  def apply[R, A, B](l: R => A, r: R => B): Splitter[R, A, B] = new Splitter[R, A, B] {
+    def head(x: R): A       = l(x)
+    def tail(x: R): B       = r(x)
+    def split(x: R): A -> B = (l(x), r(x))
+  }
 }
 object Joiner {
   def apply[R, A, B](f: (A, B) => R): Joiner[R, A, B] =

@@ -1,7 +1,6 @@
 package psp
 package std
 
-
 import api._, all._
 
 sealed abstract class Plist[A] extends Each[A] {
@@ -29,7 +28,7 @@ final case object Pnil extends Plist[Nothing] {
 object Plist {
   def empty[A] : Plist[A]        = Pnil.castTo[Plist[A]]
   def newBuilder[A] : Builder[A] = new Builder[A]()
-  def apply[A](xs: A*): Plist[A] = xs.m.zfoldr[Plist[A]](_ :: _)
+  def apply[A](xs: A*): Plist[A] = xs.zfoldr[Plist[A]](_ :: _)
 
   final class Builder[A] extends Builds[A, Plist[A]] {
     def build(xs: Foreach[A]): Plist[A] = (Each each xs).foldr(empty[A])(_ :: _)

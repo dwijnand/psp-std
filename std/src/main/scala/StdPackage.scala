@@ -30,12 +30,6 @@ trait AllExplicit extends PspApi with PspCreators {
   def stringEq[A] : Hash[A]                        = Eq.ToString
   // def shownEq[A: Show] : Hash[A]                   = hashBy[A](x => render(x))(Eq.ToString)
 
-  def fst[A, B](x: A -> B): A          = x._1
-  def snd[A, B](x: A -> B): B          = x._2
-  // def tuple[A, B](x: A -> B): ((A, B)) = scala.Tuple2(x._1, x._2)
-  // def swap[A, B](x: A -> B): B -> A    = scala.Tuple2(x._2, x._1)
-  def swap[A, B](x: A, y: B): B -> A   = scala.Tuple2(y, x)
-
   def inView[A](mf: Suspended[A]): View[A] = new LinearView(Each(mf))
 
   final val NoIndex       = Index.invalid

@@ -42,7 +42,6 @@ trait AllImplicit extends scala.AnyRef
 trait StdImplicits extends scala.AnyRef
       with StdBuilds
       with StdOps
-      with SetAndMapOps
       with StdUniversal {
 
   self =>
@@ -68,11 +67,6 @@ trait StdImplicits extends scala.AnyRef
     case xs: AtomicView[_, _] => xs.castTo
     case _                    => new LinearView(Each each xs)
   }
-}
-
-trait SetAndMapOps {
-  implicit def opsExtensionalSet[A](x: ExSet[A]): ops.ExSetOps[A]          = new ops.ExSetOps(x)
-  implicit def opsExtensionalMap[K, V](x: ExMap[K, V]): ops.ExMapOps[K, V] = new ops.ExMapOps(x)
 }
 
 trait StdOps0 {
