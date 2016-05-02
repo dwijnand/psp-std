@@ -41,12 +41,18 @@ trait PspApi extends ExternalLibs {
   def abort(msg: String): Nothing                        = runtimeException(msg)
   def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
   def emptyValue[A](implicit z: Empty[A]): A             = z.empty
+  def fst[A, B](x: A -> B): A                            = x._1
   def identity[A](x: A): A                               = x
   def none[A](): Option[A]                               = scala.None
   def pair[@fspec A, @fspec B](x: A, y: B): Tuple2[A, B] = new Tuple2(x, y)
   def show[A](implicit z: Show[A]): Show[A]              = z
   def sideEffect[A](result: A, exprs: Any*): A           = result
+  def snd[A, B](x: A -> B): B                            = x._2
   def some[A](x: A): Option[A]                           = scala.Some(x)
+  def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
+
+  // def tuple[a, b](x: a -> b): ((a, b)) = scala.tuple2(x._1, x._2)
+  // def swap[A, B](x: A -> B): B -> A    = scala.Tuple2(x._2, x._1)
 
   def assert(assertion: => Boolean, msg: => Any): Unit = if (!assertion) runtimeException("" + msg)
 
