@@ -1,8 +1,7 @@
 package psp
 package std
 
-import api._, all._ //, StdEq._
-// import java.util.concurrent.LinkedBlockingQueue
+import api._, all._
 
 object indices {
   def all: Indexed[Index]                      = Indexed(i => i.toIndex)

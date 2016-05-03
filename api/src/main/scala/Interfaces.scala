@@ -28,19 +28,19 @@ trait View[@fspec +A] extends Any with Foreach[A] {
    *  a (possibly empty) uninterrupted subsequence of the elements of the
    *  target collection.
    */
-  def drop(n: Precise): View[A]
-  def dropRight(n: Precise): View[A]
-  def dropWhile(p: ToBool[A]): View[A]
-  def take(n: Precise): View[A]
-  def takeRight(n: Precise): View[A]
-  def takeWhile(p: ToBool[A]): View[A]
+  // def drop(n: Precise): View[A]
+  // def dropRight(n: Precise): View[A]
+  // def dropWhile(p: ToBool[A]): View[A]
+  // def take(n: Precise): View[A]
+  // def takeRight(n: Precise): View[A]
+  // def takeWhile(p: ToBool[A]): View[A]
 
-  def collect[B](pf: A ?=> B): View[B]
-  def map[B](f: A => B): View[B]
-  def flatMap[B](f: A => Foreach[B]): View[B]
-  def withFilter(p: ToBool[A]): View[A]
-  def span(p: ToBool[A]): SplitView[A]
-  def partition(p: ToBool[A]): SplitView[A]
+  // def collect[B](pf: A ?=> B): View[B]
+  // def map[B](f: A => B): View[B]
+  // def flatMap[B](f: A => Foreach[B]): View[B]
+  // def withFilter(p: ToBool[A]): View[A]
+  // def span(p: ToBool[A]): SplitView[A]
+  // def partition(p: ToBool[A]): SplitView[A]
 }
 
 /** When a View is split into two disjoint views.
