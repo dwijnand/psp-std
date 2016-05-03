@@ -85,8 +85,8 @@ sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
   final def build(implicit z: Builds[A, Repr]): Repr       = force[Repr]
 }
 
-sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with IView[A] {
-  final def join(that: IView[A]): IView[A]    = Joined(this, that)
+sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with View[A] {
+  final def join(that: View[A]): View[A]      = Joined(this, that)
   final def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
   final def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))
 }
@@ -157,7 +157,7 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
   }
 }
 
-final case class Joined [A,         Repr](prev: IBaseView[A, Repr], ys: IView[A])   extends CompositeView[A, A, Repr](pp"++ $ys",      _ + ys.size)
+final case class Joined [A,         Repr](prev: IBaseView[A, Repr], ys: View[A])   extends CompositeView[A, A, Repr](pp"++ $ys",      _ + ys.size)
 final case class Filtered    [A   , Repr](prev: BaseView[A, Repr], p: ToBool[A])    extends CompositeView[A, A, Repr](pp"filter $p",   _.atMost)
 final case class Dropped     [A   , Repr](prev: BaseView[A, Repr], n: Precise)      extends CompositeView[A, A, Repr](pp"drop $n",     _ - n)
 final case class DroppedR    [A   , Repr](prev: BaseView[A, Repr], n: Precise)      extends CompositeView[A, A, Repr](pp"dropR $n",    _ - n)

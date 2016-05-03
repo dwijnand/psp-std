@@ -18,13 +18,13 @@ trait AllImplicit extends scala.AnyRef
 
   // Ugh. XXX
 
-  implicit def promoteSize(x: Long): Precise                      = Size(x)
-  implicit def conforms[A] : (A <:< A)                            = new conformance[A]
-  implicit def defaultRenderer: FullRenderer                      = new FullRenderer
-  // implicit def constantPredicate[A](value: Boolean): ToBool[A] = if (value) ConstantTrue else ConstantFalse
-  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B  = f.toPartial
-  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]      = new ops.DirectOps(xs)
-  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]   = new ops.ForeachOps(xs)
+  implicit def promoteSize(x: Long): Precise                     = Size(x)
+  implicit def conforms[A] : (A <:< A)                           = new conformance[A]
+  implicit def defaultRenderer: FullRenderer                     = new FullRenderer
+  implicit def constantPredicate[A](value: Boolean): ToBool[A]   = if (value) ConstantTrue else ConstantFalse
+  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
+  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]     = new ops.DirectOps(xs)
+  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
 
   implicit final class DocSeqOps(xs: Direct[Doc]) {
     def joinLines: String = xs mapNow (x => render(x)) mk_s EOL
@@ -78,9 +78,9 @@ trait StdOps1 extends StdOps0 {
 }
 trait StdOps2 extends StdOps1 {
   // We buried Predef's {un,}augmentString in favor of these.
-  implicit def opsWrapString(x: String): Pstring                                           = new Pstring(x)
-  implicit def opsAlreadyView[A](x: View[A]): ops.IViewOps[A]                              = new ops.IViewOps(x)
-  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.IViewOps[A] = new ops.IViewOps(xs.m)
+  implicit def opsWrapString(x: String): Pstring                                          = new Pstring(x)
+  implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                              = new ops.ViewOps(x)
+  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.ViewOps[A] = new ops.ViewOps(xs.m)
 
   implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                       = new ops.OrderOps[A](x)
   // implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                      = new ops.HasHash(x)
@@ -89,7 +89,7 @@ trait StdOps2 extends StdOps1 {
 }
 
 trait StdOps3 extends StdOps2 {
-  implicit def opsDirectView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.IViewOps[A]   = new ops.IViewOps(new DirectView(ev(xs)))
+  implicit def opsDirectView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.ViewOps[A] = new ops.ViewOps(new DirectView(ev(xs)))
 
   // We're (sickly) using the context bound to reduce the applicability of the implicit,
   // but then discarding it. The only way these can be value classes is if the type class

@@ -4,23 +4,25 @@ package ops
 
 import api._, all._, /* StdShow._, */ StdEq._
 
-trait ViewOps[+A] extends Any {
-  def xs: View[A]
-
-  private def directIsEmpty: Boolean = {
-    xs foreach (_ => return false)
-    true
-  }
-
+final class ViewOps[A](val xs: View[A]) extends AnyVal {
   // def apply(index: Index): A                                         = xs drop index.sizeExcluding head
   // def dropIndex(index: Index): View[A]                               = xs splitAt index mapRight (_ drop 1) rejoin
   // def first[B](pf: A ?=> B): Option[B]                               = find(pf.isDefinedAt) map pf
   // def fold[@fspec B](implicit z: Empty[B]): HasInitialValue[A, B]    = foldFrom(z.empty)
   // def forallTrue(implicit ev: A <:< Boolean): Boolean                = forall(ev)
   // def gatherClass[B: CTag] : View[B]                                 = xs collect classFilter[B]
+  // def gather[B](p: Partial[A, View[B]]): View[B]                     = xs flatMap p.zapply
   // def indicesWhere(p: ToBool[A]): View[Index]                        = zipIndex filterLeft p rights
+  // def intersperse(ys: View[A]): View[A]                              = Split(xs, ys).intersperse
   // def mapApply[B, C](x: B)(implicit ev: A <:< (B => C)): View[C]     = xs map (f => ev(f)(x))
+  // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C]       = groupBy[B](f) map g // Probably this should be groupBy
+  // def memo: Indexed.Memo[A]                                          = new Indexed.Memo(xs)
+  // def minOf[B: Order](f: A => B): B                                  = xs map f min
+  // def quotientSet(implicit z: Eq[A]): View[ExSet[A]]                 = groupBy[A](identity).values map (_.toExSet)
   // def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]                = xs dropWhile p takeWhile q
+  // def sortBy[B](f: A => B)(implicit z: Order[B]): View[A]            = orderOps(orderBy[A](f)).sorted
+  // def sortWith(cmp: OrderRelation[A]): View[A]                       = orderOps(Order(cmp)).sorted
+  // def splitAround(index: Index): A -> Split[A]                       = splitAt(index) |> (lr => (lr onRight (_.head)) -> (lr mapRight (_ tail)))
   // def takeToFirst(p: ToBool[A]): View[A]                             = xs span !p mapRight (_ take 1) rejoin
   // def tee(f: A => String): View[A]                                   = xs map (x => sideEffect(x, println(f(x))))
   // def unzip[L, R](implicit z: Splitter[A, L, R]): View[L] -> View[R] = zipped[L, R] |> (x => x.lefts -> x.rights)
@@ -28,10 +30,12 @@ trait ViewOps[+A] extends Any {
   // def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B                = find(pf.isDefinedAt).fold(z.empty)(pf)
 
   def count(p: ToBool[A]): Int                                   = foldl[Int](0)((res, x) => if (p(x)) res + 1 else res)
+  def cross[B](ys: View[B]): View[A -> B]                        = for (x <- xs ; y <- ys) yield x -> y
   def exists(p: ToBool[A]): Boolean                              = foldl(false)((res, x) => if (p(x)) return true else res)
   def filter(p: ToBool[A]): View[A]                              = xs withFilter p
   def filterNot(p: ToBool[A]): View[A]                           = xs withFilter !p
   def find(p: ToBool[A]): Option[A]                              = foldl(none[A])((res, x) => if (p(x)) return Some(x) else res)
+  def findOr(p: ToBool[A], alt: => A): A                         = find(p) | alt
   def foldFrom[@fspec B](zero: B): HasInitialValue[A, B]         = new HasInitialValue(xs, zero)
   def foldl[@fspec B](zero: B)(f: (B, A) => B): B                = foldFrom(zero) left f
   def foldr[@fspec B](zero: B)(f: (A, B) => B): B                = foldFrom(zero) right f
@@ -41,49 +45,32 @@ trait ViewOps[+A] extends Any {
   def indexWhere(p: ToBool[A]): Index                            = zipIndex findLeft p map snd or NoIndex
   def indexed: WithIndex[A]                                      = new WithIndex[A](xs)
   def init: View[A]                                              = xs dropRight 1
-  def isEmpty: Boolean                                           = xs.size.isZero || directIsEmpty
+  def isEmpty: Boolean                                           = xs.size.isZero || !exists(true)
   def join_s(implicit z: Show[A]): String                        = this mk_s ""
   def last: A                                                    = xs takeRight 1 head
+  def mapIf(pf: Partial[A, A]): View[A]                          = xs map (x => pf.applyOr(x, x))
   def mapNow[B](f: A => B): Vec[B]                               = xs map f toVec
   def mapZip[B](f: A => B): ZipView[A, B]                        = Zip.zip2(xs, xs map f)
+  def maxOf[B: Order](f: A => B): B                              = xs map f max
   def mk_s(sep: Char)(implicit z: Show[A]): String               = this mk_s sep.to_s
   def mk_s(sep: String)(implicit z: Show[A]): String             = (xs map z.show).zfoldl[String]((res, x) => if (res == "") x else res append sep append x)
-  def nonEmpty: Boolean                                          = xs.size.isNonZero || !directIsEmpty
+  def nonEmpty: Boolean                                          = xs.size.isNonZero || exists(true)
+  def product(implicit z: MultiplicativeMonoid[A]): A            = z prod xs.trav
+  def reducel(f: BinOp[A]): A                                    = tail.foldl(head)(f)
+  def reducer(f: BinOp[A]): A                                    = init.foldr(last)(f)
   def slice(range: VdexRange): View[A]                           = xs drop range.startInt take range.size
+  def splitAt(index: Index): Split[A]                            = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
+  def sum(implicit z: AdditiveMonoid[A]): A                      = z sum xs.trav
   def tail: View[A]                                              = xs drop 1
   def toRefs: View[Ref[A]]                                       = xs map (_.toRef)
+  def transpose[B](implicit ev: A <:< View[B]): View2D[B]        = indices.all map (n => xs flatMap (_ drop n.sizeExcluding take 1))
   def zfoldl[B](f: (B, A) => B)(implicit z: Empty[B]): B         = foldl(z.empty)(f)
   def zfoldr[B](f: (A, B) => B)(implicit z: Empty[B]): B         = foldr(z.empty)(f)
   def zipIndex: ZipView[A, Index]                                = xs zip indices.all
   def zip[B](ys: View[B]): ZipView[A, B]                         = Zip.zip2[A, B](xs, ys)
   def zipped[L, R](implicit z: Splitter[A, L, R]): ZipView[L, R] = Zip.zip0[A, L, R](xs)(z)
-}
-
-final class IViewOps[A](val xs: View[A]) extends ViewOps[A] {
-  // def +:(elem: A): View[A] = view(elem) ++ xs
-  // def :+(elem: A): View[A] = xs ++ view(elem)
-
-  def cross[B](ys: View[B]): View[A -> B]                      = for (x <- xs ; y <- ys) yield x -> y
-  def findOr(p: ToBool[A], alt: => A): A                       = find(p) | alt
-  // def gather[B](p: Partial[A, View[B]]): View[B]               = xs flatMap p.zapply
-  // def intersperse(ys: View[A]): View[A]                        = Split(xs, ys).intersperse
-  // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C] = groupBy[B](f) map g // Probably this should be groupBy
-  def mapIf(pf: Partial[A, A]): View[A]                        = xs map (x => pf.applyOr(x, x))
-  def maxOf[B: Order](f: A => B): B                            = xs map f max
-  // def memo: Indexed.Memo[A]                                    = new Indexed.Memo(xs)
-  // def minOf[B: Order](f: A => B): B                            = xs map f min
-  def product(implicit z: MultiplicativeMonoid[A]): A          = z prod xs.trav
-  // def quotientSet(implicit z: Eq[A]): View[ExSet[A]]           = groupBy[A](identity).values map (_.toExSet)
-  def reducel(f: BinOp[A]): A                                  = tail.foldl(head)(f)
-  def reducer(f: BinOp[A]): A                                  = init.foldr(last)(f)
-  // def sortBy[B](f: A => B)(implicit z: Order[B]): View[A]      = orderOps(orderBy[A](f)).sorted
-  // def sortWith(cmp: OrderRelation[A]): View[A]                 = orderOps(Order(cmp)).sorted
-  // def splitAround(index: Index): A -> Split[A]                 = splitAt(index) |> (lr => (lr onRight (_.head)) -> (lr mapRight (_ tail)))
-  def splitAt(index: Index): Split[A]                          = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
-  def sum(implicit z: AdditiveMonoid[A]): A                    = z sum xs.trav
-  def transpose[B](implicit ev: A <:< View[B]): View2D[B]      = indices.all map (n => xs flatMap (_ drop n.sizeExcluding take 1))
-  def zreducel(f: BinOp[A])(implicit z: Empty[A]): A           = if (isEmpty) z.empty else reducel(f)
-  def zreducer(f: BinOp[A])(implicit z: Empty[A]): A           = if (isEmpty) z.empty else reducer(f)
+  def zreducel(f: BinOp[A])(implicit z: Empty[A]): A             = if (isEmpty) z.empty else reducel(f)
+  def zreducer(f: BinOp[A])(implicit z: Empty[A]): A             = if (isEmpty) z.empty else reducer(f)
 
   /** This is kind of horrific but has the advantage of not being as busted.
    *  We need to not be using scala's map because it will always compare keys based
