@@ -15,13 +15,13 @@ final case class Split[A](left: View[A], right: View[A]) extends api.SplitView[A
 }
 
 object Zip {
-  def impl[A, B](xs: ZipView[A, B]): Impl[A, B]                                  = new Impl[A, B](xs)
+  def impl[A, B](xs: ZipView[A, B]): Impl[A, B]                                = new Impl[A, B](xs)
   def zip0[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): Impl[A, B] = impl(new ZipView0(xs))
-  def zip1[A, B](xs: View[A -> B]): Impl[A, B]                                   = impl(new ZipView1(xs))
-  def zip2[A, B](l: View[A], r: View[B]): Impl[A, B]                             = impl(new ZipView2(l, r))
-  // def zip2[A, B](lr: (View[A], View[B])): Impl[A, B]                             = zip2(lr._1, lr._2)
-  // def zipf[A, B](l: View[A])(f: Index => A => B): Impl[A, B]                     = impl(new ZipViewF(l, f))
-  // def zipc[A, B](l: View[A], r: View[B]): Impl[A, B]                             = impl(new CrossView(l, r))
+  def zip1[A, B](xs: View[A -> B]): Impl[A, B]                                 = impl(new ZipView1(xs))
+  def zip2[A, B](l: View[A], r: View[B]): Impl[A, B]                           = impl(new ZipView2(l, r))
+  // def zip2[A, B](lr: (View[A], View[B])): Impl[A, B]                        = zip2(lr._1, lr._2)
+  // def zipf[A, B](l: View[A])(f: Index => A => B): Impl[A, B]                = impl(new ZipViewF(l, f))
+  // def zipc[A, B](l: View[A], r: View[B]): Impl[A, B]                        = impl(new CrossView(l, r))
 
   /** A ZipView has similar operations to a View, but with the benefit of
    *  being aware each element has a left and a right.

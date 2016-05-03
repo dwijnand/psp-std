@@ -1,7 +1,7 @@
 psp.std - a non-standard library
 ================================
 
-[![Build Status](https://travis-ci.org/paulp/psp-std.svg?branch=master)](https://travis-ci.org/paulp/psp-std) [![codecov](https://codecov.io/gh/paulp/psp-std/branch/master/graph/badge.svg)](https://codecov.io/gh/paulp/psp-std) [![Join the chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/paulp/psp-std)
+[![Build Status](https://travis-ci.org/paulp/psp-std.svg?branch=master)](https://travis-ci.org/paulp/psp-std) [![codecov](https://codecov.io/gh/paulp/psp-std/branch/master/graph/badge.svg?bloop)](https://codecov.io/gh/paulp/psp-std) [![Join the chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/paulp/psp-std)
 
 ### Background
 
@@ -22,8 +22,7 @@ initialCommands in console :=  "import psp._, std._, all._, api._, StdEq._, StdS
 Then `sbt console` and you can look around.
 ```scala
 % sbt console
-Using libsbt 0.5.7
-psp-std repl (ammonite 0.5.6, scala 2.11.7, jvm 1.8.0_74)
+psp-std repl (ammonite 0.5.7, scala 2.11.8, jvm 1.8.0_92)
 
 psp> 1 to 20 splitAt 10
 res0: Split[Int] = Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])

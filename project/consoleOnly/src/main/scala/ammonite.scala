@@ -11,6 +11,7 @@ object ReplMain {
   def initImports = sm"""
     |import psp._, std._, all._, api._
     |import StdShow._, StdEq._, INREPL._
+    |import Unsafe.promoteIndex
   """
   // Working around ammonite bugs.
   // https://github.com/lihaoyi/Ammonite/issues/213
