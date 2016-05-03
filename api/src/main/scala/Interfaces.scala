@@ -43,12 +43,6 @@ trait View[@fspec +A] extends Any with Foreach[A] {
   def partition(p: ToBool[A]): SplitView[A]
 }
 
-/** When the operation has an `A` in negative position.
- */
-trait IView[A] extends Any with View[A] {
-  def join(that: IView[A]): IView[A]
-}
-
 /** When a View is split into two disjoint views.
  *  Notably, that's span, partition, and splitAt.
  */

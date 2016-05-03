@@ -37,11 +37,10 @@ trait AllExplicit extends PspApi with PspCreators {
   final val NoPath: jPath = jPath("")
   final val NoUri: jUri   = jUri("")
 
-  private def stdout                  = scala.Console.out
-  // private def putOut(msg: Any): Unit  = sideEffect(stdout print msg, stdout.flush())
-  private def echoOut(msg: Any): Unit = stdout println msg
-  private def aops[A](x: A)           = new ops.AnyOps(x)
-  // private def vops[A](x: View[A])     = new ops.IViewOps(x)
+  private def stdout                    = scala.Console.out
+  // private def putOut(msg: Any): Unit = sideEffect(stdout print msg, stdout.flush())
+  private def echoOut(msg: Any): Unit   = stdout println msg
+  private def aops[A](x: A)             = new ops.AnyOps(x)
 
   // def print[A: Show](x: A): Unit   = putOut(render(x))
   def println[A: Show](x: A): Unit = echoOut(render(x))
