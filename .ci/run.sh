@@ -6,10 +6,15 @@ set -e
 GREP="egrep --line-buffered"
 
 # Look ma I'm testing pipefail.
-if /usr/bin/false | cat; then echo "Failing pipe didn't fail!" && exit 1; fi
+if /usr/bin/false | cat; then
+  echo "Failing pipe didn't fail!" && exit 1
+fi
 
 runTests () {
-  sbt -batch console # just making sure it compiles
+  if sbt console <.ci/repl.txt |& grep -q 'Compilation Failed'; then
+    echo "console smoke test encountered error" && exit 1
+  fi
+
   sbt -batch -no-colors cover
 }
 

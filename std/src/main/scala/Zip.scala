@@ -58,7 +58,7 @@ object Zip {
     def dropWhileSnd(p: ToBool[A2]): This                           = pairs dropWhile (xy => p(snd(xy))) zipped
     def filter(q: Predicate2): This                                 = withFilter(q)
     def filterLeft(q: ToBool[A1]): This                             = withFilter((x, _) => q(x))
-    // def filterRight(q: ToBool[A2]): This                            = withFilter((_, y) => q(y))
+    def filterRight(q: ToBool[A2]): This                            = withFilter((_, y) => q(y))
     def findLeft(p: ToBool[A1]): Option[Both]                       = find((x, _) => p(x))
     // def findRight(p: ToBool[A2]): Option[Both]                      = find((_, y) => p(y))
     def flatMap[B](f: (A1, A2) => Foreach[B]): View[B]              = inView(mf => foreach((x, y) => f(x, y) foreach mf))
