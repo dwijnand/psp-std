@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
 
-set pipefail
+set -o pipefail
 set -e
 GREP="egrep --line-buffered"
+
+# Look ma I'm testing pipefail.
+if /usr/bin/false | cat; then echo "Failing pipe didn't fail!" && exit 1; fi
 
 runTests () {
   sbt -batch console # just making sure it compiles
