@@ -63,7 +63,6 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def sum(implicit z: AdditiveMonoid[A]): A                      = z sum xs.trav
   def tail: View[A]                                              = xs drop 1
   def toRefs: View[Ref[A]]                                       = xs map (_.toRef)
-  // def transpose[B](implicit ev: A <:< View[B]): View2D[B]        = indices.all map (n => xs flatMap (_ drop n.sizeExcluding take 1))
   def zfoldl[B](f: (B, A) => B)(implicit z: Empty[B]): B         = foldl(z.empty)(f)
   def zfoldr[B](f: (A, B) => B)(implicit z: Empty[B]): B         = foldr(z.empty)(f)
   def zipIndex: ZipView[A, Index]                                = xs zip indices.all
