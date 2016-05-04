@@ -17,31 +17,12 @@ trait Foreach[+A] extends Any {
 }
 
 trait Each[@fspec +A]    extends Any with Foreach[A]
+trait View[@fspec +A]    extends Any with Foreach[A]
 trait Indexed[@fspec +A] extends Any with Each[A]    { def elemAt(i: Vdex): A }
 trait Direct[@fspec +A]  extends Any with Indexed[A] { def size: Precise      }
 
 trait ExSet[A]     extends Any with Each[A] { def apply(x: A): Boolean    }
 trait ExMap[K, +V] extends Any              { def lookup: FiniteDom[K, V] }
-
-trait View[@fspec +A] extends Any with Foreach[A] {
-  /** Contiguous operations share the property that the result is always
-   *  a (possibly empty) uninterrupted subsequence of the elements of the
-   *  target collection.
-   */
-  def drop(n: Precise): View[A]
-  def dropRight(n: Precise): View[A]
-  def dropWhile(p: ToBool[A]): View[A]
-  def take(n: Precise): View[A]
-  def takeRight(n: Precise): View[A]
-  def takeWhile(p: ToBool[A]): View[A]
-
-  def collect[B](pf: A ?=> B): View[B]
-  def map[B](f: A => B): View[B]
-  def flatMap[B](f: A => Foreach[B]): View[B]
-  def withFilter(p: ToBool[A]): View[A]
-  def span(p: ToBool[A]): SplitView[A]
-  def partition(p: ToBool[A]): SplitView[A]
-}
 
 /** When a View is split into two disjoint views.
  *  Notably, that's span, partition, and splitAt.

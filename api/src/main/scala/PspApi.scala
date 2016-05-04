@@ -39,6 +39,7 @@ trait PspApi extends ExternalLibs {
   // A few methods it is convenient to expose at this level.
   def ?[A](implicit value: A): A                         = value
   def abort(msg: String): Nothing                        = runtimeException(msg)
+  def cast[A](value: Any): A                             = value.asInstanceOf[A]
   def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
   def emptyValue[A](implicit z: Empty[A]): A             = z.empty
   def fst[A, B](x: A -> B): A                            = x._1

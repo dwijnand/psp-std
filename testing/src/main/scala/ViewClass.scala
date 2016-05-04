@@ -3,11 +3,6 @@ package tests
 
 import psp.std._, all._, api._, StdShow._
 
-object ViewClass {
-  type Op    = ToSelf[ViewClass]
-  type Trans = ToSelf[Op]
-}
-
 /** Methods for comparing against scala views.
  */
 trait ViewClass extends ShowSelf {

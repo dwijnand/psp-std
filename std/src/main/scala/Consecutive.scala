@@ -32,7 +32,7 @@ final class Consecutive[+A] private (val startInt: Int, val lastInt: Int, f: Int
   /** Shift the whole range to the left. */
   // def << (n: Int): Consecutive[A] = create(startInt - n, size)
 
-  def to_s = if (isEmpty) "[]" else if (isPoint) s"[$startInt]" else s"[$startInt..$lastInt]"
+  def to_s = if (isEmpty) "[0,0)" else if (isPoint) s"[$startInt]" else s"[$startInt..$lastInt]"
 }
 
 object Consecutive {
