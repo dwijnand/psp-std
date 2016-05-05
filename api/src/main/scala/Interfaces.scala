@@ -21,15 +21,15 @@ object Foreach {
     def foreach(f: A => Unit): Unit = mf(f)
   }
 }
-final class Builds[@fspec -Elem, +To](val f: Foreach[Elem] => To) {
+final class Builds[-Elem, +To](val f: Foreach[Elem] => To) {
   def build(xs: Foreach[Elem]): To   = f(xs)
   def apply(mf: Suspended[Elem]): To = build(Foreach(mf, Size.Unknown))
 }
 
-trait Each[@fspec +A]    extends Any with Foreach[A]
-trait View[@fspec +A]    extends Any with Foreach[A]
-trait Indexed[@fspec +A] extends Any with Each[A]    { def elemAt(i: Vdex): A }
-trait Direct[@fspec +A]  extends Any with Indexed[A] { def size: Precise      }
+trait Each[+A]    extends Any with Foreach[A]
+trait View[+A]    extends Any with Foreach[A]
+trait Indexed[+A] extends Any with Each[A]    { def elemAt(i: Vdex): A }
+trait Direct[+A]  extends Any with Indexed[A] { def size: Precise      }
 
 trait ExSet[A]     extends Any with Each[A] { def apply(x: A): Boolean    }
 trait ExMap[K, +V] extends Any              { def lookup: FiniteDom[K, V] }
@@ -37,7 +37,7 @@ trait ExMap[K, +V] extends Any              { def lookup: FiniteDom[K, V] }
 /** When a View is split into two disjoint views.
  *  Notably, that's span, partition, and splitAt.
  */
-trait SplitView[@fspec +A] extends Any {
+trait SplitView[+A] extends Any {
   def left: View[A]   // the elements in the left-hand M.
   def right: View[A]  // the elements in the right-hand M.
   def rejoin: View[A] // Moral equivalent of left ++ right.
@@ -46,7 +46,7 @@ trait SplitView[@fspec +A] extends Any {
 /** When a View presents as a sequence of pairs.
  *  There may be two underlying views being zipped, or one view holding pairs.
  */
-trait ZipView[@fspec +A1, @fspec +A2] extends Any {
+trait ZipView[+A1, +A2] extends Any {
   // def relativeSize: Option[Long]
   def lefts: View[A1]        // the left element of each pair. Moral equivalent of pairs map fst.
   def rights: View[A2]       // the right element of each pair. Moral equivalent of pairs map snd.

@@ -26,7 +26,7 @@ final case object Pnil extends Plist[Nothing] {
   def head = abort("Pnil.head")
   def tail = abort("Pnil.tail")
 }
-final class Vec[@fspec A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
+final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   def isEmpty       = length <= 0
   def nonEmpty      = length > 0
   def lastIntIndex  = length - 1
@@ -93,8 +93,8 @@ object Indexed {
 object Vec {
   private val NIL = new Vec[Any](sciVector())
 
-  def empty[@fspec A] : Vec[A]                        = NIL.castTo[Vec[A]]
-  def apply[@fspec A](xs: A*): Vec[A]                 = new Vec[A](xs.toScalaVector)
-  def unapplySeq[@fspec A](x: Vec[A]): Some[scSeq[A]] = Some(x.seq)
-  def newBuilder[@fspec A](): Builds[A, Vec[A]]       = Builds(xs => new Vec[A](xs.seq.toScalaVector))
+  def empty[A] : Vec[A]                        = NIL.castTo[Vec[A]]
+  def apply[A](xs: A*): Vec[A]                 = new Vec[A](xs.toScalaVector)
+  def unapplySeq[A](x: Vec[A]): Some[scSeq[A]] = Some(x.seq)
+  def newBuilder[A](): Builds[A, Vec[A]]       = Builds(xs => new Vec[A](xs.seq.toScalaVector))
 }
