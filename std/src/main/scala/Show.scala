@@ -101,7 +101,7 @@ trait ShowEach extends ShowEach0 {
 
       rows map (formatFns zip _ map (_ apply _) mk_s ' ')
     }
-    def render(implicit z: Show[B]): String = renderLines.joinLines
+    def render(implicit z: Show[B]): String = renderLines mk_s EOL
   }
 
   private def tabular[A](xs: View[A])(columns: ToString[A]*): String =

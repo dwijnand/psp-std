@@ -2,18 +2,28 @@ package psp
 package api
 
 import scala.{ Tuple2, collection => sc }
+import java.{ lang => jl }
 
 // Importing from this is necessary to use these aliases within the api package,
 // where they aren't otherwise visible because there's no api package object.
 private[api] final object Api extends PspApi
 
-trait PspApi extends ext.ScalaLib with ext.JavaLib {
+abstract class PspApi extends ext.ScalaLib with ext.JavaLib {
+  final val MaxInt  = jl.Integer.MAX_VALUE
+  final val MaxLong = jl.Long.MAX_VALUE
+  final val MinInt  = jl.Integer.MIN_VALUE
+  final val MinLong = jl.Long.MIN_VALUE
+  final val EOL     = jl.System getProperty "line.separator"
+
   // Caveat: ?=> associates to the left instead of the right.
   type ->[+A, +B]      = scala.Product2[A, B]        // A less overconstrained product type.
   type ?=>[-A, +B]     = scala.PartialFunction[A, B] // Less clumsy syntax for the all-important partial function.
   type GTOnce[+A]      = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
   type Id[+X]          = X                           // The identity type constructor.
+  type Index           = Vindex[Vindex.Zero.type]
+  type Nth             = Vindex[Vindex.One.type]
   type Ref[+A]         = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
+  type Vdex            = Vindex[_]
   type sCollection[+A] = sc.GenTraversable[A]        // named analogously to jCollection.
 
   // Aliases and constant values for common function types.
@@ -26,14 +36,6 @@ trait PspApi extends ext.ScalaLib with ext.JavaLib {
   type ToSelf[A]          = A => A
   type ToString[-A]       = A => String
   type ToUnit[-A]         = A => Unit
-
-  final val ConstantTrue  = (x: scala.Any) => true
-  final val ConstantFalse = (x: scala.Any) => false
-  final val ->            = Pair
-
-  type Vdex  = Vindex[_]
-  type Index = Vindex[Vindex.Zero.type]
-  type Nth   = Vindex[Vindex.One.type]
 
   // A few methods it is convenient to expose at this level.
   def ?[A](implicit value: A): A                         = value
@@ -51,7 +53,7 @@ trait PspApi extends ext.ScalaLib with ext.JavaLib {
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
 
-  // def tuple[a, b](x: a -> b): ((a, b)) = scala.tuple2(x._1, x._2)
+  // def tuple[a, b](x: a -> b): ((a, b)) = scala.Tuple2(x._1, x._2)
   // def swap[A, B](x: A -> B): B -> A    = scala.Tuple2(x._2, x._1)
 
   def assert(assertion: => Boolean, msg: => Any): Unit = if (!assertion) runtimeException("" + msg)

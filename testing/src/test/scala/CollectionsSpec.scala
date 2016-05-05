@@ -22,10 +22,12 @@ class EmptySpec extends ScalacheckBundle {
       sciList[Bippy]().m.zhead, vec[Bippy]().m.zhead,
       Option.empty[Bippy].zget, Some(new Bippy("mom")).zget)
     ),
-    seqShows(s"0, 0, $MinLong, -1, -1, 0", vec[Long](
-      emptyValue[jPath].any_s.length, emptyValue[jFile].any_s.length,
-      emptyValue[FileTime].toMillis, emptyValue[Index].get,
-      emptyValue[Nth].get, emptyValue[String].length)
+    seqShows("0, 0, -1, -1, 0", vec[Long](
+      emptyValue[jPath].any_s.length,
+      emptyValue[jFile].any_s.length,
+      emptyValue[Index].get,
+      emptyValue[Nth].get,
+      emptyValue[String].length)
     ),
     expectValue(eint)(view[Int]() zreducel (_ + _)),
     expectValue(eint)(view[Int]().zfoldl[Int](_ + _)),
@@ -150,7 +152,7 @@ class GridSpec extends ScalacheckBundle {
     val width = yss.flatten maxOf (_.length)
     val fmt   = lformat(width)
 
-    (yss mmap fmt map (_ mk_s ' ') joinLines).trimLines
+    (yss mmap fmt map (_ mk_s ' ') mk_s EOL).trimLines
   }
   def primePartition6 = sm"""
   |2   4   6   8   10  12
@@ -259,7 +261,7 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, ... ]", punfold),
     // showsAs("[ 1, 2, 3 ], [ 1, 2 ], [ 1 ], [  ], [ 2 ], [ 2, 3 ], [ 3 ]", closure mk_s ", "),
     // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries.to[Vec[Int -> Precise]] mk_s ", "),
-    seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.m.indexed map (i => x => x -> i)),
+    seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),
     seqShows("11, 22, 33, 44", indexRange(1, 50) grep """(.)\1""".r),
     seqShows("99, 1010, 1111", xxNumbers slice (8 takeNext 3).asIndices),
     expectValue[Size](4)(strs.byRef.distinct.force.size),

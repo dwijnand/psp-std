@@ -1,8 +1,7 @@
 package psp
 package std
 
-import api._, all._, StdEq._, StdShow._, Unsafe.inheritedShow
-import lowlevel.CircularBuffer
+import api._, all._, StdShow._, Unsafe.inheritedShow
 
 sealed abstract class AtomicView[A, Repr] extends IBaseView[A, Repr] {
   type This <: AtomicView[A, Repr]
@@ -24,14 +23,6 @@ object FlattenSlice {
     case _                       => xs.size matchOpt { case x: Precise => xs -> x.indices }
   }
 }
-
-// final class StreamView[A, Repr](underlying: jStream[A]) extends AtomicView[A, Repr] {
-//   type This = StreamView[A, Repr]
-//   lazy val size: Precise = Size(underlying.count)
-
-//   @inline def foreach(f: A => Unit): Unit                  = underlying.iterator foreach f
-//   def foreachSlice(range: VdexRange)(f: A => Unit): Unit = underlying slice range foreach f
-// }
 
 final class LinearView[A, Repr](underlying: Each[A]) extends AtomicView[A, Repr] {
   type This = LinearView[A, Repr]
@@ -86,9 +77,7 @@ sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
 }
 
 sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with View[A] {
-  final def join(that: View[A]): View[A]      = Joined(this, that)
-  final def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
-  final def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))
+  final def join(that: View[A]): View[A] = Joined(this, that)
 }
 
 sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEffect: ToSelf[Size]) extends IBaseView[B, Repr] {
@@ -99,75 +88,30 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
     def loop[C](xs: View[C])(f: C => Unit): Unit = {
       type Pred = (ToBool[C] @unchecked) // silencing patmat warnings
       xs match {
-        case FlattenSlice(xs, range)  => foreachSlice(xs, range, f)
-        case Mapped(xs, g)            => loop(xs)(g andThen f)
-        case FlatMapped(xs, g)        => loop(xs)(x => g(x) foreach f)
-        case Filtered(xs, p: Pred)    => loop(xs)(x => if (p(x)) f(x))
-        case TakenWhile(xs, p: Pred)  => foreachTakeWhile(xs, f, p)
-        case DropWhile(xs, p: Pred)   => foreachDropWhile(xs, f, p)
-        case Collected(xs, pf)        => loop(xs)(x => if (pf isDefinedAt x) f(pf(x)))
-        case Joined(xs, ys)           => loop(xs)(f) ; loop(ys)(f)
-        case DroppedR(xs, n: Precise) => foreachDropRight(xs, f, n)
-        case TakenR(xs, n: Precise)   => foreachTakeRight(xs, f, n)
-        case Dropped(xs, Finite(n))   => foreachSlice(xs, n until MaxLong map Index, f)
-        case Taken(xs, n: Precise)    => foreachSlice(xs, n.indices, f)
-        case xs: View[_]              => xs foreach f
-        case _                        => abort(pp"Unexpected view class ${xs.shortClass}")
+        case FlattenSlice(xs, range) => foreachSlice(xs, range, f)
+        case Mapped(xs, g)           => loop(xs)(g andThen f)
+        case FlatMapped(xs, g)       => loop(xs)(x => g(x) foreach f)
+        case Filtered(xs, p: Pred)   => loop(xs)(x => if (p(x)) f(x))
+        case TakenWhile(xs, p: Pred) => ll.foreachTakeWhile(xs, f, p)
+        case DropWhile(xs, p: Pred)  => ll.foreachDropWhile(xs, f, p)
+        case Collected(xs, pf)       => loop(xs)(x => if (pf isDefinedAt x) f(pf(x)))
+        case Joined(xs, ys)          => loop(xs)(f) ; loop(ys)(f)
+        case DroppedR(xs, Finite(0)) => loop(xs)(f)
+        case TakenR(xs, Finite(0))   => ()
+        case DroppedR(xs, n)         => ll.foreachDropRight(xs, f, n)
+        case TakenR(xs, n)           => ll.foreachTakeRight(xs, f, n)
+        case Dropped(xs, Finite(n))  => foreachSlice(xs, n until MaxLong map Index, f)
+        case Taken(xs, n: Precise)   => foreachSlice(xs, n.indices, f)
+        case xs: View[_]             => xs foreach f
+        case _                       => abort(pp"Unexpected view class ${xs.shortClass}")
       }
     }
     if (!size.isZero)
       loop(this)(f)
   }
-
-  private def foreachTakeWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
-    var taken = 0
-    xs foreach { x =>
-      if (p(x)) sideEffect(f(x), taken += 1)
-      else return taken
-    }
-    taken
-  }
-  private def foreachDropWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
-    var dropping = true
-    var dropped  = 0
-    xs foreach { x =>
-      if (dropping && p(x)) dropped += 1
-      else {
-        if (dropping) dropping = false
-        f(x)
-      }
-    }
-    dropped
-  }
-
-  private def foreachTakeRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit = (
-    if (n > 0)
-      (CircularBuffer[A](n) ++= xs) foreach f
-  )
-  private def foreachDropRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit = (
-    if (n.isZero)
-      xs foreach f
-    else
-      lowlevel.ll.foldLeft[A, CircularBuffer[A]](
-        xs,
-        CircularBuffer[A](n),
-        (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x
-      )
-  )
-
   private def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = xs match {
     case Mapped(prev, g) => foreachSlice(prev, range, g andThen f)
-    case _               =>
-      if (range.isEmpty) return
-      val start   = range.head.indexValue
-      val last    = range.last.indexValue
-      var current = 0L
-
-      xs foreach { x =>
-        if (start <= current && current <= last) f(x)
-        current += 1
-        if (current > last) return
-      }
+    case _               => ll.foreachSlice(xs, range, f)
   }
 }
 

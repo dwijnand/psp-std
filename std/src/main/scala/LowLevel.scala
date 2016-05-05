@@ -1,10 +1,8 @@
 package psp
 package std
-package lowlevel
 
-import api._, all._ //, StdEq._
+import api._, all._
 import scala.Tuple2
-// import java.nio.ByteBuffer
 import java.io.{ ByteArrayOutputStream, BufferedInputStream }
 
 object ll {
@@ -30,7 +28,7 @@ object ll {
    *
    *  In the interim one can inspect the bytecode from "sbt console" via
    *
-   *    :javap psp.std.lowlevel.ll$
+   *    :javap psp.std.ll$
    *
    *  The critical elements are that the only non-local call is the function
    *  application, and the function application is specialized - that is, its name
@@ -77,90 +75,96 @@ object ll {
     arr foreach (x => res = f(x, res))
     res
   }
-}
 
-/** Hand specialized on the left, @specialized on the right, value classes for tuple creation.
- */
-// final class ArrowAssocInt(val self: Int) extends AnyVal {
-//   @inline def -> [@fspec B](y: B): Tuple2[Int, B] = Tuple2(self, y)
-// }
-// final class ArrowAssocLong(val self: Long) extends AnyVal {
-//   @inline def -> [@fspec B](y: B): Tuple2[Long, B] = Tuple2(self, y)
-// }
-// final class ArrowAssocDouble(val self: Double) extends AnyVal {
-//   @inline def -> [@fspec B](y: B): Tuple2[Double, B] = Tuple2(self, y)
-// }
-// final class ArrowAssocChar(val self: Char) extends AnyVal {
-//   @inline def -> [@fspec B](y: B): Tuple2[Char, B] = Tuple2(self, y)
-// }
-// final class ArrowAssocBoolean(val self: Boolean) extends AnyVal {
-//   @inline def -> [@fspec B](y: B): Tuple2[Boolean, B] = Tuple2(self, y)
-// }
-final class ArrowAssocRef[A](val self: A) extends AnyVal {
-  @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
-}
-
-final class CircularBuffer[@fspec A](capacity: Precise) extends Direct[A] {
-  assert(!capacity.isZero, "CircularBuffer capacity cannot be 0")
-
-  private[this] def cap: Int            = capacity.getInt
-  private[this] val buffer              = newArray[Any](cap)
-  private[this] var seen                = 0L
-  private[this] def writePointer: Int   = (seen % cap).toInt
-  private[this] def readPointer         = if (isFull) writePointer else 0
-  private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
-
-  @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
-
-  def isFull                         = seen >= cap
-  def elemAt(index: Vdex): A         = buffer((readPointer + index.getInt) % cap).castTo[A]
-  def size: Precise                  = capacity min Size(seen)
-  def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
-  def += (x: A): this.type           = sideEffect(this, setHead(x))
-  def push(x: A): A                  = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
-}
-// final class ByteBufferInputStream(b: ByteBuffer) extends InputStream {
-//   private def empty = !b.hasRemaining
-
-//   override def read()                                       = if (empty) -1 else b.get & 0xFF
-//   override def read(bytes: Array[Byte], off: Int, len: Int) = if (empty) -1 else doto(len min b.remaining)(b.get(bytes, off, _))
-// }
-
-// final class ByteBufferOutputStream(b: ByteBuffer) extends OutputStream {
-//   override def write(x: Int)                                 = b put x.toByte
-//   override def write(bytes: Array[Byte], off: Int, len: Int) = b.put(bytes, off, len)
-// }
-
-// object ArrowAssoc {
-//   val Types = new scala.Specializable.Group((scala.Int, scala.Long, scala.Double, scala.Char, scala.Boolean))
-// }
-
-object CircularBuffer {
-  def builder[@fspec A](capacity: Precise): Builds[A, CircularBuffer[A]] = Builds(xs => CircularBuffer[A](capacity) ++= xs)
-  def apply[@fspec A](capacity: Precise): CircularBuffer[A]              = new CircularBuffer[A](capacity)
-}
-object Streams {
-  final val InputStreamBufferSize = 8192
-
-  def slurp(in: BufferedInputStream): Array[Byte] = {
-    val out = new ByteArrayOutputStream
-    val buf = new Array[Byte](InputStreamBufferSize)
-    def loop(): Array[Byte] = in read buf match {
-      case -1 => out.toByteArray
-      case n  => out.write(buf, 0, n) ; loop()
+  def foreachTakeWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
+    var taken = 0
+    xs foreach { x =>
+      if (!p(x)) return taken
+      f(x)
+      taken += 1
     }
-    sideEffect(loop(), in.close())
+    taken
   }
-  def slurp(in: BufferedInputStream, size: Precise): Array[Byte] = {
-    val len = size.toInt
-    val buf = newArray[Byte](len)
-    def loop(remaining: Int): Array[Byte] = {
-      if (remaining == 0) buf
-      else in.read(buf, len - remaining, remaining) match {
-        case -1 => buf
-        case n  => loop(remaining - n)
+  def foreachDropWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
+    var dropping = true
+    var dropped  = 0
+    xs foreach { x =>
+      if (dropping && p(x)) dropped += 1
+      else {
+        if (dropping) dropping = false
+        f(x)
       }
     }
-    sideEffect(loop(len), in.close())
+    dropped
+  }
+  def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = {
+    if (range.isEmpty) return
+    val start   = range.head.indexValue
+    val last    = range.last.indexValue
+    var current = 0L
+
+    xs foreach { x =>
+      if (start <= current && current <= last) f(x)
+      current += 1
+      if (current > last) return
+    }
+  }
+
+  // Precondition: n > 0
+  def foreachTakeRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit =
+    (CBuf[A](n) ++= xs) foreach f
+
+  // Precondition: n > 0
+  def foreachDropRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit =
+    foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
+
+  final class ArrowAssocRef[A](val self: A) extends AnyVal {
+    @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
+  }
+
+  /** Circular Buffer. */
+  private case class CBuf[@fspec A](capacity: Precise) extends Direct[A] {
+    assert(!capacity.isZero, "CBuf capacity cannot be 0")
+
+    private[this] def cap: Int            = capacity.getInt
+    private[this] val buffer              = newArray[Any](cap)
+    private[this] var seen                = 0L
+    private[this] def writePointer: Int   = (seen % cap).toInt
+    private[this] def readPointer         = if (isFull) writePointer else 0
+    private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
+
+    @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
+
+    def isFull                         = seen >= cap
+    def elemAt(index: Vdex): A         = buffer((readPointer + index.getInt) % cap).castTo[A]
+    def size: Precise                  = capacity min Size(seen)
+    def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
+    def += (x: A): this.type           = sideEffect(this, setHead(x))
+    def push(x: A): A                  = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
+  }
+  object Streams {
+    final val InputStreamBufferSize = 8192
+
+    def slurp(in: BufferedInputStream): Array[Byte] = {
+      val out = new ByteArrayOutputStream
+      val buf = new Array[Byte](InputStreamBufferSize)
+      def loop(): Array[Byte] = in read buf match {
+        case -1 => out.toByteArray
+        case n  => out.write(buf, 0, n) ; loop()
+      }
+      sideEffect(loop(), in.close())
+    }
+    def slurp(in: BufferedInputStream, size: Precise): Array[Byte] = {
+      val len = size.toInt
+      val buf = newArray[Byte](len)
+      def loop(remaining: Int): Array[Byte] = {
+        if (remaining == 0) buf
+        else in.read(buf, len - remaining, remaining) match {
+          case -1 => buf
+          case n  => loop(remaining - n)
+        }
+      }
+      sideEffect(loop(len), in.close())
+    }
   }
 }
