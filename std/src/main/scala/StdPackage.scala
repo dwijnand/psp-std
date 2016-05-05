@@ -6,28 +6,35 @@ import scala.{ collection => sc }
 import sc.{ mutable => scm, immutable => sci }
 
 abstract class AllExplicit extends PspApi with PspCreators {
-  final val Array     = scala.Array
-  final val Failure   = scala.util.Failure
-  final val Nil       = scala.collection.immutable.Nil
-  final val None      = scala.None
-  final val Option    = scala.Option
-  final val SafeLong  = spire.math.SafeLong
-  final val Some      = scala.Some
-  final val Success   = scala.util.Success
-  final val Try       = scala.util.Try
-  final val sciList   = sci.List
-  final val sciMap    = sci.Map
-  final val sciSeq    = sci.Seq
-  final val sciSet    = sci.Set
-  final val sciVector = sci.Vector
-  final val scmMap    = scm.Map
+  final val ->            = Pair
+  final val Array         = scala.Array
+  final val ConstantFalse = (x: scala.Any) => false
+  final val ConstantTrue  = (x: scala.Any) => true
+  final val Failure       = scala.util.Failure
+  final val Nil           = scala.collection.immutable.Nil
+  final val NoFile        = jFile("")
+  final val NoIndex       = Index.invalid
+  final val NoPath        = jPath("")
+  final val NoUri         = jUri("")
+  final val None          = scala.None
+  final val Option        = scala.Option
+  final val SafeLong      = spire.math.SafeLong
+  final val Some          = scala.Some
+  final val Success       = scala.util.Success
+  final val Try           = scala.util.Try
+  final val sciList       = sci.List
+  final val sciMap        = sci.Map
+  final val sciSeq        = sci.Seq
+  final val sciSet        = sci.Set
+  final val sciVector     = sci.Vector
+  final val scmMap        = scm.Map
 
   // Type aliases I don't like enough to have in the API.
   type Bag[A]               = ExMap[A, Precise]
   type Bool                 = Boolean
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
-  type VdexRange          = Consecutive[Vdex]
-  // type IndexRange           = Consecutive[Index]
+  type VdexRange            = Consecutive[Vdex]
+  // type IndexRange        = Consecutive[Index]
   type IntRange             = Consecutive[Int]
   type LongRange            = Consecutive[Long]
   type Renderer             = Show[Doc]
@@ -49,11 +56,6 @@ abstract class AllExplicit extends PspApi with PspCreators {
   // def shownEq[A: Show] : Hash[A]                   = hashBy[A](x => render(x))(Eq.ToString)
 
   def inView[A](mf: Suspended[A]): View[A] = new LinearView(Each(mf))
-
-  final val NoIndex       = Index.invalid
-  final val NoFile: jFile = jFile("")
-  final val NoPath: jPath = jPath("")
-  final val NoUri: jUri   = jUri("")
 
   private def stdout                    = scala.Console.out
   // private def putOut(msg: Any): Unit = sideEffect(stdout print msg, stdout.flush())

@@ -17,8 +17,8 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
 
   def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
 
-  @inline def foreachIndex(f: Vdex => Unit): Unit  = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
-  // @inline def foreachIntIndex(f: Int => Unit): Unit = if (xs.size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, f)
+  @inline def foreachIndex(f: Vdex => Unit): Unit  = if (xs.size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
+  // @inline def foreachIntIndex(f: Int => Unit): Unit = if (xs.size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, f)
 }
 
 final class ForeachOps[A](val xs: Foreach[A]) {
@@ -53,8 +53,8 @@ final class PreciseOps(val size: Precise) {
   def min(rhs: Precise): Precise = if (size <= rhs) size else rhs
   // def max(rhs: Precise): Precise = if (size >= rhs) size else rhs
 
-  // @inline def foreachIndex(f: Index => Unit): Unit  = if (size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
-  // @inline def foreachIntIndex(f: Int => Unit): Unit = if (size.get > 0L) lowlevel.ll.foreachConsecutive(0, lastIndex.getInt, f)
+  // @inline def foreachIndex(f: Index => Unit): Unit  = if (size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
+  // @inline def foreachIntIndex(f: Int => Unit): Unit = if (size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, f)
 }
 
 // final class InputStreamOps(val in: InputStream) extends AnyVal {

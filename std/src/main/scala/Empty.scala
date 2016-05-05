@@ -33,7 +33,7 @@ trait StdEmpty {
 
   // implicit lazy val emptyDoc: Empty.Const[Doc]             = Empty const Doc.empty
   implicit lazy val emptyFile: Empty.Const[jFile]             = Empty const NoFile
-  implicit lazy val emptyFileTime: Empty.Const[FileTime]      = Empty const FileTime.empty
+  // implicit lazy val emptyFileTime: Empty.Const[FileTime]      = Empty const FileTime.empty
   implicit lazy val emptyIndex: Empty.Const[Index]            = Empty const Index.invalid
   implicit lazy val emptyIndexRange: Empty.Const[VdexRange] = Empty const indexRange(0, 0)
   implicit lazy val emptyNth: Empty.Const[Nth]                = Empty const Nth.invalid

@@ -15,6 +15,16 @@ trait Foreach[+A] extends Any {
   def size: Size
   def foreach(f: A => Unit): Unit
 }
+object Foreach {
+  def apply[A](mf: Suspended[A], n: Size): Foreach[A] = new Foreach[A] {
+    def size                        = n
+    def foreach(f: A => Unit): Unit = mf(f)
+  }
+}
+final class Builds[@fspec -Elem, +To](val f: Foreach[Elem] => To) {
+  def build(xs: Foreach[Elem]): To   = f(xs)
+  def apply(mf: Suspended[Elem]): To = build(Foreach(mf, Size.Unknown))
+}
 
 trait Each[@fspec +A]    extends Any with Foreach[A]
 trait View[@fspec +A]    extends Any with Foreach[A]

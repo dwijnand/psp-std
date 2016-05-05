@@ -36,9 +36,9 @@ trait Empty[@fspec +A] extends Any {
 /** Back and forth between a Repr and an Each[A].
  *  Not especially classic in this presentation.
  */
-trait Builds[@fspec -Elem, +To] extends Any {
-  def build(xs: Foreach[Elem]): To
-}
+// trait Builds[@fspec -Elem, +To] extends Any {
+//   def build(xs: Foreach[Elem]): To
+// }
 
 trait Unbuilds[Repr] extends Any {
   type Elem

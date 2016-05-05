@@ -7,7 +7,7 @@ sealed abstract class Plist[A] extends Each[A] {
   def head: A
   def tail: Plist[A]
 
-  def ::(hd: A): Plist[A] = Pcons(hd, this)
+  def ::(head: A): Plist[A] = Pcons(head, this)
   def isEmpty = this eq Pnil
   def size    = if (isEmpty) Size(0) else Size(1).atLeast
 
@@ -26,11 +26,7 @@ final case object Pnil extends Plist[Nothing] {
 }
 
 object Plist {
-  def empty[A] : Plist[A]        = Pnil.castTo[Plist[A]]
-  def newBuilder[A] : Builder[A] = new Builder[A]()
-  def apply[A](xs: A*): Plist[A] = xs.zfoldr[Plist[A]](_ :: _)
-
-  final class Builder[A] extends Builds[A, Plist[A]] {
-    def build(xs: Foreach[A]): Plist[A] = (Each each xs).foldr(empty[A])(_ :: _)
-  }
+  def empty[A] : Plist[A]                 = Pnil.castTo[Plist[A]]
+  def newBuilder[A] : Builds[A, Plist[A]] = new Builds(xs => ll.foldRight[A, Plist[A]](xs, empty[A], _ :: _))
+  def apply[A](xs: A*): Plist[A]          = xs.zfoldr[Plist[A]](_ :: _)
 }

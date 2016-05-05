@@ -19,7 +19,7 @@ object Built {
 }
 
 object Builds {
-  def apply[Elem, To](f: Foreach[Elem] => To): Builds[Elem, To] = new Impl(f)
+  def apply[Elem, To](f: Foreach[Elem] => To): Builds[Elem, To] = new Builds(f)
 
   def ?[Elem, To](implicit z: Builds[Elem, To]) = z
 
@@ -34,10 +34,10 @@ object Builds {
   def sMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] = apply(xs => doto(z())(b => xs foreach (x => b += (fst(x) -> snd(x)))) result)
   def string(): Builds[Char, String]                                                         = apply(xs => doto(new StringBuilder)(b => xs foreach (c => b append c)) toString)
 
-  final class Impl[Elem, To](val f: Foreach[Elem] => To) extends AnyVal with Builds[Elem, To] {
-    def build(xs: Foreach[Elem]): To   = f(xs)
-    def apply(mf: Suspended[Elem]): To = build(Each(mf))
-  }
+  // final class Impl[Elem, To](val f: Foreach[Elem] => To) extends AnyVal with Builds[Elem, To] {
+  //   def build(xs: Foreach[Elem]): To   = f(xs)
+  //   def apply(mf: Suspended[Elem]): To = build(Each(mf))
+  // }
 }
 
 /** These classes all put the expected result type up front,

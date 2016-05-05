@@ -94,9 +94,9 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
   // def join(that: View[A]): View[A]            = new AView(xs, Op.Join(this, that))
 
-  def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
-  def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
   def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))
+  def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
+  def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
 
   // def toRefs: View[Ref[A]]                                       = xs map (_.toRef)
 
@@ -160,7 +160,7 @@ final class View2DOps[A](val xss: View2D[A]) {
  */
 class HasEq[A](xs: View[A])(implicit z: Eq[A]) {
   def contains(x: A): Boolean                     = xs exists (_ === x)
-  def distinct: View[A]                           = xs.zfoldl[Vec[A]]((res, x) => if (res.m contains x) res else res :+ x)
+  def distinct: View[A]                           = xs.zfoldl[Vec[A]]((res, x) => if (new HasEq(res) contains x) res else res :+ x)
   def indexOf(x: A): Index                        = xs indexWhere (_ === x)
   // def indicesOf(x: A): View[Index]                = xs indicesWhere (_ === x)
   // def mapOnto[B](f: A => B): ExMap[A, B]          = toSet mapOnto f
@@ -182,13 +182,13 @@ final class HasEmpty[A](xs: View[A])(implicit z: Empty[A]) {
   def zhead: A = xs take 1 zfoldl ((zero: A, head: A) => head)
 }
 final class HasInitialValue[+A, B](xs: View[A], initial: B) {
-  // def indexed(f: (B, A, Index) => B): B = lowlevel.ll.foldLeftIndexed(xs, initial, f)
-  def left(f: (B, A) => B): B           = lowlevel.ll.foldLeft(xs, initial, f)
-  def right(f: (A, B) => B): B          = lowlevel.ll.foldRight(xs, initial, f)
+  // def indexed(f: (B, A, Index) => B): B = ll.foldLeftIndexed(xs, initial, f)
+  def left(f: (B, A) => B): B           = ll.foldLeft(xs, initial, f)
+  def right(f: (A, B) => B): B          = ll.foldRight(xs, initial, f)
 }
 final class WithIndex[+A](xs: View[A]) {
   // def fold[@fspec B](zero: B)(f: (B, A, Index) => B): B = xs.foldFrom(zero) indexed f
-  // def foreach(f: (A, Index) => Unit): Unit              = lowlevel.ll.foldLeftIndexed[A, Unit](xs, (), (acc, x, i) => f(x, i))
+  // def foreach(f: (A, Index) => Unit): Unit              = ll.foldLeftIndexed[A, Unit](xs, (), (acc, x, i) => f(x, i))
   def map[B](f: Index => A => B): View[B]               = zipped map ((x, i) => f(i)(x))
   // def mapZip[B](f: Index => A => B): ZipView[A, B]      = Zip.zipf(xs)(f)
   def zipped: ZipView[A, Index]                         = xs zip indices.all
