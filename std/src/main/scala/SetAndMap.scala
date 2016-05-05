@@ -35,13 +35,12 @@ object ExMap {
   def apply[K, V](f: FiniteDom[K, V]): ExMap[K, V]                = new Impl(f)
   def apply[K, V](keys: ExSet[K], lookup: Fun[K, V]): ExMap[K, V] = apply(FiniteDom(keys, lookup))
   def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]                 = apply[K, V](ExSet fromJava xs.keySet, Opaque[K, V](xs get _))
-  // def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V]            = apply[K, V](xs.keys.byEquals.toSet, Opaque(xs))
+  def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V]               = apply[K, V](xs.keys.byEquals.toSet, Opaque(xs))
 
   def impl[K, V](xs: ExMap[K, V]): Impl[K, V] = xs match {
     case xs: Impl[K, V] => xs
     case _              => new Impl(xs.lookup)
   }
-
   final class Impl[K, V](val lookup: FiniteDom[K, V]) extends ExMap[K, V] {
     import lookup._
     type Entry = K -> V
@@ -52,7 +51,6 @@ object ExMap {
     def keyVector: Vec[K]                 = keys.toVec
     def entries: ZipView[K, V]            = keyVector mapZip lookup
     def map[V1](g: V => V1): ExMap[K, V1] = ExMap(keySet, f mapOut g)
-    // def apply(key: K): V                      = lookup(key)
-    // def filterKeys(p: ToBool[K]): ExMap[K, V] = ExMap(keys filter p, f)
+    def apply(key: K): V                  = lookup(key)
   }
 }

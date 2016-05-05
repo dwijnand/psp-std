@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, exp._ // , StdShow._
+import api._, exp._
 
 /** Motley objects for which a file of residence is not obvious.
  */
@@ -9,10 +9,6 @@ class FormatFun(val fmt: String) extends (Any => String) with ShowSelf {
   def apply(x: Any): String = stringFormat(fmt, x)
   def to_s = fmt
 }
-// object sys {
-//   def props = scala.sys.props
-//   def env   = scala.sys.env
-// }
 class Partial[A, B](p: ToBool[A], f: A => B) extends (A ?=> B) {
   def isDefinedAt(x: A): Boolean            = p(x)
   def apply(x: A): B                        = f(x)

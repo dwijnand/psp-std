@@ -77,7 +77,6 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs filter (regex isMatch _)
   def init: View[A]                                    = xs dropRight 1
   def mapIf(pf: Partial[A, A]): View[A]                = xs map (x => pf.applyOr(x, x))
-  def mapNow[B](f: A => B): Vec[B]                     = xs map f toVec
   def slice(range: VdexRange): View[A]                 = xs drop range.startInt take range.size
   def sorted(implicit z: Order[A]): View[A]            = xs.toRefArray.inPlace.sort
   def tail: View[A]                                    = xs drop 1
@@ -102,26 +101,8 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
   def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
 
-  /** This is kind of horrific but has the advantage of not being as busted.
-   *  We need to not be using scala's map because it will always compare keys based
-   *  on the inherited equals.
-   */
-  // def groupBy[B: Eq](f: A => B): ExMap[B, View[A]] = {
-  //   var seen: Vec[B] = vec()
-  //   val buf = bufferMap[Index, Vec[A]]()
-  //   xs foreach { x =>
-  //     val fx: B = f(x)
-  //     val idx: Index = seen.m indexOf fx match {
-  //       case NoIndex => seen = seen :+ fx ; seen.lastIndex
-  //       case idx     => idx
-  //     }
-  //     buf(idx) :+= x
-  //   }
-  //   val res = buf.toMap map { case (k, v) => seen(k) -> v.m }
-  //   res.m.toExMap
-  // }
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
-    inView[View[A]](mf => xs.toEach partition p(xs) match {
+    inView[View[A]](mf => xs partition p(xs) match {
       case Split(xs, ys) =>
         mf(xs)
         ys mpartition p foreach mf

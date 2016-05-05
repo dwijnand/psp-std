@@ -2,7 +2,6 @@ package psp
 package std
 
 import api._, all._
-import scala.collection.immutable.VectorBuilder
 
 /** "Native" psp collections.
  */
@@ -55,6 +54,23 @@ final class Vec[@fspec A](private val underlying: sciVector[A]) extends AnyVal w
       ll.foreachConsecutive(0, lastIntIndex, i => f(applyInt(i)))
   }
 }
+object FunctionGrid {
+  def apply[A](xs: View[A])(columns: ToString[A]*): FunctionGrid[A, String] = new FunctionGrid(xs, columns.toVec)
+}
+class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
+  import StdShow._
+  def rows: View2D[B]    = values map (v => functions map (f => f(v)))
+  def columns: View2D[B] = rows.transpose
+
+  def renderLines(implicit z: Show[B]): Vec[String] = {
+    if (values.isEmpty || functions.isEmpty) return vec()
+    val widths    = columns map (_ map z.show map (_.length) max)
+    val formatFns = widths map lformat
+
+    rows map (formatFns zip _ map (_ apply _) mk_s ' ')
+  }
+  def render(implicit z: Show[B]): String = renderLines mk_s EOL
+}
 
 object Plist {
   def empty[A] : Plist[A]                 = Pnil.castTo[Plist[A]]
@@ -80,9 +96,5 @@ object Vec {
   def empty[@fspec A] : Vec[A]                        = NIL.castTo[Vec[A]]
   def apply[@fspec A](xs: A*): Vec[A]                 = new Vec[A](xs.toScalaVector)
   def unapplySeq[@fspec A](x: Vec[A]): Some[scSeq[A]] = Some(x.seq)
-  def newBuilder[@fspec A](): Builds[A, Vec[A]]       = Builds { xs =>
-    val buf = new VectorBuilder[A]
-    xs foreach (buf += _)
-    new Vec(buf.result)
-  }
+  def newBuilder[@fspec A](): Builds[A, Vec[A]]       = Builds(xs => new Vec[A](xs.seq.toScalaVector))
 }

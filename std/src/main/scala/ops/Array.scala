@@ -48,6 +48,7 @@ final class InPlace[A](val xs: Array[A]) extends AnyVal {
     // case xs: Array[AnyRef] => java.util.Arrays.sort[AnyRef](xs, Eq.refComparator)
     case _                 => ???
   }
+  private def randomPosInt(max: Int): Int = scala.util.Random.nextInt(max + 1)
 
   // def insertionSort(implicit z: Order[A]): Array[A] = sideEffect(xs, Sorting.insertionSort[A](xs)(z, null))
   // def quickSort(implicit z: Order[A]): Array[A]     = sideEffect(xs, Sorting.quickSort[A](xs)(z, null))

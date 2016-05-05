@@ -4,7 +4,7 @@ package std
 import api._, all._
 
 object Direct extends Constructions[Direct] {
-  def construct[A](size: Size, mf: Suspended[A]): Vec[A] = Vec.newBuilder[A] build Each(mf)
+  def construct[A](size: Size, mf: Suspended[A]): Vec[A] = Vec.newBuilder[A]()(mf)
   def array[A](xs: Array[A]): Direct[A]                  = new WrapArray[A](xs)
   def reversed[A](xs: Direct[A]): Reversed[A]            = new Reversed(xs)
   def string(s: String): Direct[Char]                    = new WrapString(s)
@@ -25,7 +25,6 @@ object Direct extends Constructions[Direct] {
     def elemAt(i: Vdex) = xs elemAt xs.lastIndex - i.get
   }
 }
-
 object Each extends Constructions[Each] {
   def apply[A](mf: Suspended[A]): Each[A]                 = new Impl[A](Size.Unknown, mf)
   def construct[A](size: Size, mf: Suspended[A]): Each[A] = new Impl[A](size, mf)
