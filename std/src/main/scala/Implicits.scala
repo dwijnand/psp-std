@@ -35,10 +35,6 @@ trait AllImplicit extends scala.AnyRef
 {
   self =>
 
-  import StdShow._
-
-  // Ugh. XXX
-
   implicit def promoteSize(x: Long): Precise                     = Size(x)
   implicit def conforms[A] : (A <:< A)                           = new conformance[A]
   implicit def defaultRenderer: FullRenderer                     = new FullRenderer
@@ -46,10 +42,6 @@ trait AllImplicit extends scala.AnyRef
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
   implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]     = new ops.DirectOps(xs)
   implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
-
-  implicit final class DocSeqOps(xs: Direct[Doc]) {
-    def joinLines: String = xs mapNow (x => render(x)) mk_s EOL
-  }
 }
 
 /** This file needs to not import `object all` because that's cycle city,

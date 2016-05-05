@@ -26,18 +26,11 @@ object Builds {
   import Java._
 
   def array[A: CTag]: Builds[A, Array[A]]                                                    = apply(xs => doto(Array.newBuilder[A])(_ ++= xs.trav).result)
-  // def direct[A](): Builds[A, Vec[A]]                                                         = new Vec.Builder[A]
   def exMap[K : Eq, V] : Builds[K -> V, ExMap[K, V]]                                         = ?[K->V, jMap[K, V]] map (ExMap fromJava _)
   def exSet[A : Eq]: Builds[A, ExSet[A]]                                                     = ?[A, jSet[A]] map (ExSet fromJava _)
-  // def list[A](): Builds[A, Plist[A]]                                                         = new Plist.Builder[A]
   def sCollection[A, That](implicit z: CanBuild[A, That]): Builds[A, That]                   = apply(xs => doto(z())(b => xs foreach (b += _)) result)
   def sMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] = apply(xs => doto(z())(b => xs foreach (x => b += (fst(x) -> snd(x)))) result)
   def string(): Builds[Char, String]                                                         = apply(xs => doto(new StringBuilder)(b => xs foreach (c => b append c)) toString)
-
-  // final class Impl[Elem, To](val f: Foreach[Elem] => To) extends AnyVal with Builds[Elem, To] {
-  //   def build(xs: Foreach[Elem]): To   = f(xs)
-  //   def apply(mf: Suspended[Elem]): To = build(Each(mf))
-  // }
 }
 
 /** These classes all put the expected result type up front,

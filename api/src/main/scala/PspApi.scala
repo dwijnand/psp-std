@@ -52,9 +52,7 @@ abstract class PspApi extends ext.ScalaLib with ext.JavaLib {
   def snd[A, B](x: A -> B): B                            = x._2
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
-
-  // def tuple[a, b](x: a -> b): ((a, b)) = scala.Tuple2(x._1, x._2)
-  // def swap[A, B](x: A -> B): B -> A    = scala.Tuple2(x._2, x._1)
+  def tuple[A, B](x: A -> B): ((A, B))                   = scala.Tuple2(fst(x), snd(x))
 
   def assert(assertion: => Boolean, msg: => Any): Unit = if (!assertion) runtimeException("" + msg)
 

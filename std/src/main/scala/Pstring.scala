@@ -38,6 +38,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   // def length: Int                             = self.length
   // def replaceChar(pair: Char -> Char): String = self.replace(pair._1, pair._2)
 
+  def ~(that: String): String                       = this append that
   def append(that: String): String                  = self + that   /** Note to self: don't touch this `+`. */
   def capitalize: String                            = applyIfNonEmpty[String](self)(s => s.head.toUpper.to_s append s.tail.force)
   def charSeq: scSeq[Char]                          = chars.m.seq

@@ -71,9 +71,10 @@ class ADTSpec extends ScalacheckBundle {
   val m1 = f1.traced(
     x => seen += s"f($x): ",
     x => seen += s"$x "
-    )
+  )
+
   lazy val m1trace = {
-    xs mapNow m1
+    xs map m1 force;
     seen.trim
   }
 
@@ -463,7 +464,7 @@ class CollectionsSpec extends ScalacheckBundle {
         pset union pset
       ),
       expectTypes[Vec[_]](
-        pvec mapNow identity,
+        pvec map identity build,
         pvec ++ pvec,
         pvec.m ++ pvec.m build,
         pvec.tail.force,

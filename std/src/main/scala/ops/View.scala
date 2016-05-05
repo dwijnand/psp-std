@@ -5,32 +5,35 @@ package ops
 import api._, all._, StdEq._
 
 final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
-  def count(p: ToBool[A]): Int                           = foldl[Int](0)((res, x) => if (p(x)) res + 1 else res)
-  def exists(p: ToBool[A]): Boolean                      = foldl(false)((res, x) => if (p(x)) return true else res)
-  def find(p: ToBool[A]): Option[A]                      = foldl(none[A])((res, x) => if (p(x)) return Some(x) else res)
-  def findOr(p: ToBool[A], alt: => A): A                 = find(p) | alt
-  def foldl[B](zero: B)(f: (B, A) => B): B               = ll.foldLeft(xs, zero, f)
-  def foldr[B](zero: B)(f: (A, B) => B): B               = ll.foldRight(xs, zero, f)
-  def forall(p: ToBool[A]): Boolean                      = foldl(true)((_, x) => p(x) || { return false })
-  def head: A                                            = (xs take 1).force.head
-  def indexWhere(p: ToBool[A]): Index                    = xs.zipIndex findLeft p map snd or NoIndex
-  def isEmpty: Boolean                                   = xs.size.isZero || !exists(true)
-  def join_s(implicit z: Show[A]): String                = this mk_s ""
-  def last: A                                            = xs takeRight 1 head
-  def max(implicit z: Order[A]): A                       = xs reducel (_ max _)
-  def maxOf[B: Order](f: A => B): B                      = xs map f max
-  def mk_s(sep: Char)(implicit z: Show[A]): String       = this mk_s sep.to_s
-  def mk_s(sep: String)(implicit z: Show[A]): String     = (xs map z.show).zfoldl[String]((res, x) => if (res == "") x else res append sep append x)
-  def nonEmpty: Boolean                                  = xs.size.isNonZero || exists(true)
-  def product(implicit z: MultiplicativeMonoid[A]): A    = z prod xs.trav
-  def reducel(f: BinOp[A]): A                            = xs.tail.foldl(head)(f)
-  def reducer(f: BinOp[A]): A                            = xs.init.foldr(last)(f)
-  def sum(implicit z: AdditiveMonoid[A]): A              = z sum xs.trav
-  def zfoldl[B](f: (B, A) => B)(implicit z: Empty[B]): B = foldl(z.empty)(f)
-  def zfoldr[B](f: (A, B) => B)(implicit z: Empty[B]): B = foldr(z.empty)(f)
-  def zhead(implicit z: Empty[A]): A                     = xs take 1 findOr (ConstantTrue, emptyValue)
-  def zreducel(f: BinOp[A])(implicit z: Empty[A]): A     = if (xs.isEmpty) z.empty else reducel(f)
-  def zreducer(f: BinOp[A])(implicit z: Empty[A]): A     = if (xs.isEmpty) z.empty else reducer(f)
+  def count(p: ToBool[A]): Int                        = foldl[Int](0)((res, x) => if (p(x)) res + 1 else res)
+  def exists(p: ToBool[A]): Boolean                   = foldl(false)((res, x) => if (p(x)) return true else res)
+  def find(p: ToBool[A]): Option[A]                   = foldl(none[A])((res, x) => if (p(x)) return Some(x) else res)
+  def findOr(p: ToBool[A], alt: => A): A              = find(p) | alt
+  def foldl[B](zero: B)(f: (B, A) => B): B            = ll.foldLeft(xs, zero, f)
+  def foldr[B](zero: B)(f: (A, B) => B): B            = ll.foldRight(xs, zero, f)
+  def forall(p: ToBool[A]): Boolean                   = foldl(true)((_, x) => p(x) || { return false })
+  def head: A                                         = (xs take 1).force.head
+  def indexWhere(p: ToBool[A]): Index                 = xs.zipIndex findLeft p map snd or NoIndex
+  def isEmpty: Boolean                                = xs.size.isZero || !exists(true)
+  def last: A                                         = xs takeRight 1 head
+  def max(implicit z: Order[A]): A                    = xs reducel (_ max _)
+  def maxOf[B: Order](f: A => B): B                   = xs map f max
+  def nonEmpty: Boolean                               = xs.size.isNonZero || exists(true)
+  def product(implicit z: MultiplicativeMonoid[A]): A = z prod xs.trav
+  def reducel(f: BinOp[A]): A                         = xs.tail.foldl(head)(f)
+  def reducer(f: BinOp[A]): A                         = xs.init.foldr(last)(f)
+  def sum(implicit z: AdditiveMonoid[A]): A           = z sum xs.trav
+  def zfoldl[B: Empty](f: (B, A) => B): B             = ll.foldLeft(xs, emptyValue[B], f)
+  def zfoldr[B: Empty](f: (A, B) => B): B             = ll.foldRight(xs, emptyValue[B], f)
+  def zhead(implicit z: Empty[A]): A                  = xs match { case Each(head, _*) => head ; case _ => z.empty }
+  def zreducel(f: BinOp[A])(implicit z: Empty[A]): A  = if (xs.isEmpty) z.empty else reducel(f)
+  def zreducer(f: BinOp[A])(implicit z: Empty[A]): A  = if (xs.isEmpty) z.empty else reducer(f)
+
+  def joinLines(implicit z: Show[A]): String         = this mk_s EOL
+  def join_s(implicit z: Show[A]): String            = this mk_s ""
+  def mk_s(sep: Char)(implicit z: Show[A]): String   = this mk_s sep.to_s
+  def mk_s(sep: String)(implicit z: Show[A]): String = xs map z.show zreducel ((l, r) => cond(l == "", "", l ~ sep) ~ r)
+  def to_s(implicit z: Show[A]): String              = "[ " + ( xs mk_s ", " ) + " ]"
 }
 
 final case class AView[A, B](xs: View[A], op: Op[A, B]) extends View[B] {
@@ -74,7 +77,6 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs filter (regex isMatch _)
   def init: View[A]                                    = xs dropRight 1
   def mapIf(pf: Partial[A, A]): View[A]                = xs map (x => pf.applyOr(x, x))
-  def mapNow[B](f: A => B): Vec[B]                     = xs map f toVec
   def slice(range: VdexRange): View[A]                 = xs drop range.startInt take range.size
   def sorted(implicit z: Order[A]): View[A]            = xs.toRefArray.inPlace.sort
   def tail: View[A]                                    = xs drop 1
@@ -99,26 +101,8 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
   def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
 
-  /** This is kind of horrific but has the advantage of not being as busted.
-   *  We need to not be using scala's map because it will always compare keys based
-   *  on the inherited equals.
-   */
-  // def groupBy[B: Eq](f: A => B): ExMap[B, View[A]] = {
-  //   var seen: Vec[B] = vec()
-  //   val buf = bufferMap[Index, Vec[A]]()
-  //   xs foreach { x =>
-  //     val fx: B = f(x)
-  //     val idx: Index = seen.m indexOf fx match {
-  //       case NoIndex => seen = seen :+ fx ; seen.lastIndex
-  //       case idx     => idx
-  //     }
-  //     buf(idx) :+= x
-  //   }
-  //   val res = buf.toMap map { case (k, v) => seen(k) -> v.m }
-  //   res.m.toExMap
-  // }
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
-    inView[View[A]](mf => xs.toEach partition p(xs) match {
+    inView[View[A]](mf => xs partition p(xs) match {
       case Split(xs, ys) =>
         mf(xs)
         ys mpartition p foreach mf
