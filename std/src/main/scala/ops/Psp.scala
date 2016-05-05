@@ -8,7 +8,7 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def head: A = apply(Index(0))
   def last: A = apply(lastIndex)
   def tail    = xs.drop(1)
-  // def init    = xs.dropRight(1)
+  def init    = xs.dropRight(1)
 
   def reverse: Direct[A] = Direct reversed xs
   def apply(i: Vdex): A  = xs elemAt i
@@ -17,8 +17,10 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
 
   def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
 
-  @inline def foreachIndex(f: Vdex => Unit): Unit  = if (xs.size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
-  // @inline def foreachIntIndex(f: Int => Unit): Unit = if (xs.size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, f)
+  @inline def foreachIndex(f: Vdex => Unit): Unit = (
+    if (xs.size.isNonZero)
+      ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
+  )
 }
 
 final class ForeachOps[A](val xs: Foreach[A]) {
@@ -29,7 +31,7 @@ final class ForeachOps[A](val xs: Foreach[A]) {
   def toRefs: Each[Ref[A]]        = each map castRef
   def toRefArray(): Array[Ref[A]] = toRefs.force
   def each: Each[A]               = Each(xs foreach _)
-  def view: View[A]               = each.m
+  def view: View[A]               = each
 }
 final class DocOps(val lhs: Doc) extends AnyVal {
   def doc: Doc                             = lhs
@@ -112,15 +114,10 @@ final class SizeOps(val lhs: Size) extends AnyVal {
 final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
   outer =>
 
-  def applyOrElse(x: A, g: A => B): B       = if (f isDefinedAt x) f(x) else g(x)
-  def zfold[C: Empty](x: A)(g: B => C): C   = if (f isDefinedAt x) g(f(x)) else emptyValue[C]
+  def applyOrElse(x: A, g: A => B): B       = cond(f isDefinedAt x, f(x), g(x))
+  def zfold[C: Empty](x: A)(g: B => C): C   = cond(f isDefinedAt x, g(f(x)), emptyValue)
   def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
   def get(x: A): Option[B]                  = zfold(x)(some)
-
-  // zapply(x)
-  // if (f isDefinedAt x) Some(f(x)) else None
-  // def getOr(key: A, alt: => B): B        = get(key) getOrElse alt
-  // def orElse(g: Fun[A, B]): Fun[A, B]    = OrElse(f, g)
   def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Fun(g), f)
   def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Fun(g))
 
@@ -135,5 +132,5 @@ final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
   }
 
   def traced(in: A => Unit, out: B => Unit): Fun[A, B] =
-    f mapIn[A] (x => doto(x)(in)) mapOut (x => doto(x)(out))
+    mapIn[A](x => doto(x)(in)) mapOut (x => doto(x)(out))
 }

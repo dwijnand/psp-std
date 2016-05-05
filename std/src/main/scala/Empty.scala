@@ -31,12 +31,10 @@ trait StdEmpty {
   implicit def emptyTuple[A: Empty, B: Empty]: Empty[(A, B)]          = Empty(pair(emptyValue[A], emptyValue[B]))
   implicit def emptyView[A, R] : Empty[AtomicView[A, R]]              = Empty(new LinearView(Pnil))
 
-  // implicit lazy val emptyDoc: Empty.Const[Doc]             = Empty const Doc.empty
-  implicit lazy val emptyFile: Empty.Const[jFile]             = Empty const NoFile
-  // implicit lazy val emptyFileTime: Empty.Const[FileTime]      = Empty const FileTime.empty
-  implicit lazy val emptyIndex: Empty.Const[Index]            = Empty const Index.invalid
+  implicit lazy val emptyFile: Empty.Const[jFile]           = Empty const NoFile
+  implicit lazy val emptyIndex: Empty.Const[Index]          = Empty const Index.invalid
   implicit lazy val emptyIndexRange: Empty.Const[VdexRange] = Empty const indexRange(0, 0)
-  implicit lazy val emptyNth: Empty.Const[Nth]                = Empty const Nth.invalid
-  implicit lazy val emptyPath: Empty.Const[jPath]             = Empty const NoPath
-  implicit lazy val emptyString: Empty.Const[String]          = Empty const ""
+  implicit lazy val emptyNth: Empty.Const[Nth]              = Empty const Nth.invalid
+  implicit lazy val emptyPath: Empty.Const[jPath]           = Empty const NoPath
+  implicit lazy val emptyString: Empty.Const[String]        = Empty const ""
 }

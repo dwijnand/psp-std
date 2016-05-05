@@ -1,8 +1,13 @@
 package psp
-package ext
+package api
 
 import scala.{ collection => sc }
 import sc.{ mutable => scm, immutable => sci }
+// import scala.annotation.unchecked.{ uncheckedVariance => uV }
+import java.{ lang => jl }
+import java.{ util => ju }
+import java.{ io => jio }
+import java.nio.{ file => jnf }
 
 /** Building a default namespace consciously rather than accretively.
  *  Primarily these are various "magic" types which cannot be avoided
@@ -22,7 +27,7 @@ import sc.{ mutable => scm, immutable => sci }
  *   - PartialFunction has all of Function1's and then some
  *   - DelayedInit is very special but it's garbage so omitted
  */
-trait ScalaLib {
+trait ExternalTypes {
   // The top and bottom types.
   type Any     = scala.Any
   type AnyRef  = scala.AnyRef
@@ -89,6 +94,49 @@ trait ScalaLib {
   type MultiplicativeMonoid[A] = spire.algebra.MultiplicativeMonoid[A]
   type SafeLong                = spire.math.SafeLong
   type UInt                    = spire.math.UInt
+
+  // Types from java.
+  type AssertionError                = jl.AssertionError
+  type ClassCastException            = jl.ClassCastException
+  type Exception                     = jl.Exception
+  type IOException                   = jio.IOException
+  type IllegalArgumentException      = jl.IllegalArgumentException
+  type IndexOutOfBoundsException     = jl.IndexOutOfBoundsException
+  type NoSuchElementException        = ju.NoSuchElementException
+  type RuntimeException              = jl.RuntimeException
+  type Throwable                     = jl.Throwable
+  type UnsupportedOperationException = jl.UnsupportedOperationException
+
+  type Class[A]             = jl.Class[A]
+  type Comparable[A]        = jl.Comparable[A]
+  type Comparator[-A]       = ju.Comparator[A @uV]
+  type InputStream          = jio.InputStream
+  type OutputStream         = jio.OutputStream
+  type String               = jl.String
+  type StringBuilder        = jl.StringBuilder
+  type Thread               = jl.Thread
+  type jArrayList[A]        = ju.ArrayList[A]
+  type jCharSequence        = jl.CharSequence
+  type jClass               = jl.Class[_]
+  type jClassLoader         = jl.ClassLoader
+  type jEnum[E <: jEnum[E]] = jl.Enum[E]
+  type jEnumeration[A]      = ju.Enumeration[A]
+  type jFile                = jio.File
+  type jHashMap[K, V]       = ju.HashMap[K, V]
+  type jHashSet[A]          = ju.HashSet[A]
+  type jIterable[+A]        = jl.Iterable[A @uV]
+  type jIterator[+A]        = ju.Iterator[A @uV]
+  type jList[A]             = ju.List[A]
+  type jMap[K, V]           = ju.Map[K, V]
+  type jOptional[+A]        = ju.Optional[A @uV]
+  type jPath                = jnf.Path
+  type jSet[A]              = ju.Set[A]
+  type jSortedMap[K, V]     = ju.SortedMap[K, V]
+  type jSortedSet[A]        = ju.SortedSet[A]
+  type jStream[A]           = ju.stream.Stream[A]
+  type jTreeMap[K, V]       = ju.TreeMap[K, V]
+  type jTreeSet[A]          = ju.TreeSet[A]
+  type jUri                 = java.net.URI
 
   // You can't use string interpolation without a StringContext term in scope.
   def StringContext = scala.StringContext

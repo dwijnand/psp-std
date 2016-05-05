@@ -31,7 +31,6 @@ abstract class AllExplicit extends PspApi {
 
   // Type aliases I don't like enough to have in the API.
   type Bag[A]               = ExMap[A, Precise]
-  type Bool                 = Boolean
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
   type VdexRange            = Consecutive[Vdex]
   type IntRange             = Consecutive[Int]
@@ -82,7 +81,6 @@ abstract class AllExplicit extends PspApi {
   // def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
 
   def arr[A: CTag](xs: A*): Array[A]                = xs.toArray[A]
-  def cond[A](p: Bool, thenp: => A, elsep: => A): A = if (p) thenp else elsep
   def list[A](xs: A*): Plist[A]                     = new Conversions(view(xs: _*)) toPlist
   def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]       = ExMap fromScala (xs map tuple toMap)
   def set[A: Eq](xs: A*): ExSet[A]                  = new Conversions(view(xs: _*)) toExSet
