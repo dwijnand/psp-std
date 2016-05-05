@@ -30,8 +30,7 @@ trait Bundle extends ShowSelf {
     println(s"$str passed: $msg")
     ok
   }
-  def finish(): Boolean = finish(this.shortClass stripSuffix "$")
-
+  def finish(): Boolean = finish(classNameOf(this) stripSuffix "$")
 
   def to_s = bundle
 }

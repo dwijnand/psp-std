@@ -20,7 +20,7 @@ object FlattenSlice {
     case TakenR(xs, n)           => unapply(xs) map { case (xs, range) => (xs, range takeRight n) }
     case Dropped(xs, n)          => unapply(xs) map { case (xs, range) => (xs, range drop n) }
     case Taken(xs, n)            => unapply(xs) map { case (xs, range) => (xs, range take n) }
-    case _                       => xs.size matchOpt { case x: Precise => xs -> x.indices }
+    case _                       => xs.size matchIf { case x: Precise => some(xs -> x.indices) }
   }
 }
 
@@ -103,7 +103,7 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
         case Dropped(xs, Finite(n))  => foreachSlice(xs, n until MaxLong map Index, f)
         case Taken(xs, n: Precise)   => foreachSlice(xs, n.indices, f)
         case xs: View[_]             => xs foreach f
-        case _                       => abort(pp"Unexpected view class ${xs.shortClass}")
+        case _                       => abort(pp"Unexpected view class ${classNameOf(xs)}")
       }
     }
     if (!size.isZero)

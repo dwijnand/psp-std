@@ -26,8 +26,8 @@ final class ForeachOps[A](val xs: Foreach[A]) {
 
   def trav: scTraversable[A]      = to[scTraversable] // flatMap, usually
   def seq: scSeq[A]               = to[scSeq]         // varargs or unapplySeq, usually
-  def toRefs                      = Each[A](xs foreach _) map (_.toRef)
-  def toRefArray(): Array[Ref[A]] = Builds.array[Ref[A]] build xs.toRefs
+  def toRefs: Each[Ref[A]]        = each map castRef
+  def toRefArray(): Array[Ref[A]] = toRefs.force
   def each: Each[A]               = Each(xs foreach _)
   def view: View[A]               = each.m
 }
@@ -83,8 +83,6 @@ final class SizeOps(val lhs: Size) extends AnyVal {
     case x: Atomic      => x
   }
 
-  // def slice(range: VdexRange): Size = (this - range.startInt) min range.size
-
   /** For instance taking the union of two sets. The new size is
    *  at least the size of the larger operand, but at most the sum
    *  of the two sizes.
@@ -114,11 +112,17 @@ final class SizeOps(val lhs: Size) extends AnyVal {
 final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
   outer =>
 
-  def get(x: A): Option[B]            = if (f isDefinedAt x) Some(f(x)) else None
-  // def getOr(key: A, alt: => B): B     = get(key) getOrElse alt
-  // def orElse(g: Fun[A, B]): Fun[A, B] = OrElse(f, g)
-  def mapIn[C](g: C => A): Fun[C, B]  = AndThen(Fun(g), f)
-  def mapOut[C](g: B => C): Fun[A, C] = AndThen(f, Fun(g))
+  def applyOrElse(x: A, g: A => B): B       = if (f isDefinedAt x) f(x) else g(x)
+  def zfold[C: Empty](x: A)(g: B => C): C   = if (f isDefinedAt x) g(f(x)) else emptyValue[C]
+  def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
+  def get(x: A): Option[B]                  = zfold(x)(some)
+
+  // zapply(x)
+  // if (f isDefinedAt x) Some(f(x)) else None
+  // def getOr(key: A, alt: => B): B        = get(key) getOrElse alt
+  // def orElse(g: Fun[A, B]): Fun[A, B]    = OrElse(f, g)
+  def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Fun(g), f)
+  def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Fun(g))
 
   def defaulted(g: A => B): Defaulted[A, B] = f match {
     case Defaulted(_, u) => Defaulted(g, u)
@@ -130,12 +134,6 @@ final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
     case _               => FilterIn(p, f)
   }
 
-  def traced(in: A => Unit, out: B => Unit): Fun[A, B] = ( f
-    .   mapIn[A] { x => in(x) ; x }
-    .  mapOut[B] { x => out(x) ; x }
-  )
-  // def memoized: Fun[A, B] = {
-  //   val cache = scala.collection.mutable.Map[A, B]()
-  //   Opaque[A, B](x => cache.getOrElseUpdate(x, f(x))) filterIn (x => (cache contains x) || (f isDefinedAt x))
-  // }
+  def traced(in: A => Unit, out: B => Unit): Fun[A, B] =
+    f mapIn[A] (x => doto(x)(in)) mapOut (x => doto(x)(out))
 }

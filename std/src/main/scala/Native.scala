@@ -73,7 +73,7 @@ class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
 }
 
 object Plist {
-  def empty[A] : Plist[A]                 = Pnil.castTo[Plist[A]]
+  def empty[A] : Plist[A]                 = cast(Pnil)
   def newBuilder[A] : Builds[A, Plist[A]] = new Builds(xs => ll.foldRight[A, Plist[A]](xs, empty[A], _ :: _))
   def apply[A](xs: A*): Plist[A]          = xs.zfoldr[Plist[A]](_ :: _)
 }
@@ -93,7 +93,7 @@ object Indexed {
 object Vec {
   private val NIL = new Vec[Any](sciVector())
 
-  def empty[A] : Vec[A]                        = NIL.castTo[Vec[A]]
+  def empty[A] : Vec[A]                        = cast(NIL)
   def apply[A](xs: A*): Vec[A]                 = new Vec[A](xs.toScalaVector)
   def unapplySeq[A](x: Vec[A]): Some[scSeq[A]] = Some(x.seq)
   def newBuilder[A](): Builds[A, Vec[A]]       = Builds(xs => new Vec[A](xs.seq.toScalaVector))
@@ -113,7 +113,7 @@ object Direct extends Constructions[Direct] {
   }
   final case class WrapArray[A](val xs: Array[_]) extends AnyVal with Common[A] {
     def size               = Size(xs.length)
-    def elemAt(i: Vdex): A = xs(i.getInt).castTo[A]
+    def elemAt(i: Vdex): A = cast(xs(i.getInt))
   }
   final class Reversed[A](val xs: Direct[A]) extends AnyVal with Common[A] {
     def size            = xs.size

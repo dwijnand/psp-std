@@ -59,7 +59,6 @@ abstract class AllExplicit extends PspApi {
   private def stdout                    = scala.Console.out
   // private def putOut(msg: Any): Unit = sideEffect(stdout print msg, stdout.flush())
   private def echoOut(msg: Any): Unit   = stdout println msg
-  private def aops[A](x: A)             = new ops.AnyOps(x)
 
   // def print[A: Show](x: A): Unit   = putOut(render(x))
   def println[A: Show](x: A): Unit = echoOut(render(x))
@@ -70,18 +69,12 @@ abstract class AllExplicit extends PspApi {
 
   def ??? : Nothing = throw new scala.NotImplementedError
 
-  def classOf[A: CTag](): Class[_ <: A]      = classTag[A].runtimeClass.asInstanceOf[Class[_ <: A]]
-  def classTag[A: CTag] : CTag[A]            = ?[CTag[A]]
-  def classFilter[A: CTag] : Partial[Any, A] = Partial(x => aops(x).isClass[A], x => aops(x).castTo[A])
-
-  // def abortTrace(msg: String): Nothing           = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
-  def bufferMap[A, B: Empty](): scmMap[A, B]        = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def classNameOf(x: Any): String                 = JvmName asScala x.getClass short
+  def classFilter[A: CTag] : Partial[Any, A]      = Partial(isInstance[A], cast[A])
+  def bufferMap[A, B: Empty](): scmMap[A, B]      = scmMap[A, B]() withDefaultValue emptyValue[B]
   def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
-  def lformat[A](n: Int): FormatFun                 = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
-  def noNull[A](value: A, orElse: => A): A          = if (value == null) orElse else value
-  // def nullAs[A] : A                                 = null.asInstanceOf[A]
-  // def optMap[A, B](x: A)(f: A => B): Option[B]      = if (x == null) None else Some(f(x))
-  // def utf8(xs: Array[Byte]): Utf8                = new Utf8(xs)
+  def lformat[A](n: Int): FormatFun               = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def noNull[A](value: A, orElse: => A): A        = if (value == null) orElse else value
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
   def make0[R] : MakeHelper[R]         = new MakeHelper[R]

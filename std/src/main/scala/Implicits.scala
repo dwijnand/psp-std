@@ -70,7 +70,7 @@ trait StdImplicits extends scala.AnyRef
   implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B] = Zip impl xs
 
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = xs match {
-    case xs: AtomicView[_, _] => xs.castTo
+    case xs: AtomicView[_, _] => cast(xs)
     case _                    => new LinearView(Each each xs)
   }
 }

@@ -136,7 +136,7 @@ object ll {
     @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
 
     def isFull                         = seen >= cap
-    def elemAt(index: Vdex): A         = buffer((readPointer + index.getInt) % cap).castTo[A]
+    def elemAt(index: Vdex): A         = cast(buffer((readPointer + index.getInt) % cap))
     def size: Precise                  = capacity min Size(seen)
     def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
     def += (x: A): this.type           = sideEffect(this, setHead(x))

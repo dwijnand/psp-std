@@ -13,7 +13,7 @@ class Partial[A, B](p: ToBool[A], f: A => B) extends (A ?=> B) {
   def isDefinedAt(x: A): Boolean            = p(x)
   def apply(x: A): B                        = f(x)
   def applyOr(x: A, alt: => B): B           = if (p(x)) f(x) else alt
-  // def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, emptyValue)
+  def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
 }
 object Partial {
   implicit def liftPartial[A, B](pf: A ?=> B): Partial[A, B] = apply(pf)
