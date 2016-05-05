@@ -133,7 +133,7 @@ class StringExtensions extends ScalacheckBundle {
     expectValue("")("".capitalize),
     expectValue("Bob")("bob".capitalize),
     expectValue("Bob johnson")("bob johnson".capitalize),
-    expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines mk_s ' '),
+    // expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines mk_s ' '),
     expectValue("\u0001\u0002b\u0020b\u0003".sanitize)("??b b?")
   )
 }

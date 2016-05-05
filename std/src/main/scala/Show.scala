@@ -7,7 +7,7 @@ class FullRenderer extends Renderer {
   def minElements: Precise = 3
   def maxElements: Precise = 10
 
-  def showEach(xs: Each[Doc]): String = "[ " + (xs.m splitAt maxElements.lastIndex match {
+  def showView(xs: View[Doc]): String = "[ " + (xs splitAt maxElements.lastIndex match {
     case Split(xs, ys) if ys.isEmpty => xs map show mk_s ", "
     case Split(xs, _)                => (xs take minElements map show mk_s ", ") + ", ..."
   }) + " ]"
@@ -15,7 +15,7 @@ class FullRenderer extends Renderer {
   def show(x: Doc): String = x match {
     case Doc.NoDoc           => ""
     case Doc.Cat(l, r)       => show(l) + show(r)
-    case Doc.Group(xs)       => showEach(xs)
+    case Doc.Group(xs)       => showView(xs)
     case Doc.Shown(value, z) => z show value
     case Doc.Literal(s)      => s
   }
@@ -88,12 +88,9 @@ trait ShowInstances extends ShowEach {
   }
 }
 trait ShowEach0 {
-  implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = showBy[View[A]](z showEach _.toEach.map(_.doc))
+  implicit def showForeach[A: Show](implicit z: FullRenderer): Show[Foreach[A]] = Show(xs => z showView (xs.view map (_.doc)))
 }
-trait ShowEach1 extends ShowEach0 {
-  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(xs => z showEach (xs map (_.doc)))
-}
-trait ShowEach extends ShowEach1 {
+trait ShowEach extends ShowEach0 {
   case class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
     def rows: View2D[B]   = values map (v => functions map (f => f(v)))
     def columns:View2D[B] = functions map (f => values map (v => f(v)))

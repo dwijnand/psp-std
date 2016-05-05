@@ -61,7 +61,7 @@ object ll {
   //       22: if_icmpne     5
   //       25: return
 
-  final def foldLeft[@fspec A, @fspec B](xs: Each[A], initial: B, f: (B, A) => B): B = {
+  final def foldLeft[@fspec A, @fspec B](xs: Foreach[A], initial: B, f: (B, A) => B): B = {
     var res = initial
     xs foreach (x => res = f(res, x))
     res
@@ -71,7 +71,7 @@ object ll {
   //   xs.zipIndex foreach ((x, i) => res = f(res, x, i))
   //   res
   // }
-  final def foldRight[@fspec A, @fspec B](xs: Each[A], initial: B, f: (A, B) => B): B = {
+  final def foldRight[@fspec A, @fspec B](xs: Foreach[A], initial: B, f: (A, B) => B): B = {
     val arr: Array[Ref[A]] = doto(xs.toRefArray)(_.inPlace.reverse)
     var res: B = initial
     arr foreach (x => res = f(x, res))

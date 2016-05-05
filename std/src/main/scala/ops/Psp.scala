@@ -22,9 +22,14 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
 }
 
 final class ForeachOps[A](val xs: Foreach[A]) {
-  private[this] def to[CC[X]](implicit z: Builds[A, CC[A]]): CC[A] = z build Each(xs foreach _)
-  def trav: scTraversable[A] = to[scTraversable] // flatMap, usually
-  def seq: scSeq[A]          = to[scSeq]         // varargs or unapplySeq, usually
+  private[this] def to[CC[X]](implicit z: Builds[A, CC[A]]): CC[A] = z build each
+
+  def trav: scTraversable[A]      = to[scTraversable] // flatMap, usually
+  def seq: scSeq[A]               = to[scSeq]         // varargs or unapplySeq, usually
+  def toRefs                      = Each[A](xs foreach _) map (_.toRef)
+  def toRefArray(): Array[Ref[A]] = Builds.array[Ref[A]] build xs.toRefs
+  def each: Each[A]               = Each(xs foreach _)
+  def view: View[A]               = each.m
 }
 final class DocOps(val lhs: Doc) extends AnyVal {
   def doc: Doc                             = lhs

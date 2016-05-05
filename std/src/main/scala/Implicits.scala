@@ -5,6 +5,29 @@ import api._
 import psp.std.{ lowlevel => ll }
 import exp._ // no implicit conversions in this file
 
+// 49 promoteSize
+// 47 convertHasShowDoc
+// 39 liftPair
+// 24 apply
+// 13 viewPspDirect
+// 11 convertViewEach
+// 11 const
+// 10 applyNext
+//  7 funToPartialFunction
+//  7 convertViewBuilds
+//  6 promoteIndex
+//  5 viewPspString
+//  4 viewScalaCollection
+//  2 viewPspEach
+//  2 constantPredicate
+//  1 viewScalaIndexedSeq
+//  1 viewPspArray
+//  1 promoteApiExSet
+//  1 long2bigInt
+//  1 liftSeqPair
+//  1 liftPositional
+//  1 liftPartial
+//  1 int2bigInt
 trait AllImplicit extends scala.AnyRef
       with StdEmpty
       with StdJava
@@ -78,9 +101,11 @@ trait StdOps1 extends StdOps0 {
 }
 trait StdOps2 extends StdOps1 {
   // We buried Predef's {un,}augmentString in favor of these.
-  implicit def opsWrapString(x: String): Pstring                                          = new Pstring(x)
-  implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                              = new ops.ViewOps(x)
-  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.ViewOps[A] = new ops.ViewOps(xs.m)
+  implicit def opsWrapString(x: String): Pstring                                                   = new Pstring(x)
+  implicit def opsTerminalView[A](x: View[A]): ops.TerminalViewOps[A]                              = new ops.TerminalViewOps(x)
+  implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.TerminalViewOps[A] = new ops.TerminalViewOps[A](xs.m) //z unbuild xs)
+  implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                                       = new ops.ViewOps(x)
+  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.ViewOps[A]          = new ops.ViewOps(xs.m)
 
   implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                       = new ops.OrderOps[A](x)
   // implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                      = new ops.HasHash(x)

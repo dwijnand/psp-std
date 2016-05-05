@@ -83,22 +83,13 @@ trait ScalaLib {
   type scmBuilder[-Elem, +To] = scm.Builder[Elem, To]
   type scmMap[K, V]           = scm.Map[K, V]
 
+  // Spire
+  type AdditiveMonoid[A]       = spire.algebra.AdditiveMonoid[A]
+  type BooleanAlgebra[R]       = spire.algebra.Bool[R]
+  type MultiplicativeMonoid[A] = spire.algebra.MultiplicativeMonoid[A]
+  type SafeLong                = spire.math.SafeLong
+  type UInt                    = spire.math.UInt
+
   // You can't use string interpolation without a StringContext term in scope.
   def StringContext = scala.StringContext
-
-  // Companions etc for which I have found a need.
-  final val Array     = scala.Array
-  final val Failure   = scala.util.Failure
-  final val Nil       = scala.collection.immutable.Nil
-  final val None      = scala.None
-  final val Option    = scala.Option
-  final val Some      = scala.Some
-  final val Success   = scala.util.Success
-  final val Try       = scala.util.Try
-  final val sciList   = sci.List
-  final val sciMap    = sci.Map
-  final val sciSeq    = sci.Seq
-  final val sciSet    = sci.Set
-  final val sciVector = sci.Vector
-  final val scmMap    = scm.Map
 }

@@ -119,7 +119,7 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
       loop(this)(f)
   }
 
-  private def foreachTakeWhile[A](xs: Each[A], f: A => Unit, p: ToBool[A]): Int = {
+  private def foreachTakeWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
     var taken = 0
     xs foreach { x =>
       if (p(x)) sideEffect(f(x), taken += 1)
@@ -127,7 +127,7 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
     }
     taken
   }
-  private def foreachDropWhile[A](xs: Each[A], f: A => Unit, p: ToBool[A]): Int = {
+  private def foreachDropWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
     var dropping = true
     var dropped  = 0
     xs foreach { x =>
@@ -140,20 +140,34 @@ sealed abstract class CompositeView[A, B, Repr](val description: Doc, val sizeEf
     dropped
   }
 
-  private def foreachTakeRight[A](xs: Each[A], f: A => Unit, n: Precise): Unit = (
+  private def foreachTakeRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit = (
     if (n > 0)
       (CircularBuffer[A](n) ++= xs) foreach f
   )
-  private def foreachDropRight[A](xs: Each[A], f: A => Unit, n: Precise): Unit = (
+  private def foreachDropRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit = (
     if (n.isZero)
       xs foreach f
     else
-      xs.foldl(CircularBuffer[A](n))((buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
+      lowlevel.ll.foldLeft[A, CircularBuffer[A]](
+        xs,
+        CircularBuffer[A](n),
+        (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x
+      )
   )
 
-  private def foreachSlice[A](xs: View[A], range: VdexRange, f: A => Unit): Unit = xs match {
+  private def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = xs match {
     case Mapped(prev, g) => foreachSlice(prev, range, g andThen f)
-    case _               => xs.foreachSlice(range)(f)
+    case _               =>
+      if (range.isEmpty) return
+      val start   = range.head.indexValue
+      val last    = range.last.indexValue
+      var current = 0L
+
+      xs foreach { x =>
+        if (start <= current && current <= last) f(x)
+        current += 1
+        if (current > last) return
+      }
   }
 }
 
