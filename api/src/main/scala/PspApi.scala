@@ -2,13 +2,12 @@ package psp
 package api
 
 import scala.{ Tuple2, collection => sc }
-import psp.ext.ExternalLibs
 
 // Importing from this is necessary to use these aliases within the api package,
 // where they aren't otherwise visible because there's no api package object.
 private[api] final object Api extends PspApi
 
-trait PspApi extends ExternalLibs {
+trait PspApi extends ext.ScalaLib with ext.JavaLib {
   // Caveat: ?=> associates to the left instead of the right.
   type ->[+A, +B]      = scala.Product2[A, B]        // A less overconstrained product type.
   type ?=>[-A, +B]     = scala.PartialFunction[A, B] // Less clumsy syntax for the all-important partial function.

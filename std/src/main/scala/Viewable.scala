@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, exp._, StdShow._
+import api._, exp._
 
 /** Op and Operable
  *
@@ -18,6 +18,7 @@ trait Operable[M[X]] {
 
 object Op {
   type ConstString[X] = String
+  type ConstSize[X]   = Size
 
   implicit class OpOps[A, B](op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
@@ -40,12 +41,30 @@ object Op {
 
   final case class Collect[A, B](pf: A ?=> B)                 extends Op[A, B]
   final case class Maps[A, B](f: A => B)                      extends Op[A, B]
-  final case class FlatMap[A, B](f: A => View[B])             extends Op[A, B]
+  final case class FlatMap[A, B](f: A => Foreach[B])          extends Op[A, B]
   final case class Compose[A, B, C](p: Op[A, B], q: Op[B, C]) extends Op[A, C]
 }
 
 object Operable {
   import Op._, all._
+
+  implicit object OperableSize extends Operable[ConstSize] {
+    def apply[A, B](in: Size)(op: Op[A, B]): Size = op match {
+      case Initial(_)        => in
+      case Pos(Take(n))      => in min n
+      case Pos(Drop(n))      => in - n
+      case Pos(TakeRight(n)) => in min n
+      case Pos(DropRight(n)) => in - n
+      case Pos(Slice(range)) => in - range.startInt min range.size
+      case TakeWhile(_)      => in.atMost
+      case DropWhile(_)      => in.atMost
+      case Filter(p)         => in.atMost
+      case Collect(pf)       => in.atMost
+      case Maps(_)           => in
+      case FlatMap(f)        => if (in.isZero) in else Size.Unknown
+      case Compose(o1, o2)   => apply(apply(in)(o1))(o2)
+    }
+  }
 
   implicit object OperableString extends Operable[ConstString] {
     def str(in: String, name: String, arg: Any): String = {

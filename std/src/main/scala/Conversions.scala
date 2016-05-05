@@ -48,7 +48,7 @@ trait ConversionsImpl[A] extends Any {
   // def toJavaList: jList[A]                     = to[jList]
   def toJavaSet: jSet[A]                       = to[jSet]
   def toPlist: Plist[A]                        = to[Plist]
-  def toRefArray(): Array[Ref[A]]              = Builds.array[Ref[A]] build xs.toRefs
+  // def toRefArray(): Array[Ref[A]]              = Builds.array[Ref[A]] build xs.toRefs
   // def toScalaList: sciList[A]                  = to[sciList]
   // def toScalaSeq: sciSeq[A]                    = to[sciSeq]
   // def toScalaSet: sciSet[A]                    = to[sciSet]
@@ -63,7 +63,7 @@ trait Constructions[M[X]] {
 
   def const[A](elem: A): M[A]         = pure(mf => while(true) mf(elem))
   def each[A](xs: Foreach[A]): M[A]   = construct(xs.size, xs foreach _)
-  def elems[A](xs: A*): M[A]          = scala(xs)
+  def elems[A](xs: A*): M[A]          = scala(xs.seq)
   // def empty[A] : M[A]                 = construct(Size.Zero, vec() foreach _)
   def java[A](xs: jIterable[A]): M[A] = pure(BiIterable(xs) foreach _)
   def pure[A](f: Suspended[A]): M[A]  = construct(Size.Unknown, f)

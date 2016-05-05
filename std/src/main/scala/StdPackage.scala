@@ -2,8 +2,26 @@ package psp
 package std
 
 import psp.api._
+import scala.{ collection => sc }
+import sc.{ mutable => scm, immutable => sci }
 
-trait AllExplicit extends PspApi with PspCreators {
+abstract class AllExplicit extends PspApi with PspCreators {
+  final val Array     = scala.Array
+  final val Failure   = scala.util.Failure
+  final val Nil       = scala.collection.immutable.Nil
+  final val None      = scala.None
+  final val Option    = scala.Option
+  final val SafeLong  = spire.math.SafeLong
+  final val Some      = scala.Some
+  final val Success   = scala.util.Success
+  final val Try       = scala.util.Try
+  final val sciList   = sci.List
+  final val sciMap    = sci.Map
+  final val sciSeq    = sci.Seq
+  final val sciSet    = sci.Set
+  final val sciVector = sci.Vector
+  final val scmMap    = scm.Map
+
   // Type aliases I don't like enough to have in the API.
   type Bag[A]               = ExMap[A, Precise]
   type Bool                 = Boolean

@@ -86,8 +86,8 @@ object Size {
       case (Range(l1, h1), Range(l2, h2))        => apply(min(l1, l2), max(h1, h2))
     }
     def unapply(x: Size): Some[(Atomic, Atomic)] = x match {
-      case Bounded(lo, hi) => Some((lo, hi))
-      case x: Atomic       => Some((x, x))
+      case Bounded(lo, hi) => scala.Some((lo, hi))
+      case x: Atomic       => scala.Some((x, x))
     }
   }
 }
