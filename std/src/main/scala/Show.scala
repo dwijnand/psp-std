@@ -88,7 +88,8 @@ trait ShowInstances extends ShowEach {
   }
 }
 trait ShowEach0 {
-  implicit def showForeach[A: Show](implicit z: FullRenderer): Show[Foreach[A]] = Show(xs => z showView (xs.view map (_.doc)))
+  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(xs => z showView (xs.view map (_.doc)))
+  implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
 }
 trait ShowEach extends ShowEach0 {
   case class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
@@ -110,5 +111,7 @@ trait ShowEach extends ShowEach0 {
   implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]        = Show(xs => tabular(xs.entries.pairs)(_.render))
   implicit def showZipped[A1: Show, A2: Show] : Show[ZipView[A1, A2]] = showBy[ZipView[A1, A2]](_.pairs)
   implicit def showArray[A: Show] : Show[Array[A]]                    = showBy[Array[A]](_.toVec)
+  // implicit def showVec[A: Show] : Show[Vec[A]]                        = showBy[View[A]](_.m)
+
   // implicit def showJavaEnum[A <: jEnum[A]] : Show[jEnum[A]]           = inheritShow
 }

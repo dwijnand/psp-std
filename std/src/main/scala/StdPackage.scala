@@ -75,24 +75,6 @@ abstract class AllExplicit extends PspApi with PspCreators {
   def classTag[A: CTag] : CTag[A]            = ?[CTag[A]]
   def classFilter[A: CTag] : Partial[Any, A] = Partial(x => aops(x).isClass[A], x => aops(x).castTo[A])
 
-  // def transitiveClosure[A: Eq](root: A)(expand: A => Foreach[A]): View[A] = inView { f =>
-  //   def loop(in: View[A], seen: View[A]): Unit = new ops.IViewOps(in) filterNot (new ops.HasEq(seen) contains _) match {
-  //     case Each() => ()
-  //     case in     => in foreach f ; loop(in flatMap expand, new DirectView((new Conversions(seen) toVec) ++ (new Conversions(in) toVec)))
-  //   }
-  //   loop(view(root), view())
-  // }
-
-  // @inline def timed[A](elapsed: Long => Unit)(body: => A): A = {
-  //   val start = nanoTime
-  //   val result = body
-  //   elapsed(nanoTime - start)
-  //   result
-  // }
-
-  // def assert(assertion: => Boolean, msg: => Any): Unit =
-  //   if (!assertion) runtimeException("" + msg)
-
   // def abortTrace(msg: String): Nothing           = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
   def bufferMap[A, B: Empty](): scmMap[A, B]        = scmMap[A, B]() withDefaultValue emptyValue[B]
   def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
@@ -117,4 +99,12 @@ abstract class AllExplicit extends PspApi with PspCreators {
   def vec[A](xs: A*): Vec[A]                        = Vec[A](xs: _*)
   def view[A](xs: A*): DirectView[A, Vec[A]]        = new DirectView[A, Vec[A]](vec(xs: _*))
   def zip[A, B](xs: (A->B)*): ZipView[A, B]         = Zip zip1 view(xs: _*)
+
+  object indices {
+    def all: Indexed[Index]                      = Indexed(i => i.toIndex)
+    def from(start: SafeLong): Indexed[SafeLong] = Indexed(i => start + i.get)
+    def from(start: BigInt): Indexed[BigInt]     = Indexed(i => start + i.get)
+    def from(start: Long): Indexed[Long]         = Indexed(i => start + i.get)
+    def from(start: Int): Indexed[Int]           = Indexed(i => start + i.getInt)
+  }
 }
