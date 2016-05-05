@@ -261,7 +261,7 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, ... ]", punfold),
     // showsAs("[ 1, 2, 3 ], [ 1, 2 ], [ 1 ], [  ], [ 2 ], [ 2, 3 ], [ 3 ]", closure mk_s ", "),
     // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries.to[Vec[Int -> Precise]] mk_s ", "),
-    seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.m.indexed map (i => x => x -> i)),
+    seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),
     seqShows("11, 22, 33, 44", indexRange(1, 50) grep """(.)\1""".r),
     seqShows("99, 1010, 1111", xxNumbers slice (8 takeNext 3).asIndices),
     expectValue[Size](4)(strs.byRef.distinct.force.size),

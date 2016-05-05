@@ -48,8 +48,8 @@ object Zip {
     }
     def foreach(f: (A1, A2) => Unit): Unit = (lefts, rights) match {
       case (xs: Direct[A1], ys: Direct[A2]) => (xs.size min ys.size).indices foreach (i => f(xs(i), ys(i)))
-      case (xs: Direct[A1], ys)             => (ys take xs.size).indexed map (i => y => f(xs(i), y))
-      case (xs, ys: Direct[A2])             => (xs take ys.size).indexed map (i => x => f(x, ys(i)))
+      case (xs: Direct[A1], ys)             => (ys take xs.size).zipIndex map ((y, i) => f(xs(i), y))
+      case (xs, ys: Direct[A2])             => (xs take ys.size).zipIndex map ((x, i) => f(x, ys(i)))
       case _                                => lefts.iterator |> (it => rights foreach (y => if (it.hasNext) f(it.next, y) else return))
     }
 
