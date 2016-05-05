@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, exp._
+import api._, all._
 
 /** Motley objects for which a file of residence is not obvious.
  */
@@ -19,6 +19,17 @@ object Partial {
   implicit def liftPartial[A, B](pf: A ?=> B): Partial[A, B] = apply(pf)
   def apply[A, B](pf: A ?=> B): Partial[A, B]                = apply(pf isDefinedAt _, pf apply _)
   def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B]    = new Partial(p, f)
+}
+final class JvmName(val raw: String) extends ShowSelf {
+  def segments: Vec[String] = raw splitChar '.'
+  def short: String         = segments.last
+  def to_s: String          = raw
+}
+object JvmName {
+  import scala.reflect.NameTransformer.decode
+
+  def asJava(clazz: jClass): JvmName  = new JvmName(clazz.getName)
+  def asScala(clazz: jClass): JvmName = new JvmName(clazz.getName.mapSplit('.')(decode))
 }
 // final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
 //   def chars: Array[Char] = scala.io.Codec fromUTF8 bytes
