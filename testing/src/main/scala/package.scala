@@ -176,7 +176,7 @@ package object tests {
     val prop = forAll((elem: A) => f(xs, elem) === f(ys, elem))
     (Test check prop)(identity).passed
   }
-  implicit def pintEq: Hash[Pint]                                     = inheritEq
+  implicit def pintEq: Hash[Pint]                                     = byEquals
   implicit def pintShow: Show[Pint]                                   = inheritShow
   implicit def predicateEq[A : Arb] : Eq[InvariantPredicate[A]] = observationalEq[InvariantPredicate, A, Boolean](_ apply _)
 

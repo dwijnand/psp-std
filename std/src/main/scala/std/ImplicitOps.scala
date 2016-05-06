@@ -41,67 +41,14 @@ final class CharOps(val ch: Char) extends AnyVal {
   def to_s         = ch.toString
 }
 final class IntOps(val self: Int) extends AnyVal {
-  // def abs: Int                         = scala.math.abs(self)
-  def downTo(end: Int): Direct[Int]    = Consecutive.downTo(self, end)
   def takeNext(len: Precise): IntRange = until(self + len.getInt)
   def to(end: Int): IntRange           = Consecutive.to(self, end)
   def until(end: Int): IntRange        = Consecutive.until(self, end)
 }
-
 final class LongOps(val self: Long) extends AnyVal {
   def to(end: Long): LongRange    = safeLongToInt(self) to safeLongToInt(end) map (_.toLong)
   def until(end: Long): LongRange = safeLongToInt(self) until safeLongToInt(end) map (_.toLong)
 }
-
-/** Extension methods for scala library classes.
- *  We'd like to get away from all such classes,
- *  but scala doesn't allow it.
- */
-final class OptionOps[A](val x: Option[A]) extends AnyVal {
-  def or(alt: => A): A              = x getOrElse alt
-  def toVec: Vec[A]                 = this zfold (x => vec(x))
-  def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
-  def zget(implicit z: Empty[A]): A = x getOrElse z.empty
-  def | (alt: => A): A              = x getOrElse alt
-}
-final class TryOps[A](val x: Try[A]) extends AnyVal {
-  def | (expr: => A): A = x.toOption | expr
-  def fold[B](f: Throwable => B, g: A => B): B = x match {
-    case Success(x) => g(x)
-    case Failure(t) => f(t)
-  }
-}
-
-/** Methods requiring us to have additional knowledge, by parameter or type class.
- *  We keep the interface simple and foolproof by establishing thet instance
- *  first and only offering the methods after that.
- *
- *  But.
- *
- *  This approach, so nice in principle, stretches scala's willingness to connect
- *  implicits past its abilities. It works on psp collections, but when we depend on
- *  an implicit to entire Viewville in the first place, then these methods become
- *  out of reach without an implicit call to .m to become a view.
- *
- *  The search continues.
- */
-class HasEqOps[A](xs: View[A])(implicit z: Eq[A]) {
-  def contains(x: A): Boolean = xs exists (_ === x)
-  def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => if (new HasEqOps(res) contains x) res else res :+ x)
-  def indexOf(x: A): Index    = xs indexWhere (_ === x)
-  def toSet: ExSet[A]         = xs.toExSet
-
-  // def indicesOf(x: A): View[Index]                = xs indicesWhere (_ === x)
-  // def mapOnto[B](f: A => B): ExMap[A, B]          = toSet mapOnto f
-  // def toBag: Bag[A]                               = xs groupBy identity map (_.size.getInt)
-  // def without(x: A): View[A]                      = xs filterNot (_ === x)
-  // def withoutEmpty(implicit z: Empty[A]): View[A] = this without z.empty
-}
-class HasHashOps[A](xs: View[A])(implicit z: Hash[A]) extends HasEqOps[A](xs)(z) {
-  override def toSet: ExSet[A] = xs.toHashSet
-}
-
-
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def head: A = apply(Index(0))
   def last: A = apply(lastIndex)
@@ -146,27 +93,12 @@ final class PreciseOps(val size: Precise) {
   def indices: VdexRange = indexRange(0, size.getInt)
   def lastIndex: Index   = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
-  // def + (n: Precise): Precise         = size + n.get
+  def + (n: Precise): Precise            = size + n.get
   def - (n: Precise): Precise            = size - n.get
   def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
 
   def min(rhs: Precise): Precise = all.min(size, rhs)
-
-  // if (size <= rhs) size else rhs
-  // def max(rhs: Precise): Precise = if (size >= rhs) size else rhs
-
-  // @inline def foreachIndex(f: Index => Unit): Unit  = if (size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
-  // @inline def foreachIntIndex(f: Int => Unit): Unit = if (size.get > 0L) ll.foreachConsecutive(0, lastIndex.getInt, f)
 }
-
-// final class InputStreamOps(val in: InputStream) extends AnyVal {
-//   def buffered: BufferedInputStream = in match {
-//     case in: BufferedInputStream => in
-//     case _                       => new BufferedInputStream(in)
-//   }
-//   def slurp(): Array[Byte]             = lowlevel.Streams slurp buffered
-//   def slurp(len: Precise): Array[Byte] = lowlevel.Streams.slurp(buffered, len)
-// }
 
 final class SizeOps(val lhs: Size) extends AnyVal {
   import Size._, StdEq._

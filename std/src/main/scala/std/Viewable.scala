@@ -15,11 +15,6 @@ trait Operable[M[X]] {
   def apply[A, B](xs: M[A])(op: Op[A, B]): M[B]
 }
 
-class OpOps[A, B](op: Op[A, B]) {
-  def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
-  def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
-}
-
 // sealed trait OpType {
 //   type In
 //   type Out

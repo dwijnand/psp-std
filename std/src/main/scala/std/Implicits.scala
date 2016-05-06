@@ -55,15 +55,14 @@ trait AllImplicit extends scala.AnyRef
 trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps {
   self =>
 
-  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A]                       = new ll.ArrowAssocRef(x)
-  implicit def convertViewEach[A](xs: View[A]): Each[A]                          = Each(xs foreach _)
-  implicit def opsAny[A](x: A): AnyOps[A]                                        = new AnyOps[A](x)
-  implicit def opsBuildsTc[Elem, To](z: Builds[Elem, To]): BuildsTcOps[Elem, To] = new BuildsTcOps(z)
-  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]           = ExMap impl x
-  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]                    = ExSet impl x
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]                    = Order impl z
-  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]        = Zip impl xs
-  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]                = Cleaver[A -> B, A, B](((_, _)), fst, snd)
+  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A]                = new ll.ArrowAssocRef(x)
+  implicit def convertViewEach[A](xs: View[A]): Each[A]                   = Each(xs foreach _)
+  implicit def opsAny[A](x: A): AnyOps[A]                                 = new AnyOps[A](x)
+  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]    = ExMap impl x
+  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]             = ExSet impl x
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]             = Order impl z
+  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B] = Zip impl xs
+  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]         = Cleaver[A -> B, A, B](((_, _)), fst, snd)
 
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = xs match {
     case xs: AtomicView[_, _] => cast(xs)
@@ -77,9 +76,7 @@ trait StdOps1 {
 }
 trait StdOps2 extends StdOps1 {
   implicit def opsAlreadyView[A](x: View[A]): ViewOps[A]                                       = new ViewOps(x)
-  // implicit def opsHasOrderInfix[A: Order](x: A): OrderOps[A]                                   = new OrderOps[A](x)
   implicit def opsSize(x: Size): SizeOps                                                       = new SizeOps(x)
-  implicit def opsOp[A, B](x: Op[A, B]): OpOps[A, B]                                           = new OpOps(x)
   implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): TerminalViewOps[A] = new TerminalViewOps[A](xs.m)
   implicit def opsTerminalView[A](x: View[A]): TerminalViewOps[A]                              = new TerminalViewOps(x)
   implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ViewOps[A]          = new ViewOps(xs.m)
@@ -96,12 +93,9 @@ trait StdOps3 extends StdOps2 {
 
   implicit def opsChar(x: Char): CharOps                = new CharOps(x)
   implicit def opsFun[A, B](f: Fun[A, B]): FunOps[A, B] = new FunOps(f)
-  implicit def opsHasEq[A: Eq](x: View[A]): HasEqOps[A] = new HasEqOps(x)
   implicit def opsInt(x: Int): IntOps                   = new IntOps(x)
   implicit def opsLong(x: Long): LongOps                = new LongOps(x)
-  implicit def opsOption[A](x: Option[A]): OptionOps[A] = new OptionOps(x)
   implicit def opsPrecise(x: Precise): PreciseOps       = new PreciseOps(x)
-  implicit def opsTry[A](x: Try[A]): TryOps[A]          = new TryOps(x)
 
   implicit def opsPairSplit[R, A, B](xs: Foreach[R])(implicit splitter: Splitter[R, A, B]): Paired[R, A, B] =
     new Paired[R, A, B](Each(xs foreach _))

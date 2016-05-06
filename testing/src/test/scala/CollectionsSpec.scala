@@ -220,7 +220,7 @@ class ViewBasic extends ScalacheckBundle {
     vec[NamedProp](
       "take/drop vs. slice" -> sameOutcomes[Triple[IntRange, Int, Int], IntRange](
         { case (xs, (start, len)) => xs drop start take len },
-        { case (xs, (start, len)) => xs.slice(start, max(start, 0) + len) }
+        { case (xs, (start, len)) => xs.slice(start, max(start, 0).toLong + len) }
       ),
       "drop/apply" -> sameOutcomes[RTriple, Int](
         { case xs -> (idx -> size) => (xs drop size)(idx) },
