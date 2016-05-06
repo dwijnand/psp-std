@@ -4,14 +4,6 @@ package tests
 import psp.std._, all._, api._, StdShow._, StdEq._
 import org.scalacheck._, Prop.forAll, Gen._
 
-final class LabeledFunction[-T, +R](f: T => R, val to_s: String) extends (T ?=> R) with ShowSelf {
-  def isDefinedAt(x: T) = f match {
-    case f: scala.PartialFunction[_,_] => f isDefinedAt x
-    case _                             => true
-  }
-  def apply(x: T): R = f(x)
-}
-
 class OperationCounts extends ScalacheckBundle {
   import Op._
 
@@ -23,8 +15,6 @@ class OperationCounts extends ScalacheckBundle {
   def bundle                 = "Operation Counts"
   def max                    = 100
   def minSuccessful: Precise = 1000
-
-  val counter = OperableCounter(1 to max)
 
   def maxDisplay: Precise    = 20
   def chooseMax   = 0 upTo max
@@ -41,21 +31,23 @@ class OperationCounts extends ScalacheckBundle {
   private def pairup           = lop("=>(x,x)", (x: Int) => view(x, x))
 
   def genOneOp: Gen[IntOp] = oneOf(
-    lowHalf     ^^ (n => Pos[Int](Drop(n))),
-    highHalf    ^^ (n => Pos[Int](Take(n))),
-    chooseMax   ^^ (n => Pos[Int](DropRight(n))),
-    chooseMax   ^^ (n => Pos[Int](TakeRight(n))),
+    lowHalf     ^^ (n => Drop[Int](n)),
+    highHalf    ^^ (n => Take[Int](n)),
+    chooseMax   ^^ (n => DropRight[Int](n)),
+    chooseMax   ^^ (n => TakeRight[Int](n)),
     lowHalf     ^^ (n => DropWhile(less(n))),
     lowHalf     ^^ (n => TakeWhile(less(n))),
     chooseSmall ^^ (n => Maps(multiply(n))),
     chooseSmall ^^ (n => Filter(divides(n))),
     chooseSmall ^^ (n => Collect(Partial(divides(n), (_: Int) / n))),
     chooseSmall ^^ (n => FlatMap(pairup)),
-    chooseRange ^^ (r => Pos[Int](Slice(r)))
+    chooseRange ^^ (r => Slice[Int](r))
   )
   def genCompositeOp: Gen[IntOp] = genOneOp * numComposite ^^ (_ reducel (_ ~ _))
 
   def composite: Gen[CompositeOp] = genCompositeOp ^^ CompositeOp
+
+  val counter = OperableCounter(1 to max)
 
   case class CompositeOp(op: IntOp) {
     lazy val (maybeRes, views, eager) = counter(op ~ Take(3))
@@ -72,7 +64,7 @@ class OperationCounts extends ScalacheckBundle {
       case scala.Right(res) => res.to_s
       case scala.Left(err)  => err
     }
-    def pass_s = "|%s  %s  %s  // %s".format("%-70s".format(op), counts1, counts2, res_s) // $op $counts // ${optResult.get}"
+    def pass_s = "|%s  %s  %s  // %s".format("%-70s".format(op.render), counts1, counts2, res_s)
     def fail_s = s"Inconsistent results for $op: $res_s"
 
     private def maybeShow(): Unit = {
@@ -96,7 +88,7 @@ object OperableCounter {
   import Operable._
   import Op._
 
-  class CountXs[A](xs: api.Direct[A], val counter: OpCount) extends api.Direct[A] with ShowSelf {
+  class CountXs[A](xs: Direct[A], val counter: OpCount) extends Direct[A] with ShowSelf {
     import Unsafe.inheritedShow
 
     def size: Precise               = xs.size
@@ -112,11 +104,9 @@ object OperableCounter {
     )
   }
 
-  case class ViewOpCount(label: String, accesses: Long, allocations: Long) extends ShowSelf {
-    def to_s = "%5s: %4s accesses, %4s allocations".format(label, accesses, allocations)
-  }
+  case class ViewOpCount(label: String, accesses: Long, allocations: Long)
 
-  class OpCount(label: String) {
+  class OpCount(label: String) extends ShowSelf {
     private var _access, _alloc    = 0L
 
     def reset(): Unit              = sideEffect(_access = 0, _alloc = 0)
@@ -124,7 +114,7 @@ object OperableCounter {
     def alloc(size: Precise): Unit = _alloc += size.getLong
     def result(): ViewOpCount      = ViewOpCount(label, _access, _alloc)
 
-    override def toString = result.toString
+    def to_s = s"$label: $result"
   }
 
   implicit object OperableCountXs extends Operable[CountXs] {

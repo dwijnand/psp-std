@@ -1,7 +1,5 @@
 package psp
 package std
-package ops
-
 
 import api._, all._
 
@@ -48,7 +46,7 @@ final class CmpEnumOps(val cmp: Cmp) {
 /** The second variety begins here.
  */
 
-final class BuildsTypeClassOps[Elem, To](z: Builds[Elem, To]) {
+final class BuildsTcOps[Elem, To](z: Builds[Elem, To]) {
   def map[Next](f: To => Next): Builds[Elem, Next] = Builds(xs => f(z build xs))
   def scalaBuilder: scmBuilder[Elem, To]           = sciVector.newBuilder[Elem] mapResult (z build _.toEach)
 }
