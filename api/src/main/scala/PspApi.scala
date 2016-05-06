@@ -46,11 +46,11 @@ abstract class PspApi extends ExternalTypes {
   def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(s"$msg")
 
   def ?[A](implicit value: A): A                    = value
-  def cond[A](p: Bool, thenp: => A, elsep: => A): A = if (p) thenp else elsep
   def castRef[A](value: A): Ref[A]                  = cast(value)
   def cast[A](value: Any): A                        = value.asInstanceOf[A]
   def classOf[A: CTag](): Class[_ <: A]             = cast(classTag[A].runtimeClass)
   def classTag[A: CTag] : CTag[A]                   = ?[CTag[A]]
+  def cond[A](p: Bool, thenp: => A, elsep: => A): A = if (p) thenp else elsep
   def doto[A](x: A)(f: A => Unit): A                = sideEffect(x, f(x))
   def emptyValue[A](implicit z: Empty[A]): A        = z.empty
   def fst[A, B](x: A -> B): A                       = x._1
@@ -68,6 +68,7 @@ abstract class PspApi extends ExternalTypes {
   def some[A](x: A): Option[A]                      = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                = scala.Tuple2(y, x)
   def tuple[A, B](x: A -> B): ((A, B))              = scala.Tuple2(fst(x), snd(x))
+  def zcond[A: Empty](p: Bool, thenp: => A): A      = cond(p, thenp, emptyValue[A])
 
   /** Safe in the senses that it won't silently truncate values,
    *  and will translate MaxLong to MaxInt instead of -1.

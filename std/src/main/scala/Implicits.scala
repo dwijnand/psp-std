@@ -28,20 +28,24 @@ import api._, exp._ // no implicit conversions in this file
 //  1 int2bigInt
 trait AllImplicit extends scala.AnyRef
       with StdEmpty
-      with StdJava
       with PrimitiveInstances
       with AlgebraInstances
       with StdImplicits
 {
   self =>
 
-  implicit def promoteSize(x: Long): Precise                     = Size(x)
   implicit def conforms[A] : (A <:< A)                           = new conformance[A]
+  implicit def constantPredicate[A](value: Boolean): ToBool[A]   = cond(value, ConstantTrue, ConstantFalse)
   implicit def defaultRenderer: FullRenderer                     = new FullRenderer
-  implicit def constantPredicate[A](value: Boolean): ToBool[A]   = if (value) ConstantTrue else ConstantFalse
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
   implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]     = new ops.DirectOps(xs)
   implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
+  implicit def promoteSize(x: Long): Precise                     = Size(x)
+
+  implicit def opsJavaIterator[A](x: jIterator[A]): ops.JavaIteratorOps[A]                           = new ops.JavaIteratorOps(x)
+  implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]                  = Unbuilds[A, CC[A]](Each java _)
+  implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
+  implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
 }
 
 /** This file needs to not import `object all` because that's cycle city,
@@ -83,17 +87,14 @@ trait StdOps1 extends StdOps0 {
   // implicit def opsHasEq[A: Eq](x: View[A]): ops.HasEq[A]       = new ops.HasEq(x)
 }
 trait StdOps2 extends StdOps1 {
-  // We buried Predef's {un,}augmentString in favor of these.
-  implicit def opsWrapString(x: String): Pstring                                                   = new Pstring(x)
-  implicit def opsTerminalView[A](x: View[A]): ops.TerminalViewOps[A]                              = new ops.TerminalViewOps(x)
-  implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.TerminalViewOps[A] = new ops.TerminalViewOps[A](xs.m) //z unbuild xs)
   implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                                       = new ops.ViewOps(x)
+  implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                                   = new ops.OrderOps[A](x)
+  implicit def opsSize(x: Size): ops.SizeOps                                                       = new ops.SizeOps(x)
+  implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.TerminalViewOps[A] = new ops.TerminalViewOps[A](xs.m)
+  implicit def opsTerminalView[A](x: View[A]): ops.TerminalViewOps[A]                              = new ops.TerminalViewOps(x)
   implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.ViewOps[A]          = new ops.ViewOps(xs.m)
-
-  implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                       = new ops.OrderOps[A](x)
-  // implicit def opsHasHash[A: Hash](x: View[A]): ops.HasHash[A]                      = new ops.HasHash(x)
-  implicit def opsView2D[A](x: View2D[A]): ops.View2DOps[A]                            = new ops.View2DOps(x)
-  implicit def opsSize(x: Size): ops.SizeOps                                           = new ops.SizeOps(x)
+  implicit def opsView2D[A](x: View2D[A]): ops.View2DOps[A]                                        = new ops.View2DOps(x)
+  implicit def opsWrapString(x: String): Pstring                                                   = new Pstring(x)
 }
 
 trait StdOps3 extends StdOps2 {
@@ -120,19 +121,16 @@ trait StdOps3 extends StdOps2 {
 }
 
 trait StdOps extends StdOps3 {
+  implicit def opsArrayNoTag[A](xs: Array[A]): ops.ArraySpecificOps[A]                    = new ops.ArraySpecificOps[A](xs)
+  implicit def opsArrayWithTag[A: CTag](xs: Array[A]): ops.ArrayClassTagOps[A]            = new ops.ArrayClassTagOps[A](xs)
   implicit def opsStringContext(sc: StringContext): ShowInterpolator                      = new ShowInterpolator(sc)
-  // implicit def convertPredicateStreamFilter[A](p: ToBool[A]): DirectoryStreamFilter[A]    = new DirectoryStreamFilter[A] { def accept(entry: A) = p(entry) }
   implicit def opsViewConversions[A](xs: View[A]): Conversions[A]                         = new Conversions(xs)
   implicit def unbuildableConv[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Conversions[A] = new Conversions[A](inView[A](z unbuild xs foreach _))
-
-  implicit def opsArrayNoTag[A](xs: Array[A]): ops.ArraySpecificOps[A]         = new ops.ArraySpecificOps[A](xs)
-  implicit def opsArrayWithTag[A: CTag](xs: Array[A]): ops.ArrayClassTagOps[A] = new ops.ArrayClassTagOps[A](xs)
 }
 
 trait StdUniversal {
-  implicit def opsAny[A](x: A): ops.AnyOps[A] = new ops.AnyOps[A](x)
-  // Lower priority than the hand-specialized variations.
-  final implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A] = new ll.ArrowAssocRef(x)
+  implicit def opsAny[A](x: A): ops.AnyOps[A]              = new ops.AnyOps[A](x)
+  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A] = new ll.ArrowAssocRef(x)
 }
 
 /*** The builder/unbuilder/view hierarchy.
@@ -146,12 +144,11 @@ trait ScalaBuilds {
   implicit def buildScalaMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] = Builds.sMap[K, V, That]
 }
 trait PspBuilds0 {
-  implicit def unbuiltPspView0[A] : UnbuildsAs[A, View[A]]           = Unbuilds[A, View[A]](xs => xs)
+  implicit def unbuiltPspView0[A] : UnbuildsAs[A, View[A]] = Unbuilds[A, View[A]](xs => xs)
 }
 trait PspBuilds extends PspBuilds0 {
-  // implicit def unbuiltPspView1[A, R] : UnbuildsAs[A, BaseView[A, R]] = Unbuilds[A, BaseView[A, R]](xs => xs)
-  implicit def buildPspSet[A: Eq]: Builds[A, ExSet[A]]               = Builds.exSet[A]
-  implicit def buildPspMap[K: Eq, V]: Builds[K -> V, ExMap[K, V]]    = Builds.exMap[K, V]
+  implicit def buildPspSet[A: Eq]: Builds[A, ExSet[A]]            = Builds.exSet[A]
+  implicit def buildPspMap[K: Eq, V]: Builds[K -> V, ExMap[K, V]] = Builds.exMap[K, V]
 }
 
 trait StdBuilds0 extends PspBuilds with ScalaBuilds {
@@ -165,8 +162,7 @@ trait StdBuilds1 extends StdBuilds0 {
   implicit def viewPspArray[A](xs: Array[A]): DirectView[A, Array[A]] = new DirectView(Direct array xs)
 }
 trait StdBuilds2 extends StdBuilds1 {
-  implicit def buildPspDirect[A] : Builds[A, Vec[A]]                                 = Vec.newBuilder[A]
-  // implicit def viewPspDirect[A, CC[X] <: Direct[X]](xs: CC[A]): DirectView[A, CC[A]] = new DirectView(xs)
+  implicit def buildPspDirect[A] : Builds[A, Vec[A]] = Vec.newBuilder[A]
 }
 trait StdBuilds extends StdBuilds2 {
   implicit def unbuildPspString: UnbuildsAs[Char, String]              = Unbuilds(Direct string _)

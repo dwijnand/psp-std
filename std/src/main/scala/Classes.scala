@@ -61,3 +61,16 @@ object :+ {
   def unapply[A](xs: View[A]): Option[View[A] -> A] =
     cond(xs.isEmpty, none, some(xs.init -> xs.last))
 }
+object Java {
+  implicit def javaSetBuilder[A]: Builds[A, jSet[A]]            = genericJavaSetBuilder(new jHashSet[A])
+  implicit def javaListBuilder[A]: Builds[A, jList[A]]          = genericJavaListBuilder(new jArrayList[A])
+  implicit def javaMapBuilder[K, V]: Builds[K -> V, jMap[K, V]] = genericJavaMapBuilder(new jHashMap[K, V])
+
+  def genericJavaListBuilder[A, M[A] <: jList[A]](z: M[A]): Builds[A, M[A]]                 = Builds(xs => doto(z)(z => xs foreach (x => z add x)))
+  def genericJavaSetBuilder[A, M[A] <: jSet[A]](z: M[A]): Builds[A, M[A]]                   = Builds(xs => doto(z)(z => xs foreach (x => z add x)))
+  def genericJavaMapBuilder[K, V, M[K, V] <: jMap[K, V]](z: M[K, V]): Builds[K->V, M[K, V]] = Builds(xs => doto(z)(z => xs foreach (x => z.put(fst(x), snd(x)))))
+
+  def List[A](xs: A*): jList[A]            = Built(xs)
+  def Map[K, V](xs: (K -> V)*): jMap[K, V] = Built(xs)
+  def Set[A](xs: A*): jSet[A]              = Built(xs)
+}
