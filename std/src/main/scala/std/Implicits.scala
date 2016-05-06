@@ -135,17 +135,17 @@ trait PspBuilds {
 }
 
 trait StdBuilds0 extends PspBuilds with ScalaBuilds {
+  implicit def buildPspArray[A: CTag]: Builds[A, Array[A]]                       = Builds.array[A]
   implicit def buildPspLinear[A] : Builds[A, Plist[A]]                           = Plist.newBuilder[A]
-  implicit def viewPspEach[A, CC[X] <: Each[X]](xs: CC[A]): AtomicView[A, CC[A]] = new LinearView(xs)
   implicit def unbuildPspEach[A, CC[X] <: Each[X]] : UnbuildsAs[A, CC[A]]        = Unbuilds[A, CC[A]](xs => xs)
+  implicit def unbuiltPspArray[A] : UnbuildsAs[A, Array[A]]                      = Unbuilds[A, Array[A]](Direct array _)
+  implicit def viewPspArray[A](xs: Array[A]): DirectView[A, Array[A]]            = new DirectView(Direct array xs)
+  implicit def viewPspEach[A, CC[X] <: Each[X]](xs: CC[A]): AtomicView[A, CC[A]] = new LinearView(xs)
 }
 trait StdBuilds1 extends StdBuilds0 {
-  implicit def unbuiltPspArray[A] : UnbuildsAs[A, Array[A]]           = Unbuilds[A, Array[A]](Direct array _)
-  implicit def buildPspArray[A: CTag]: Builds[A, Array[A]]            = Builds.array[A]
-  implicit def viewPspArray[A](xs: Array[A]): DirectView[A, Array[A]] = new DirectView(Direct array xs)
+  implicit def buildPspDirect[A] : Builds[A, Vec[A]] = Vec.newBuilder[A]
 }
 trait StdBuilds extends StdBuilds1 {
-  implicit def buildPspDirect[A] : Builds[A, Vec[A]]               = Vec.newBuilder[A]
   implicit def unbuildPspString: UnbuildsAs[Char, String]          = Unbuilds(Direct string _)
   implicit def buildPspString: Builds[Char, String]                = Builds.string
   implicit def viewPspString(xs: String): DirectView[Char, String] = new DirectView(Direct string xs)
