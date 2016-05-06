@@ -63,30 +63,24 @@ abstract class AllExplicit extends PspApi {
   def println[A: Show](x: A): Unit = echoOut(render(x))
   // def anyprintln(x: Any): Unit     = echoOut(aops(x).any_s)
 
-  def applyIfNonEmpty[A](x: A)(f: A => A)(implicit e: Eq[A], z: Empty[A]): A =
-    if (e.eqv(x, z.empty)) x else f(x)
-
-  def ??? : Nothing = throw new scala.NotImplementedError
-
   def classNameOf(x: Any): String                 = JvmName asScala x.getClass short
   def classFilter[A: CTag] : Partial[Any, A]      = Partial(isInstance[A], cast[A])
   def bufferMap[A, B: Empty](): scmMap[A, B]      = scmMap[A, B]() withDefaultValue emptyValue[B]
   def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
   def lformat[A](n: Int): FormatFun               = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
-  def noNull[A](value: A, orElse: => A): A        = if (value == null) orElse else value
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
   def make0[R] : MakeHelper[R]         = new MakeHelper[R]
   def make1[CC[_]] : MakeHelper1[CC]   = new MakeHelper1[CC]
   // def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def arr[A: CTag](xs: A*): Array[A]                = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]                     = new Conversions(view(xs: _*)) toPlist
-  def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]       = ExMap fromScala (xs map tuple toMap)
-  def set[A: Eq](xs: A*): ExSet[A]                  = new Conversions(view(xs: _*)) toExSet
-  def vec[A](xs: A*): Vec[A]                        = new Vec[A](xs.toVector)
-  def view[A](xs: A*): DirectView[A, Vec[A]]        = new DirectView[A, Vec[A]](vec(xs: _*))
-  def zip[A, B](xs: (A->B)*): ZipView[A, B]         = Zip zip1 view(xs: _*)
+  def arr[A: CTag](xs: A*): Array[A]          = xs.toArray[A]
+  def list[A](xs: A*): Plist[A]               = new Conversions(view(xs: _*)) toPlist
+  def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V] = ExMap fromScala (xs map tuple toMap)
+  def set[A: Eq](xs: A*): ExSet[A]            = new Conversions(view(xs: _*)) toExSet
+  def vec[A](xs: A*): Vec[A]                  = new Vec[A](xs.toVector)
+  def view[A](xs: A*): DirectView[A, Vec[A]]  = new DirectView[A, Vec[A]](vec(xs: _*))
+  def zip[A, B](xs: (A->B)*): ZipView[A, B]   = Zip zip1 view(xs: _*)
 
   object indices {
     def all: Indexed[Index]                      = Indexed(_.toIndex)

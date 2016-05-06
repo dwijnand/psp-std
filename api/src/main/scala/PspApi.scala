@@ -16,35 +16,34 @@ abstract class PspApi extends ExternalTypes {
   final val MinLong = jl.Long.MIN_VALUE
   final val EOL     = jl.System getProperty "line.separator"
 
-  // Caveat: ?=> associates to the left instead of the right.
-  type ->[+A, +B]      = scala.Product2[A, B]        // A less overconstrained product type.
-  type ?=>[-A, +B]     = scala.PartialFunction[A, B] // Less clumsy syntax for the all-important partial function.
-  type Bool            = Boolean
-  type GTOnce[+A]      = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
-  type Id[+X]          = X                           // The identity type constructor.
-  type Index           = Vindex[Vindex.Zero.type]
-  type Nth             = Vindex[Vindex.One.type]
-  type Ref[+A]         = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
-  type Vdex            = Vindex[_]
-  type sCollection[+A] = sc.GenTraversable[A]        // named analogously to jCollection.
+  // Aliases for internal and external types.
+  type ->[+A, +B]        = scala.Product2[A, B]        // A less overconstrained product type.
+  type ?=>[-A, +B]       = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
+  type BinOp[A]          = (A, A) => A                 // binary operation
+  type Bool              = Boolean
+  type GTOnce[+A]        = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
+  type Id[+X]            = X                           // The identity type constructor.
+  type Index             = Vindex[Vindex.Zero.type]
+  type Nth               = Vindex[Vindex.One.type]
+  type OrderRelation[-A] = (A, A) => Cmp
+  type Ref[+A]           = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
+  type Relation[-A]      = (A, A) => Bool
+  type Suspended[+A]     = ToUnit[ToUnit[A]]
+  type ToBool[-A]        = A => Bool
+  type ToInt[-A]         = A => Int
+  type ToSelf[A]         = A => A
+  type ToString[-A]      = A => String
+  type ToUnit[-A]        = A => Unit
+  type Vdex              = Vindex[_]
+  type sCollection[+A]   = sc.GenTraversable[A]        // named analogously to jCollection.
 
-  // Aliases and constant values for common function types.
-  type BinOp[A]           = (A, A) => A // binary operation
-  type OrderRelation[-A]  = (A, A) => Cmp
-  type Relation[-A]       = (A, A) => Boolean
-  type Suspended[+A]      = ToUnit[ToUnit[A]]
-  type ToBool[-A]         = A => Boolean
-  type ToInt[-A]          = A => Int
-  type ToSelf[A]          = A => A
-  type ToString[-A]       = A => String
-  type ToUnit[-A]         = A => Unit
-
-  def abort(msg: Any): Nothing                         = throw new RuntimeException(s"$msg")
-  def assert(assertion: => Boolean, msg: => Any): Unit = cond(assertion, (), assertionError(msg))
-  def assertionError(msg: Any): Nothing                = throw new AssertionError(s"$msg")
-  def illegalArgumentException(msg: Any): Nothing      = throw new IllegalArgumentException(s"$msg")
-  def indexOutOfBoundsException(msg: Any): Nothing     = throw new IndexOutOfBoundsException(s"$msg")
-  def noSuchElementException(msg: Any): Nothing        = throw new NoSuchElementException(s"$msg")
+  def ??? : Nothing                                 = throw new scala.NotImplementedError
+  def abort(msg: Any): Nothing                      = throw new RuntimeException(s"$msg")
+  def assert(assertion: => Bool, msg: => Any): Unit = cond(assertion, (), assertionError(msg))
+  def assertionError(msg: Any): Nothing             = throw new AssertionError(s"$msg")
+  def illegalArgumentException(msg: Any): Nothing   = throw new IllegalArgumentException(s"$msg")
+  def indexOutOfBoundsException(msg: Any): Nothing  = throw new IndexOutOfBoundsException(s"$msg")
+  def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(s"$msg")
 
   def ?[A](implicit value: A): A                    = value
   def cond[A](p: Bool, thenp: => A, elsep: => A): A = if (p) thenp else elsep
@@ -56,7 +55,7 @@ abstract class PspApi extends ExternalTypes {
   def emptyValue[A](implicit z: Empty[A]): A        = z.empty
   def fst[A, B](x: A -> B): A                       = x._1
   def identity[A](x: A): A                          = x
-  def isInstance[A: CTag](x: Any): Boolean          = classOf[A]() isAssignableFrom x.getClass
+  def isInstance[A: CTag](x: Any): Bool             = classOf[A]() isAssignableFrom x.getClass
   def jFile(path: String): jFile                    = new jFile(path)
   def jPath(path: String): jPath                    = jnf.Paths get path
   def jUri(x: String): jUri                         = java.net.URI create x
@@ -69,8 +68,6 @@ abstract class PspApi extends ExternalTypes {
   def some[A](x: A): Option[A]                      = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                = scala.Tuple2(y, x)
   def tuple[A, B](x: A -> B): ((A, B))              = scala.Tuple2(fst(x), snd(x))
-
-
 
   /** Safe in the senses that it won't silently truncate values,
    *  and will translate MaxLong to MaxInt instead of -1.

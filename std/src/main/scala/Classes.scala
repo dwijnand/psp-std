@@ -52,3 +52,12 @@ final class OrderBy[A] { def apply[B](f: A => B)(implicit z: Order[B]): Order[A]
 final class ShowBy[A]  { def apply[B](f: A => B)(implicit z: Show[B]): Show[A]   = Show[A](f andThen z.show)                                 }
 final class HashBy[A]  { def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A]   = Eq.hash[A]((x, y) => z.eqv(f(x), f(y)))(x => z hash f(x)) }
 final class EqBy[A]    { def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A]       = Eq[A]((x, y) => z.eqv(f(x), f(y)))                        }
+
+object +: {
+  def unapply[A](xs: View[A]): Option[A -> View[A]] =
+    cond(xs.isEmpty, none, some(xs.head -> xs.tail))
+}
+object :+ {
+  def unapply[A](xs: View[A]): Option[View[A] -> A] =
+    cond(xs.isEmpty, none, some(xs.init -> xs.last))
+}

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._, StdShow._, StdEq._
+import api._, all._, StdShow._
 
 class FullRenderer extends Renderer {
   def minElements: Precise = 3
@@ -44,8 +44,8 @@ final class ShowInterpolator(val stringContext: StringContext) extends AnyVal {
       val post: String = s drop index.sizeExcluding force;
       pre append post.stripMargin
     }
-    val stripped = applyIfNonEmpty(escapedParts)(xs => xs.head.stripMargin :: (xs.tail map stripTrailingPart))
-    (new StringContext(stripped: _*).raw(args: _*)).trim
+    val stripped = escapedParts.m matchIf { case hd +: tl => hd.stripMargin +: (tl map stripTrailingPart force) }
+    (new StringContext(stripped.seq: _*).raw(args: _*)).trim
   }
 }
 
@@ -53,7 +53,7 @@ object Show {
   /** This of course is not implicit as that would defeat the purpose of the endeavor.
    *  There is however an implicit universal instance in the Unsafe object.
    */
-  val Inherited: Show[Any] = apply[Any](s => noNull(s, "").toString)
+  val Inherited: Show[Any] = apply[Any](s => if (s == null) "" else "" + s)
 
   def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
 

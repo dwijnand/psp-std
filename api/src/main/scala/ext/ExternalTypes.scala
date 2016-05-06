@@ -1,9 +1,7 @@
 package psp
 package api
 
-import scala.{ collection => sc }
-import sc.{ mutable => scm, immutable => sci }
-// import scala.annotation.unchecked.{ uncheckedVariance => uV }
+import scala.{ collection => sc }, sc.{ mutable => scm, immutable => sci }
 import java.{ lang => jl }
 import java.{ util => ju }
 import java.{ io => jio }
