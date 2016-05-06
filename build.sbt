@@ -1,5 +1,4 @@
 val root        = fbt.Build.root
-val api         = fbt.Build.api
 val std         = fbt.Build.std
 val consoleOnly = fbt.Build.consoleOnly
 val testing     = fbt.Build.testing
