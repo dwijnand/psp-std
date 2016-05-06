@@ -4,11 +4,10 @@ import sbt._, Keys._
 import pl.project13.scala.sbt.JmhPlugin
 
 object Build extends FbtBuild {
-  lazy val api = project setup "psp's non-standard api" also spire
-  lazy val std = project setup "psp's non-standard standard library" dependsOn api
+  lazy val std = project setup "psp's non-standard standard library" also spire
 
   // -Xlog-implicit-conversions
-  def subprojects = List[sbt.Project](api, std)
+  def subprojects = List[sbt.Project](std)
   def ammoniteArgs     = wordSeq("-encoding utf8 -language:_ -Yno-predef -Yno-imports -Yno-adapted-args")
   def warnArgs         = wordSeq("-deprecation -unchecked -Xfuture -Ywarn-unused -Ywarn-unused-import")
   def noisyArgs        = wordSeq("-Xlint -Ywarn-dead-code -Ywarn-numeric-widen -Ywarn-value-discard")
