@@ -1,8 +1,8 @@
 comment:
-  layout: header, changes, diff
+  layout: "header, diff, trends, uncovered"
+  range: "55...100"
+
 coverage:
-  ignore:
-  - testing
   notify:
     gitter:
       default:
@@ -10,3 +10,8 @@ coverage:
         - master
         threshold: 0
         url: https://webhooks.gitter.im/e/0334e6f55c6dfb45637c
+
+status:
+  project: yes
+  patch: no
+  changes: no
