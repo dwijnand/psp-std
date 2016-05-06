@@ -16,6 +16,7 @@ run211 () {
   fi
 
   sbt ++$TRAVIS_SCALA_VERSION -batch -no-colors cover
+  codecov
 }
 run212 () {
   # High fucking tech right here.
