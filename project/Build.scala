@@ -4,7 +4,7 @@ import sbt._, Keys._
 import pl.project13.scala.sbt.JmhPlugin
 
 object Build extends FbtBuild {
-  lazy val std = project setup "psp's non-standard standard library" also spire
+  lazy val std = project setup "psp's non-standard standard library"
 
   // -Xlog-implicit-conversions
   def subprojects = List[sbt.Project](std)

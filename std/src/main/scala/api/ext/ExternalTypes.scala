@@ -86,11 +86,6 @@ trait ExternalTypes {
   type scmBuilder[-Elem, +To] = scm.Builder[Elem, To]
   type scmMap[K, V]           = scm.Map[K, V]
 
-  // Spire
-  type BooleanAlgebra[R] = spire.algebra.Bool[R]
-  type SafeLong          = spire.math.SafeLong
-  type UInt              = spire.math.UInt
-
   // Types from java.
   type AssertionError                = jl.AssertionError
   type ClassCastException            = jl.ClassCastException

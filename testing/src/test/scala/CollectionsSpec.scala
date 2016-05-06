@@ -38,23 +38,13 @@ class EmptySpec extends ScalacheckBundle {
   )
 }
 
-class SpireSpec extends ScalacheckBundle {
-  def bundle = "Reliance on spire"
-  import spire._, implicits._
-  import spire.syntax.literals.si._
+class ArraySpec extends ScalacheckBundle {
+  def bundle = "Array operations"
 
-  val x = j"89 234 614 123 234 772"          // Long
-  val y = big"123 456 789 987 654 321"       // BigInt
-  val z = dec"1 234 456 789.123456789098765" // BigDecimal
-
-  val s1 = Size(MaxLong / 2) * 3
-  val s2 = SafeLong(MaxLong / 2) * 3
-
+  val y = 123
   def props = vec(
     expectValue(y * 3)(Array(y, y, y).inPlace.shuffle.reducel(_ + _)),
-    expectValue(y * y * y)(Array(y, y, y).inPlace.shuffle.m.reducel(_ * _)),
-    expectValue("89 234 614 123 234 772".toSafeLong)(x),
-    expectValue(s1.get)(s2)
+    expectValue(y * y * y)(Array(y, y, y).inPlace.shuffle.m.reducel(_ * _))
   )
 }
 

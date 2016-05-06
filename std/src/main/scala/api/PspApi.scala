@@ -59,6 +59,8 @@ abstract class PspApi extends ExternalTypes {
   def jFile(path: String): jFile                    = new jFile(path)
   def jPath(path: String): jPath                    = jnf.Paths get path
   def jUri(x: String): jUri                         = java.net.URI create x
+  def min[A](l: A, r: A)(implicit z: Order[A]): A   = cond(z.cmp(l, r) == Cmp.LT, l, r)
+  def max[A](l: A, r: A)(implicit z: Order[A]): A   = cond(z.cmp(l, r) == Cmp.LT, r, l)
   def none[A](): Option[A]                          = scala.None
   def nullAs[A] : A                                 = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]          = new Tuple2(x, y)

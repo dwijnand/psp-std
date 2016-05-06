@@ -66,9 +66,8 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   // def toFloat: Float        = parseFloat(self removeFirst "[fF]$".r)
   // def toLong: Long          = (self removeFirst "[lL]$".r) |> (s => foldPrefix("0x")(parseLong(s))(parseLong(_, 16)))
 
-  def toSafeLong: SafeLong = SafeLong(self removeAll """\s+""".r toBigInt) // spire allows spaces in their literal syntax
-  def toBigInt: BigInt     = scala.math.BigInt(self)
-  def toInt: Int           = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
+  def toBigInt: BigInt = scala.math.BigInt(self)
+  def toInt: Int       = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
 
   private def bs = '\\'
   private def foldRemove[A](r: Regex)(none: => A)(some: String => A): A       = removeFirst(r) match { case `self` => none ; case s => some(s) }

@@ -44,7 +44,6 @@ package object gen {
   def long: Gen[Long]               = MinLong upTo MaxLong
   def posInt: Gen[Int]              = 1 upTo MaxInt
   def posLong: Gen[Long]            = 1L upTo MaxLong
-  def uint: Gen[UInt]               = int ^^ (x => new UInt(x))
   def zeroPlusIndex: Gen[Index]     = zeroPlusLong map Index
   def zeroPlusInt: Gen[Int]         = 0 upTo MaxInt
   def zeroPlusLong: Gen[Long]       = 0L upTo MaxLong
