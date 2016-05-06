@@ -59,17 +59,17 @@ object ll {
   //       22: if_icmpne     5
   //       25: return
 
-  final def foldLeft[@fspec A, @fspec B](xs: Foreach[A], initial: B, f: (B, A) => B): B = {
+  final def foldLeft[A, B](xs: Foreach[A], initial: B, f: (B, A) => B): B = {
     var res = initial
     xs foreach (x => res = f(res, x))
     res
   }
-  // final def foldLeftIndexed[@fspec A, @fspec B](xs: Each[A], initial: B, f: (B, A, Index) => B): B = {
+  // final def foldLeftIndexed[A, B](xs: Each[A], initial: B, f: (B, A, Index) => B): B = {
   //   var res = initial
   //   xs.zipIndex foreach ((x, i) => res = f(res, x, i))
   //   res
   // }
-  final def foldRight[@fspec A, @fspec B](xs: Foreach[A], initial: B, f: (A, B) => B): B = {
+  final def foldRight[A, B](xs: Foreach[A], initial: B, f: (A, B) => B): B = {
     val arr: Array[Ref[A]] = doto(xs.toRefArray)(_.inPlace.reverse)
     var res: B = initial
     arr foreach (x => res = f(x, res))
@@ -123,7 +123,7 @@ object ll {
   }
 
   /** Circular Buffer. */
-  private case class CBuf[@fspec A](capacity: Precise) extends Direct[A] {
+  private case class CBuf[A](capacity: Precise) extends Direct[A] {
     assert(!capacity.isZero, "CBuf capacity cannot be 0")
 
     private[this] def cap: Int            = capacity.getInt
@@ -136,7 +136,7 @@ object ll {
     @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
 
     def isFull                         = seen >= cap
-    def elemAt(index: Vdex): A         = buffer((readPointer + index.getInt) % cap).castTo[A]
+    def elemAt(index: Vdex): A         = cast(buffer((readPointer + index.getInt) % cap))
     def size: Precise                  = capacity min Size(seen)
     def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
     def += (x: A): this.type           = sideEffect(this, setHead(x))

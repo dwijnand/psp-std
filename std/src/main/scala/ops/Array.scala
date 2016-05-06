@@ -26,7 +26,7 @@ final class ArraySpecificOps[A](val xs: Array[A]) extends AnyVal {
 
 final class InPlace[A](val xs: Array[A]) extends AnyVal {
   private def lastIndex = xs.length - 1
-  private def sortRef(cmp: Comparator[A]) = java.util.Arrays.sort[A](xs.castTo[Array[Ref[A]]], cmp)
+  private def sortRef(cmp: Comparator[A]) = java.util.Arrays.sort[A](cast[Array[Ref[A]]](xs), cmp)
   private def isReference = (xs: Any) match {
     case _: Array[AnyRef] => true
     case _                => false

@@ -31,7 +31,6 @@ abstract class AllExplicit extends PspApi {
 
   // Type aliases I don't like enough to have in the API.
   type Bag[A]               = ExMap[A, Precise]
-  type Bool                 = Boolean
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
   type VdexRange            = Consecutive[Vdex]
   type IntRange             = Consecutive[Int]
@@ -59,43 +58,29 @@ abstract class AllExplicit extends PspApi {
   private def stdout                    = scala.Console.out
   // private def putOut(msg: Any): Unit = sideEffect(stdout print msg, stdout.flush())
   private def echoOut(msg: Any): Unit   = stdout println msg
-  private def aops[A](x: A)             = new ops.AnyOps(x)
 
   // def print[A: Show](x: A): Unit   = putOut(render(x))
   def println[A: Show](x: A): Unit = echoOut(render(x))
   // def anyprintln(x: Any): Unit     = echoOut(aops(x).any_s)
 
-  def applyIfNonEmpty[A](x: A)(f: A => A)(implicit e: Eq[A], z: Empty[A]): A =
-    if (e.eqv(x, z.empty)) x else f(x)
-
-  def ??? : Nothing = throw new scala.NotImplementedError
-
-  def classOf[A: CTag](): Class[_ <: A]      = classTag[A].runtimeClass.asInstanceOf[Class[_ <: A]]
-  def classTag[A: CTag] : CTag[A]            = ?[CTag[A]]
-  def classFilter[A: CTag] : Partial[Any, A] = Partial(x => aops(x).isClass[A], x => aops(x).castTo[A])
-
-  // def abortTrace(msg: String): Nothing           = aops(new RuntimeException(msg)) |> (ex => try throw ex finally ex.printStackTrace)
-  def bufferMap[A, B: Empty](): scmMap[A, B]        = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def classNameOf(x: Any): String                 = JvmName asScala x.getClass short
+  def classFilter[A: CTag] : Partial[Any, A]      = Partial(isInstance[A], cast[A])
+  def bufferMap[A, B: Empty](): scmMap[A, B]      = scmMap[A, B]() withDefaultValue emptyValue[B]
   def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
-  def lformat[A](n: Int): FormatFun                 = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
-  def noNull[A](value: A, orElse: => A): A          = if (value == null) orElse else value
-  // def nullAs[A] : A                                 = null.asInstanceOf[A]
-  // def optMap[A, B](x: A)(f: A => B): Option[B]      = if (x == null) None else Some(f(x))
-  // def utf8(xs: Array[Byte]): Utf8                = new Utf8(xs)
+  def lformat[A](n: Int): FormatFun               = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
   def make0[R] : MakeHelper[R]         = new MakeHelper[R]
   def make1[CC[_]] : MakeHelper1[CC]   = new MakeHelper1[CC]
   // def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def arr[A: CTag](xs: A*): Array[A]                = xs.toArray[A]
-  def cond[A](p: Bool, thenp: => A, elsep: => A): A = if (p) thenp else elsep
-  def list[A](xs: A*): Plist[A]                     = new Conversions(view(xs: _*)) toPlist
-  def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]       = ExMap fromScala (xs map tuple toMap)
-  def set[A: Eq](xs: A*): ExSet[A]                  = new Conversions(view(xs: _*)) toExSet
-  def vec[A](xs: A*): Vec[A]                        = new Vec[A](xs.toVector)
-  def view[A](xs: A*): DirectView[A, Vec[A]]        = new DirectView[A, Vec[A]](vec(xs: _*))
-  def zip[A, B](xs: (A->B)*): ZipView[A, B]         = Zip zip1 view(xs: _*)
+  def arr[A: CTag](xs: A*): Array[A]          = xs.toArray[A]
+  def list[A](xs: A*): Plist[A]               = new Conversions(view(xs: _*)) toPlist
+  def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V] = ExMap fromScala (xs map tuple toMap)
+  def set[A: Eq](xs: A*): ExSet[A]            = new Conversions(view(xs: _*)) toExSet
+  def vec[A](xs: A*): Vec[A]                  = new Vec[A](xs.toVector)
+  def view[A](xs: A*): DirectView[A, Vec[A]]  = new DirectView[A, Vec[A]](vec(xs: _*))
+  def zip[A, B](xs: (A->B)*): ZipView[A, B]   = Zip zip1 view(xs: _*)
 
   object indices {
     def all: Indexed[Index]                      = Indexed(_.toIndex)

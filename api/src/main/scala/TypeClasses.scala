@@ -29,17 +29,9 @@ trait Show[-A] extends Any { def show(x: A): String }
  *  a lot of types. You could easily recover the behavior of methods like Option.get
  *  or Seq.head by creating a default instance of Empty[A] which throws an exception.
  */
-trait Empty[@fspec +A] extends Any {
+trait Empty[+A] extends Any {
   def empty: A
 }
-
-/** Back and forth between a Repr and an Each[A].
- *  Not especially classic in this presentation.
- */
-// trait Builds[@fspec -Elem, +To] extends Any {
-//   def build(xs: Foreach[Elem]): To
-// }
-
 trait Unbuilds[Repr] extends Any {
   type Elem
   def unbuild(xs: Repr): Foreach[Elem]
@@ -50,7 +42,7 @@ trait Unbuilds[Repr] extends Any {
  *  to a wild stab into the `2^32` states of an Int. This is a
  *  controversial thing to do, in the year 2014. Not joking.
  */
-trait Order[@fspec -A] extends Any with Eq[A] {
+trait Order[-A] extends Any with Eq[A] {
   def cmp(x: A, y: A): Cmp
 }
 

@@ -29,6 +29,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def r: Regex               = Regex(self)
   def to_s: String           = self
   def * (n: Precise): String = Each const self take n join_s
+  def isEmpty                = self == ""
 
   def lines: SplitCharView               = splitView('\n')
   def splitView(ch: Char): SplitCharView = new SplitCharView(splitChar(ch), ch)
@@ -40,7 +41,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
 
   def ~(that: String): String                       = this append that
   def append(that: String): String                  = self + that   /** Note to self: don't touch this `+`. */
-  def capitalize: String                            = applyIfNonEmpty[String](self)(s => s.head.toUpper.to_s append s.tail.force)
+  def capitalize: String                            = if (isEmpty) "" else (self charAt 0).toUpper.to_s ~ self.tail.force
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args : Any*): String                   = stringFormat(self, args: _*)

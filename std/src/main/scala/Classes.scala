@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, exp._
+import api._, all._
 
 /** Motley objects for which a file of residence is not obvious.
  */
@@ -13,12 +13,23 @@ class Partial[A, B](p: ToBool[A], f: A => B) extends (A ?=> B) {
   def isDefinedAt(x: A): Boolean            = p(x)
   def apply(x: A): B                        = f(x)
   def applyOr(x: A, alt: => B): B           = if (p(x)) f(x) else alt
-  // def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, emptyValue)
+  def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
 }
 object Partial {
   implicit def liftPartial[A, B](pf: A ?=> B): Partial[A, B] = apply(pf)
   def apply[A, B](pf: A ?=> B): Partial[A, B]                = apply(pf isDefinedAt _, pf apply _)
   def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B]    = new Partial(p, f)
+}
+final class JvmName(val raw: String) extends ShowSelf {
+  def segments: Vec[String] = raw splitChar '.'
+  def short: String         = segments.last
+  def to_s: String          = raw
+}
+object JvmName {
+  import scala.reflect.NameTransformer.decode
+
+  def asJava(clazz: jClass): JvmName  = new JvmName(clazz.getName)
+  def asScala(clazz: jClass): JvmName = new JvmName(clazz.getName.mapSplit('.')(decode))
 }
 // final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
 //   def chars: Array[Char] = scala.io.Codec fromUTF8 bytes
@@ -41,3 +52,12 @@ final class OrderBy[A] { def apply[B](f: A => B)(implicit z: Order[B]): Order[A]
 final class ShowBy[A]  { def apply[B](f: A => B)(implicit z: Show[B]): Show[A]   = Show[A](f andThen z.show)                                 }
 final class HashBy[A]  { def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A]   = Eq.hash[A]((x, y) => z.eqv(f(x), f(y)))(x => z hash f(x)) }
 final class EqBy[A]    { def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A]       = Eq[A]((x, y) => z.eqv(f(x), f(y)))                        }
+
+object +: {
+  def unapply[A](xs: View[A]): Option[A -> View[A]] =
+    cond(xs.isEmpty, none, some(xs.head -> xs.tail))
+}
+object :+ {
+  def unapply[A](xs: View[A]): Option[View[A] -> A] =
+    cond(xs.isEmpty, none, some(xs.init -> xs.last))
+}
