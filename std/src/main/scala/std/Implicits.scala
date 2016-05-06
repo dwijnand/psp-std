@@ -38,11 +38,10 @@ trait AllImplicit extends scala.AnyRef
   implicit def constantPredicate[A](value: Boolean): ToBool[A]   = cond(value, ConstantTrue, ConstantFalse)
   implicit def defaultRenderer: FullRenderer                     = new FullRenderer
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
-  implicit def opsDirect[A](xs: Direct[A]): ops.DirectOps[A]     = new ops.DirectOps(xs)
-  implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
+  implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]         = new DirectOps(xs)
+  implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]      = new ForeachOps(xs)
   implicit def promoteSize(x: Long): Precise                     = Size(x)
 
-  implicit def opsJavaIterator[A](x: jIterator[A]): JavaIteratorOps[A]                               = new JavaIteratorOps(x)
   implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]                  = Unbuilds[A, CC[A]](Each java _)
   implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
   implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
@@ -77,35 +76,32 @@ trait StdOps1 {
   implicit def convertViewBuilds[A, CC[A]](xs: View[A])(implicit z: Builds[A, CC[A]]): CC[A] = z build xs
 }
 trait StdOps2 extends StdOps1 {
-  implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                                       = new ops.ViewOps(x)
-  implicit def opsHasOrderInfix[A: Order](x: A): OrderOps[A]                                       = new OrderOps[A](x)
-  implicit def opsSize(x: Size): ops.SizeOps                                                       = new ops.SizeOps(x)
-  implicit def opsOp[A, B](x: Op[A, B]): OpOps[A, B]                                               = new OpOps(x)
-  implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.TerminalViewOps[A] = new ops.TerminalViewOps[A](xs.m)
-  implicit def opsTerminalView[A](x: View[A]): ops.TerminalViewOps[A]                              = new ops.TerminalViewOps(x)
-  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.ViewOps[A]          = new ops.ViewOps(xs.m)
-  implicit def opsView2D[A](x: View2D[A]): ops.View2DOps[A]                                        = new ops.View2DOps(x)
-  implicit def opsWrapString(x: String): Pstring                                                   = new Pstring(x)
+  implicit def opsAlreadyView[A](x: View[A]): ViewOps[A]                                       = new ViewOps(x)
+  // implicit def opsHasOrderInfix[A: Order](x: A): OrderOps[A]                                   = new OrderOps[A](x)
+  implicit def opsSize(x: Size): SizeOps                                                       = new SizeOps(x)
+  implicit def opsOp[A, B](x: Op[A, B]): OpOps[A, B]                                           = new OpOps(x)
+  implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): TerminalViewOps[A] = new TerminalViewOps[A](xs.m)
+  implicit def opsTerminalView[A](x: View[A]): TerminalViewOps[A]                              = new TerminalViewOps(x)
+  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ViewOps[A]          = new ViewOps(xs.m)
+  implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                                        = new View2DOps(x)
+  implicit def opsWrapString(x: String): Pstring                                               = new Pstring(x)
 }
 
 trait StdOps3 extends StdOps2 {
-  implicit def opsDirectView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ops.ViewOps[A] = new ops.ViewOps(new DirectView(ev(xs)))
+  implicit def opsDirectView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ViewOps[A] = new ViewOps(new DirectView(ev(xs)))
 
   // We're (sickly) using the context bound to reduce the applicability of the implicit,
   // but then discarding it. The only way these can be value classes is if the type class
   // arrives with the method call.
 
-  implicit def opsChar(x: Char): CharOps                                  = new CharOps(x)
-  implicit def opsCmpEnum(x: Cmp): CmpEnumOps                             = new CmpEnumOps(x)
-  implicit def opsFun[A, B](f: Fun[A, B]): ops.FunOps[A, B]               = new ops.FunOps(f)
-  implicit def opsHasAlgebraInfix[A: BooleanAlgebra](x: A): AlgebraOps[A] = new AlgebraOps(x)
-  implicit def opsHasEqInfix[A: Eq](x: A): EqOps[A]                       = new EqOps(x)
-  implicit def opsHasEq[A: Eq](x: View[A]): HasEqOps[A]                   = new HasEqOps(x)
-  implicit def opsInt(x: Int): IntOps                                     = new IntOps(x)
-  implicit def opsLong(x: Long): LongOps                                  = new LongOps(x)
-  implicit def opsOption[A](x: Option[A]): OptionOps[A]                   = new OptionOps(x)
-  implicit def opsPrecise(x: Precise): ops.PreciseOps                     = new ops.PreciseOps(x)
-  implicit def opsTry[A](x: Try[A]): TryOps[A]                            = new TryOps(x)
+  implicit def opsChar(x: Char): CharOps                = new CharOps(x)
+  implicit def opsFun[A, B](f: Fun[A, B]): FunOps[A, B] = new FunOps(f)
+  implicit def opsHasEq[A: Eq](x: View[A]): HasEqOps[A] = new HasEqOps(x)
+  implicit def opsInt(x: Int): IntOps                   = new IntOps(x)
+  implicit def opsLong(x: Long): LongOps                = new LongOps(x)
+  implicit def opsOption[A](x: Option[A]): OptionOps[A] = new OptionOps(x)
+  implicit def opsPrecise(x: Precise): PreciseOps       = new PreciseOps(x)
+  implicit def opsTry[A](x: Try[A]): TryOps[A]          = new TryOps(x)
 
   implicit def opsPairSplit[R, A, B](xs: Foreach[R])(implicit splitter: Splitter[R, A, B]): Paired[R, A, B] =
     new Paired[R, A, B](Each(xs foreach _))

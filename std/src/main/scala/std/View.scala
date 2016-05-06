@@ -1,6 +1,5 @@
 package psp
 package std
-package ops
 
 import api._, all._
 
@@ -16,7 +15,7 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def indexWhere(p: ToBool[A]): Index                = xs.zipIndex findLeft p map snd or NoIndex
   def isEmpty: Boolean                               = xs.size.isZero || !exists(true)
   def last: A                                        = xs takeRight 1 head
-  def max(implicit z: Order[A]): A                   = reducel(_ max _)
+  def max(implicit z: Order[A]): A                   = reducel(all.max)
   def maxOf[B: Order](f: A => B): B                  = xs map f max
   def nonEmpty: Boolean                              = xs.size.isNonZero || exists(true)
   def reducel(f: BinOp[A]): A                        = xs.tail.foldl(head)(f)
@@ -108,7 +107,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   )
 }
 
-final class View2DOps[A](val xss: View2D[A]) {
+final class View2DOps[A](val xss: View2D[A]) extends AnyVal {
   def column(vdex: Vdex): View[A]   = xss flatMap (_ drop vdex.sizeExcluding take 1)
   def transpose: View2D[A]          = indices.all map column
   def flatten: View[A]              = xss flatMap identity

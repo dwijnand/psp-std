@@ -59,7 +59,7 @@ object Order {
     def cmp(x: A, y: A): Cmp     = f(x, y)
     def compare(x: A, y: A): Int = cmp(x, y).intValue
 
-    def | [B: Order](f: A => B): Order[A] = apply((x, y) => cmp(x, y) | (f(x) compare f(y)))
+    def | [B](f: A => B)(implicit z: Order[B]): Order[A] = apply((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
   }
   final class FromApiOrder[A](z: api.Order[A])        extends Impl[A](z.cmp)
   final class FromComparator[A](c: Comparator[A])     extends Impl[A]((x, y) => longCmp(c.compare(x, y)))
