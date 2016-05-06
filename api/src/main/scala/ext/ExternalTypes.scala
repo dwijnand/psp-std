@@ -87,11 +87,9 @@ trait ExternalTypes {
   type scmMap[K, V]           = scm.Map[K, V]
 
   // Spire
-  type AdditiveMonoid[A]       = spire.algebra.AdditiveMonoid[A]
-  type BooleanAlgebra[R]       = spire.algebra.Bool[R]
-  type MultiplicativeMonoid[A] = spire.algebra.MultiplicativeMonoid[A]
-  type SafeLong                = spire.math.SafeLong
-  type UInt                    = spire.math.UInt
+  type BooleanAlgebra[R] = spire.algebra.Bool[R]
+  type SafeLong          = spire.math.SafeLong
+  type UInt              = spire.math.UInt
 
   // Types from java.
   type AssertionError                = jl.AssertionError

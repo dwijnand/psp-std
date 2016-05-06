@@ -51,8 +51,8 @@ class SpireSpec extends ScalacheckBundle {
   val s2 = SafeLong(MaxLong / 2) * 3
 
   def props = vec(
-    expectValue(y * 3)(Array(y, y, y).inPlace.shuffle.m.sum),
-    expectValue(y * y * y)(Array(y, y, y).inPlace.shuffle.m.product),
+    expectValue(y * 3)(Array(y, y, y).inPlace.shuffle.reducel(_ + _)),
+    expectValue(y * y * y)(Array(y, y, y).inPlace.shuffle.m.reducel(_ * _)),
     expectValue("89 234 614 123 234 772".toSafeLong)(x),
     expectValue(s1.get)(s2)
   )

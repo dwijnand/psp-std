@@ -7,7 +7,6 @@ import api._, exp._, all.opsInt
 
 final class AnyOps[A](val x: A) extends AnyVal {
   def any_s: String                         = s"$x"
-  // def collectSelf(pf: A ?=> A): A        = matchOr(x)(pf)
   def id_## : Int                           = java.lang.System.identityHashCode(x)
   def id_==(y: Any): Boolean                = x.asInstanceOf[AnyRef] eq y.asInstanceOf[AnyRef]  // Calling eq on Anys.
   def matchIf[B: Empty](pf: A ?=> B): B     = matchOr(emptyValue[B])(pf)

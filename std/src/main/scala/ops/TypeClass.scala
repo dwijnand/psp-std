@@ -38,6 +38,12 @@ final class EqOps[A](val lhs: A) extends AnyVal {
   def ===(rhs: A)(implicit z: Eq[A]): Boolean = z.eqv(lhs, rhs)
   def =!=(rhs: A)(implicit z: Eq[A]): Boolean = !z.eqv(lhs, rhs)
 }
+final class JavaIteratorOps[A](it: jIterator[A]) {
+  def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
+}
+final class CmpEnumOps(val cmp: Cmp) {
+  def |(that: => Cmp): Cmp = if (cmp == Cmp.EQ) that else cmp
+}
 
 /** The second variety begins here.
  */
