@@ -7,7 +7,7 @@ object Build extends FbtBuild {
   lazy val std = project setup "psp's non-standard standard library"
 
   // -Xlog-implicit-conversions
-  def subprojects = List[sbt.Project](std)
+  def subprojects      = List[sbt.Project](std)
   def ammoniteArgs     = wordSeq("-encoding utf8 -language:_ -Yno-predef -Yno-imports -Yno-adapted-args")
   def warnArgs         = wordSeq("-deprecation -unchecked -Xfuture -Ywarn-unused -Ywarn-unused-import")
   def noisyArgs        = wordSeq("-Xlint -Ywarn-dead-code -Ywarn-numeric-widen -Ywarn-value-discard")
@@ -72,5 +72,7 @@ object Build extends FbtBuild {
               "org.scala-lang"  % "scala-reflect"   % "2.11.8"
             )
   )
-  lazy val benchmark = project.noArtifacts.setup dependsOn std also scoverageRuntime enablePlugins JmhPlugin
+  lazy val benchmark = project.noArtifacts.setup dependsOn std enablePlugins JmhPlugin settings (
+    libraryDependencies ++= ( if (scalaBinaryVersion.value == "2.11") Seq(scoverageRuntime) else Seq() )
+  )
 }
