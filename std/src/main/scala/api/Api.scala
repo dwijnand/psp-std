@@ -16,7 +16,6 @@ trait ApiTypes extends ExternalTypes {
   type BinOp[A]          = (A, A) => A                 // binary operation
   type Bool              = Boolean
   type GTOnce[+A]        = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
-  type Id[+X]            = X                           // The identity type constructor.
   type Index             = Vindex[Vindex.Zero.type]
   type Nth               = Vindex[Vindex.One.type]
   type OrderRelation[-A] = (A, A) => Cmp
@@ -30,6 +29,11 @@ trait ApiTypes extends ExternalTypes {
   type ToUnit[-A]        = A => Unit
   type Vdex              = Vindex[_]
   type sCollection[+A]   = sc.GenTraversable[A]        // named analogously to jCollection.
+
+  // A few type constructors
+  type Id[+X]         = X
+  type ConstString[X] = String
+  type ConstSize[X]   = Size
 }
 
 abstract class ApiValues extends ApiTypes {

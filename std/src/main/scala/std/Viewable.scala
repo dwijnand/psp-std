@@ -3,38 +3,42 @@ package std
 
 import api._, exp._
 
+
 /** Op and Operable
  *
  *  It's tricky to abstract smoothly over the type constructor of a collection
  *  and its elements simultaneously.
  */
-sealed trait Op[-A, +B] extends ShowSelf {
-  def to_s = this.apply[Op.ConstString]("")(Operable.OperableString)
-}
+sealed trait Op[-A, +B] extends Any
 
 trait Operable[M[X]] {
   def apply[A, B](xs: M[A])(op: Op[A, B]): M[B]
 }
 
+class OpOps[A, B](op: Op[A, B]) {
+  def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
+  def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
+}
+
+// sealed trait OpType {
+//   type In
+//   type Out
+// }
+// trait RangeOp[A]  extends OpType {               type Out = In }
+// trait FilterOp[A] extends OpType { type In = A ; type Out = A  }
+// trait MapOp[A, B] extends OpType { type In = A ; type Out = B  }
 object Op {
-  type ConstString[X] = String
-  type ConstSize[X]   = Size
+  /** We'd like to categorize view operations as is done above for OpType.
+   *  This seems to be impossible or far too much trouble.
+   *  So instead we give in and add pointless type parameters to the Range ops.
+   */
+  final case class Take[A](n: Precise)        extends Op[A, A]
+  final case class Drop[A](n: Precise)        extends Op[A, A]
+  final case class TakeRight[A](n: Precise)   extends Op[A, A]
+  final case class DropRight[A](n: Precise)   extends Op[A, A]
+  final case class Slice[A](range: VdexRange) extends Op[A, A]
 
-  implicit class OpOps[A, B](op: Op[A, B]) {
-    def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
-    def ~[C](that: Op[B, C]): Op[A, C]                       = Compose[A, B, C](op, that)
-  }
-  implicit def liftPositional[A](x: Positional): Pos[A] = Pos[A](x)
-
-  sealed trait Positional
-  final case class Take(n: Precise)        extends Positional
-  final case class Drop(n: Precise)        extends Positional
-  final case class TakeRight(n: Precise)   extends Positional
-  final case class DropRight(n: Precise)   extends Positional
-  final case class Slice(range: VdexRange) extends Positional
-
-  final case class Initial[A](label: String)  extends Op[A, A]
-  final case class Pos[A](op: Positional)     extends Op[A, A]
+  final case class Identity[A](label: String) extends Op[A, A]
   final case class TakeWhile[A](p: ToBool[A]) extends Op[A, A]
   final case class DropWhile[A](p: ToBool[A]) extends Op[A, A]
   final case class Filter[A](p: ToBool[A])    extends Op[A, A]
@@ -50,19 +54,19 @@ object Operable {
 
   implicit object OperableSize extends Operable[ConstSize] {
     def apply[A, B](in: Size)(op: Op[A, B]): Size = op match {
-      case Initial(_)        => in
-      case Pos(Take(n))      => in min n
-      case Pos(Drop(n))      => in - n
-      case Pos(TakeRight(n)) => in min n
-      case Pos(DropRight(n)) => in - n
-      case Pos(Slice(range)) => in - range.startInt min range.size
-      case TakeWhile(_)      => in.atMost
-      case DropWhile(_)      => in.atMost
-      case Filter(p)         => in.atMost
-      case Collect(pf)       => in.atMost
-      case Maps(_)           => in
-      case FlatMap(f)        => if (in.isZero) in else Size.Unknown
-      case Compose(o1, o2)   => apply(apply(in)(o1))(o2)
+      case Identity(_)     => in
+      case Take(n)         => in min n
+      case Drop(n)         => in - n
+      case TakeRight(n)    => in min n
+      case DropRight(n)    => in - n
+      case Slice(range)    => in - range.startInt min range.size
+      case TakeWhile(_)    => in.atMost
+      case DropWhile(_)    => in.atMost
+      case Filter(p)       => in.atMost
+      case Collect(pf)     => in.atMost
+      case Maps(_)         => in
+      case FlatMap(f)      => if (in.isZero) in else Size.Unknown
+      case Compose(o1, o2) => apply(apply(in)(o1))(o2)
     }
   }
 
@@ -77,19 +81,19 @@ object Operable {
     }
 
     def apply[A, B](in: String)(op: Op[A, B]): String = op match {
-      case Initial(label)    => label
-      case Pos(Take(n))      => str(in, "take", n)
-      case Pos(Drop(n))      => str(in, "drop", n)
-      case Pos(TakeRight(n)) => str(in, "takeR", n)
-      case Pos(DropRight(n)) => str(in, "dropR", n)
-      case Pos(Slice(range)) => str(in, "slice", range)
-      case TakeWhile(p)      => str(in, "takeW", p)
-      case DropWhile(p)      => str(in, "dropW", p)
-      case Filter(p)         => str(in, "filter", p)
-      case Collect(pf)       => str(in, "collect", pf)
-      case Maps(f)           => str(in, "map", f)
-      case FlatMap(f)        => str(in, "flatMap", f)
-      case Compose(o1, o2)   => apply(apply(in)(o1))(o2)
+      case Identity(label) => label
+      case Take(n)         => str(in, "take", n)
+      case Drop(n)         => str(in, "drop", n)
+      case TakeRight(n)    => str(in, "takeR", n)
+      case DropRight(n)    => str(in, "dropR", n)
+      case Slice(range)    => str(in, "slice", range)
+      case TakeWhile(p)    => str(in, "takeW", p)
+      case DropWhile(p)    => str(in, "dropW", p)
+      case Filter(p)       => str(in, "filter", p)
+      case Collect(pf)     => str(in, "collect", pf)
+      case Maps(f)         => str(in, "map", f)
+      case FlatMap(f)      => str(in, "flatMap", f)
+      case Compose(o1, o2) => apply(apply(in)(o1))(o2)
     }
   }
   // No matter what hints we provide, scala won't figure out that
@@ -98,19 +102,19 @@ object Operable {
   implicit object OperableView extends Operable[View] {
     def apply[A, B](xs: View[A])(op: Op[A, B]): View[B] = {
       val res: View[_] = op match {
-        case Initial(_)        => xs
-        case Pos(Take(n))      => xs take n
-        case Pos(Drop(n))      => xs drop n
-        case Pos(TakeRight(n)) => xs takeRight n
-        case Pos(DropRight(n)) => xs dropRight n
-        case Pos(Slice(range)) => xs slice range
-        case TakeWhile(p)      => xs takeWhile p
-        case DropWhile(p)      => xs dropWhile p
-        case Filter(p)         => xs filter p
-        case Collect(pf)       => xs collect pf
-        case Maps(f)           => xs map f
-        case FlatMap(f)        => xs flatMap f
-        case Compose(o1, o2)   => apply(apply(xs)(o1))(o2)
+        case Identity(_)     => xs
+        case Take(n)         => xs take n
+        case Drop(n)         => xs drop n
+        case TakeRight(n)    => xs takeRight n
+        case DropRight(n)    => xs dropRight n
+        case Slice(range)    => xs slice range
+        case TakeWhile(p)    => xs takeWhile p
+        case DropWhile(p)    => xs dropWhile p
+        case Filter(p)       => xs filter p
+        case Collect(pf)     => xs collect pf
+        case Maps(f)         => xs map f
+        case FlatMap(f)      => xs flatMap f
+        case Compose(o1, o2) => apply(apply(xs)(o1))(o2)
       }
       cast(res)
     }

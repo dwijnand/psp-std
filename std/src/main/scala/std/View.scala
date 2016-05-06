@@ -35,7 +35,7 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
 }
 
 final case class AView[A, B](xs: View[A], op: Op[A, B]) extends View[B] {
-  def size: Size                  = op[Op.ConstSize](xs.size)
+  def size: Size                  = op[ConstSize](xs.size)
   def foreach(f: B => Unit): Unit = op(xs) foreach f
 }
 
@@ -80,13 +80,13 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def tail: View[A]                                    = xs drop 1
 
   def collect[B](pf: A ?=> B): View[B]        = Op.Collect(pf)
-  def drop(n: Precise): View[A]               = Op.Pos[A](Op.Drop(n))
-  def dropRight(n: Precise): View[A]          = Op.Pos[A](Op.DropRight(n))
+  def drop(n: Precise): View[A]               = Op.Drop[A](n)
+  def dropRight(n: Precise): View[A]          = Op.DropRight[A](n)
   def dropWhile(p: ToBool[A]): View[A]        = Op.DropWhile(p)
   def flatMap[B](f: A => Foreach[B]): View[B] = Op.FlatMap(f)
   def map[B](f: A => B): View[B]              = Op.Maps(f)
-  def take(n: Precise): View[A]               = Op.Pos[A](Op.Take(n))
-  def takeRight(n: Precise): View[A]          = Op.Pos[A](Op.TakeRight(n))
+  def take(n: Precise): View[A]               = Op.Take[A](n)
+  def takeRight(n: Precise): View[A]          = Op.TakeRight[A](n)
   def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
 

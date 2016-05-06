@@ -90,6 +90,7 @@ trait StdOps2 extends StdOps1 {
   implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                                       = new ops.ViewOps(x)
   implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                                   = new ops.OrderOps[A](x)
   implicit def opsSize(x: Size): ops.SizeOps                                                       = new ops.SizeOps(x)
+  implicit def opsOp[A, B](x: Op[A, B]): OpOps[A, B]                                               = new OpOps(x)
   implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.TerminalViewOps[A] = new ops.TerminalViewOps[A](xs.m)
   implicit def opsTerminalView[A](x: View[A]): ops.TerminalViewOps[A]                              = new ops.TerminalViewOps(x)
   implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.ViewOps[A]          = new ops.ViewOps(xs.m)
