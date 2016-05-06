@@ -128,7 +128,4 @@ trait ExternalTypes {
   type jTreeMap[K, V]       = ju.TreeMap[K, V]
   type jTreeSet[A]          = ju.TreeSet[A]
   type jUri                 = java.net.URI
-
-  // You can't use string interpolation without a StringContext term in scope.
-  def StringContext = scala.StringContext
 }

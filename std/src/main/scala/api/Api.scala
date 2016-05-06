@@ -7,15 +7,9 @@ import java.nio.{ file => jnf }
 
 // Importing from this is necessary to use these aliases within the api package,
 // where they aren't otherwise visible because there's no api package object.
-private[api] final object Api extends PspApi
+private[api] final object Api extends ApiValues
 
-abstract class PspApi extends ExternalTypes {
-  final val MaxInt  = jl.Integer.MAX_VALUE
-  final val MaxLong = jl.Long.MAX_VALUE
-  final val MinInt  = jl.Integer.MIN_VALUE
-  final val MinLong = jl.Long.MIN_VALUE
-  final val EOL     = jl.System getProperty "line.separator"
-
+trait ApiTypes extends ExternalTypes {
   // Aliases for internal and external types.
   type ->[+A, +B]        = scala.Product2[A, B]        // A less overconstrained product type.
   type ?=>[-A, +B]       = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
@@ -36,6 +30,14 @@ abstract class PspApi extends ExternalTypes {
   type ToUnit[-A]        = A => Unit
   type Vdex              = Vindex[_]
   type sCollection[+A]   = sc.GenTraversable[A]        // named analogously to jCollection.
+}
+
+abstract class ApiValues extends ApiTypes {
+  final val MaxInt  = jl.Integer.MAX_VALUE
+  final val MaxLong = jl.Long.MAX_VALUE
+  final val MinInt  = jl.Integer.MIN_VALUE
+  final val MinLong = jl.Long.MIN_VALUE
+  final val EOL     = jl.System getProperty "line.separator"
 
   def ??? : Nothing                                 = throw new scala.NotImplementedError
   def abort(msg: Any): Nothing                      = throw new RuntimeException(s"$msg")
@@ -97,7 +99,7 @@ abstract class PspApi extends ExternalTypes {
 
   def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
     java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
-}
 
-sealed abstract class <:<[-From, +To] extends (From => To)
-final class conformance[A] extends <:<[A, A] { def apply(x: A): A = x }
+  // You can't use string interpolation without a StringContext term in scope.
+  def StringContext = scala.StringContext
+}

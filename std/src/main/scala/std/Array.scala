@@ -1,27 +1,16 @@
 package psp
 package std
-package ops
 
 import api._, all._
-// import spire.math.Sorting
 
-final class ArrayClassTagOps[A: CTag](val xs: Array[A]) {
-  // def mergeSort(implicit z: Order[A]): Array[A] =
-  //   sideEffect(xs, Sorting.mergeSort[A](xs)(z, ?))
-
-  def ++(that: Array[A]): Array[A] = {
+final class ArrayOps[A](xs: Array[A]) {
+  def inPlace: InPlace[A] = new InPlace(xs)
+  def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
     val arr = newArray[A](xs.length + that.length)
     arraycopy(xs, 0, arr, 0, xs.length)
     arraycopy(that, 0, arr, xs.length, that.length)
     arr
   }
-}
-
-final class ArraySpecificOps[A](val xs: Array[A]) extends AnyVal {
-  // def size: Precise                          = Size(xs.length)
-  // def apply(idx: Index): A                   = xs(idx.getInt)
-  // def updated(idx: Index, value: A): xs.type = sideEffect(xs, xs(idx.getInt) = value)
-  def inPlace: InPlace[A]                    = new InPlace[A](xs)
 }
 
 final class InPlace[A](val xs: Array[A]) extends AnyVal {

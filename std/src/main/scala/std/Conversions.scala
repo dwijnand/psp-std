@@ -40,7 +40,7 @@ trait ConversionsImpl[A] extends Any {
   def byRef: ops.HasHash[Ref[A]] = new ops.HasHash[Ref[A]](xs.toRefs)(referenceEq)
   def byString: ops.HasHash[A]   = new ops.HasHash[A](xs)(stringEq)
 
-  // def toArray(implicit z: CTag[A]): Array[A]   = to[Array]
+  def toArray(implicit z: CTag[A]): Array[A]   = to[Array]
   // def toDirect: Direct[A]                      = to[Direct]
   // def toEach: Each[A]                          = to[Each]
   def toExSet(implicit z: Eq[A]): ExSet[A]     = to[ExSet]

@@ -121,8 +121,7 @@ trait StdOps3 extends StdOps2 {
 }
 
 trait StdOps extends StdOps3 {
-  implicit def opsArrayNoTag[A](xs: Array[A]): ops.ArraySpecificOps[A]                    = new ops.ArraySpecificOps[A](xs)
-  implicit def opsArrayWithTag[A: CTag](xs: Array[A]): ops.ArrayClassTagOps[A]            = new ops.ArrayClassTagOps[A](xs)
+  implicit def opsArrayNoTag[A](xs: Array[A]): ArrayOps[A]                                = new ArrayOps[A](xs)
   implicit def opsStringContext(sc: StringContext): ShowInterpolator                      = new ShowInterpolator(sc)
   implicit def opsViewConversions[A](xs: View[A]): Conversions[A]                         = new Conversions(xs)
   implicit def unbuildableConv[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Conversions[A] = new Conversions[A](inView[A](z unbuild xs foreach _))
@@ -143,10 +142,8 @@ trait ScalaBuilds {
   implicit def unbuildScalaMap[K, V, CC[X, Y] <: scMap[X, Y]] : UnbuildsAs[K -> V, CC[K, V]]                   = Unbuilds[K -> V, CC[K, V]](Each scalaMap _)
   implicit def buildScalaMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] = Builds.sMap[K, V, That]
 }
-trait PspBuilds0 {
-  implicit def unbuiltPspView0[A] : UnbuildsAs[A, View[A]] = Unbuilds[A, View[A]](xs => xs)
-}
-trait PspBuilds extends PspBuilds0 {
+trait PspBuilds {
+  implicit def unbuiltPspView0[A] : UnbuildsAs[A, View[A]]        = Unbuilds[A, View[A]](xs => xs)
   implicit def buildPspSet[A: Eq]: Builds[A, ExSet[A]]            = Builds.exSet[A]
   implicit def buildPspMap[K: Eq, V]: Builds[K -> V, ExMap[K, V]] = Builds.exMap[K, V]
 }

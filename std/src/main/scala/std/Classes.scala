@@ -74,3 +74,6 @@ object Java {
   def Map[K, V](xs: (K -> V)*): jMap[K, V] = Built(xs)
   def Set[A](xs: A*): jSet[A]              = Built(xs)
 }
+
+sealed abstract class <:<[-From, +To] extends (From => To)
+final class conformance[A] extends <:<[A, A] { def apply(x: A): A = x }
