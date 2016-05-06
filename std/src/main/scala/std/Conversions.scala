@@ -36,9 +36,9 @@ trait ConversionsImpl[A] extends Any {
   def xs: View[A]
   def to[CC[X]](implicit z: Builds[A, CC[A]]): CC[A] = z build xs
 
-  def byEquals: ops.HasHash[A]   = new ops.HasHash[A](xs)(inheritEq)
-  def byRef: ops.HasHash[Ref[A]] = new ops.HasHash[Ref[A]](xs.toRefs)(referenceEq)
-  def byString: ops.HasHash[A]   = new ops.HasHash[A](xs)(stringEq)
+  def byEquals: HasHashOps[A]   = new HasHashOps[A](xs)(inheritEq)
+  def byRef: HasHashOps[Ref[A]] = new HasHashOps[Ref[A]](xs.toRefs)(referenceEq)
+  def byString: HasHashOps[A]   = new HasHashOps[A](xs)(stringEq)
 
   def toArray(implicit z: CTag[A]): Array[A]   = to[Array]
   // def toDirect: Direct[A]                      = to[Direct]

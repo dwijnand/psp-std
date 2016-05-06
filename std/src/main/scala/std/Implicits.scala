@@ -42,7 +42,7 @@ trait AllImplicit extends scala.AnyRef
   implicit def opsForeach[A](xs: Foreach[A]): ops.ForeachOps[A]  = new ops.ForeachOps(xs)
   implicit def promoteSize(x: Long): Precise                     = Size(x)
 
-  implicit def opsJavaIterator[A](x: jIterator[A]): ops.JavaIteratorOps[A]                           = new ops.JavaIteratorOps(x)
+  implicit def opsJavaIterator[A](x: jIterator[A]): JavaIteratorOps[A]                               = new JavaIteratorOps(x)
   implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]                  = Unbuilds[A, CC[A]](Each java _)
   implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
   implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
@@ -53,25 +53,18 @@ trait AllImplicit extends scala.AnyRef
  *  supplying. We carved off some of that object for use here and import
  *  that specially.
  */
-trait StdImplicits extends scala.AnyRef
-      with StdBuilds
-      with StdOps
-      with StdUniversal {
-
+trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps {
   self =>
 
-  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]       = Cleaver[A -> B, A, B](((_, _)), fst, snd)
-  // implicit def typeclassPlistSplit[A] : Splitter[Plist[A], A, Plist[A]] = Splitter(_.head, _.tail)
-  // implicit def scalaListSplit[A] : Splitter[sciList[A], A, sciList[A]]  = Splitter(_.head, _.tail)
-
-  implicit def convertViewEach[A](xs: View[A]): Each[A]    = Each(xs foreach _)
-  // implicit def opsSplitView[A](xs: SplitView[A]): Split[A] = Split(xs.left, xs.right)
-  implicit def opsBuildsTypeClass[Elem, To](z: Builds[Elem, To]): ops.BuildsTypeClassOps[Elem, To] = new ops.BuildsTypeClassOps(z)
-
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]             = Order impl z
-  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]             = ExSet impl x
-  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]    = ExMap impl x
-  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B] = Zip impl xs
+  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A]                       = new ll.ArrowAssocRef(x)
+  implicit def convertViewEach[A](xs: View[A]): Each[A]                          = Each(xs foreach _)
+  implicit def opsAny[A](x: A): AnyOps[A]                                        = new AnyOps[A](x)
+  implicit def opsBuildsTc[Elem, To](z: Builds[Elem, To]): BuildsTcOps[Elem, To] = new BuildsTcOps(z)
+  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]           = ExMap impl x
+  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]                    = ExSet impl x
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]                    = Order impl z
+  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B]        = Zip impl xs
+  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]                = Cleaver[A -> B, A, B](((_, _)), fst, snd)
 
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = xs match {
     case xs: AtomicView[_, _] => cast(xs)
@@ -79,16 +72,13 @@ trait StdImplicits extends scala.AnyRef
   }
 }
 
-trait StdOps0 {
-  implicit def opsPspUnbuilt[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Unbuilder[A, R] = new Unbuilder[A, R](xs)
-}
-trait StdOps1 extends StdOps0 {
+trait StdOps1 {
+  implicit def opsPspUnbuilt[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Unbuilder[A, R]     = new Unbuilder[A, R](xs)
   implicit def convertViewBuilds[A, CC[A]](xs: View[A])(implicit z: Builds[A, CC[A]]): CC[A] = z build xs
-  // implicit def opsHasEq[A: Eq](x: View[A]): ops.HasEq[A]       = new ops.HasEq(x)
 }
 trait StdOps2 extends StdOps1 {
   implicit def opsAlreadyView[A](x: View[A]): ops.ViewOps[A]                                       = new ops.ViewOps(x)
-  implicit def opsHasOrderInfix[A: Order](x: A): ops.OrderOps[A]                                   = new ops.OrderOps[A](x)
+  implicit def opsHasOrderInfix[A: Order](x: A): OrderOps[A]                                       = new OrderOps[A](x)
   implicit def opsSize(x: Size): ops.SizeOps                                                       = new ops.SizeOps(x)
   implicit def opsOp[A, B](x: Op[A, B]): OpOps[A, B]                                               = new OpOps(x)
   implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ops.TerminalViewOps[A] = new ops.TerminalViewOps[A](xs.m)
@@ -105,17 +95,17 @@ trait StdOps3 extends StdOps2 {
   // but then discarding it. The only way these can be value classes is if the type class
   // arrives with the method call.
 
-  implicit def opsChar(x: Char): ops.CharOps                                  = new ops.CharOps(x)
-  implicit def opsCmpEnum(x: Cmp): ops.CmpEnumOps                             = new ops.CmpEnumOps(x)
-  implicit def opsFun[A, B](f: Fun[A, B]): ops.FunOps[A, B]                   = new ops.FunOps(f)
-  implicit def opsHasAlgebraInfix[A: BooleanAlgebra](x: A): ops.AlgebraOps[A] = new ops.AlgebraOps(x)
-  implicit def opsHasEqInfix[A: Eq](x: A): ops.EqOps[A]                       = new ops.EqOps(x)
-  implicit def opsHasEq[A: Eq](x: View[A]): ops.HasEq[A]                      = new ops.HasEq(x)
-  implicit def opsInt(x: Int): ops.IntOps                                     = new ops.IntOps(x)
-  implicit def opsLong(x: Long): ops.LongOps                                  = new ops.LongOps(x)
-  implicit def opsOption[A](x: Option[A]): ops.OptionOps[A]                   = new ops.OptionOps(x)
-  implicit def opsPrecise(x: Precise): ops.PreciseOps                         = new ops.PreciseOps(x)
-  implicit def opsTry[A](x: Try[A]): ops.TryOps[A]                            = new ops.TryOps(x)
+  implicit def opsChar(x: Char): CharOps                                  = new CharOps(x)
+  implicit def opsCmpEnum(x: Cmp): CmpEnumOps                             = new CmpEnumOps(x)
+  implicit def opsFun[A, B](f: Fun[A, B]): ops.FunOps[A, B]               = new ops.FunOps(f)
+  implicit def opsHasAlgebraInfix[A: BooleanAlgebra](x: A): AlgebraOps[A] = new AlgebraOps(x)
+  implicit def opsHasEqInfix[A: Eq](x: A): EqOps[A]                       = new EqOps(x)
+  implicit def opsHasEq[A: Eq](x: View[A]): HasEqOps[A]                   = new HasEqOps(x)
+  implicit def opsInt(x: Int): IntOps                                     = new IntOps(x)
+  implicit def opsLong(x: Long): LongOps                                  = new LongOps(x)
+  implicit def opsOption[A](x: Option[A]): OptionOps[A]                   = new OptionOps(x)
+  implicit def opsPrecise(x: Precise): ops.PreciseOps                     = new ops.PreciseOps(x)
+  implicit def opsTry[A](x: Try[A]): TryOps[A]                            = new TryOps(x)
 
   implicit def opsPairSplit[R, A, B](xs: Foreach[R])(implicit splitter: Splitter[R, A, B]): Paired[R, A, B] =
     new Paired[R, A, B](Each(xs foreach _))
@@ -126,11 +116,6 @@ trait StdOps extends StdOps3 {
   implicit def opsStringContext(sc: StringContext): ShowInterpolator                      = new ShowInterpolator(sc)
   implicit def opsViewConversions[A](xs: View[A]): Conversions[A]                         = new Conversions(xs)
   implicit def unbuildableConv[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Conversions[A] = new Conversions[A](inView[A](z unbuild xs foreach _))
-}
-
-trait StdUniversal {
-  implicit def opsAny[A](x: A): ops.AnyOps[A]              = new ops.AnyOps[A](x)
-  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A] = new ll.ArrowAssocRef(x)
 }
 
 /*** The builder/unbuilder/view hierarchy.
@@ -159,13 +144,11 @@ trait StdBuilds1 extends StdBuilds0 {
   implicit def buildPspArray[A: CTag]: Builds[A, Array[A]]            = Builds.array[A]
   implicit def viewPspArray[A](xs: Array[A]): DirectView[A, Array[A]] = new DirectView(Direct array xs)
 }
-trait StdBuilds2 extends StdBuilds1 {
-  implicit def buildPspDirect[A] : Builds[A, Vec[A]] = Vec.newBuilder[A]
-}
-trait StdBuilds extends StdBuilds2 {
-  implicit def unbuildPspString: UnbuildsAs[Char, String]              = Unbuilds(Direct string _)
-  implicit def buildPspString: Builds[Char, String]                    = Builds.string
-  implicit def viewPspString(xs: String): DirectView[Char, String]     = new DirectView(Direct string xs)
+trait StdBuilds extends StdBuilds1 {
+  implicit def buildPspDirect[A] : Builds[A, Vec[A]]               = Vec.newBuilder[A]
+  implicit def unbuildPspString: UnbuildsAs[Char, String]          = Unbuilds(Direct string _)
+  implicit def buildPspString: Builds[Char, String]                = Builds.string
+  implicit def viewPspString(xs: String): DirectView[Char, String] = new DirectView(Direct string xs)
 }
 
 trait AlgebraInstances {

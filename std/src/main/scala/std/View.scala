@@ -2,7 +2,7 @@ package psp
 package std
 package ops
 
-import api._, all._, StdEq._
+import api._, all._
 
 final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def count(p: ToBool[A]): Int                       = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
@@ -113,33 +113,4 @@ final class View2DOps[A](val xss: View2D[A]) {
   def transpose: View2D[A]          = indices.all map column
   def flatten: View[A]              = xss flatMap identity
   def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
-}
-
-/** Methods requiring us to have additional knowledge, by parameter or type class.
- *  We keep the interface simple and foolproof by establishing thet instance
- *  first and only offering the methods after that.
- *
- *  But.
- *
- *  This approach, so nice in principle, stretches scala's willingness to connect
- *  implicits past its abilities. It works on psp collections, but when we depend on
- *  an implicit to entire Viewville in the first place, then these methods become
- *  out of reach without an implicit call to .m to become a view.
- *
- *  The search continues.
- */
-class HasEq[A](xs: View[A])(implicit z: Eq[A]) {
-  def contains(x: A): Boolean = xs exists (_ === x)
-  def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => if (new HasEq(res) contains x) res else res :+ x)
-  def indexOf(x: A): Index    = xs indexWhere (_ === x)
-  def toSet: ExSet[A]         = xs.toExSet
-
-  // def indicesOf(x: A): View[Index]                = xs indicesWhere (_ === x)
-  // def mapOnto[B](f: A => B): ExMap[A, B]          = toSet mapOnto f
-  // def toBag: Bag[A]                               = xs groupBy identity map (_.size.getInt)
-  // def without(x: A): View[A]                      = xs filterNot (_ === x)
-  // def withoutEmpty(implicit z: Empty[A]): View[A] = this without z.empty
-}
-class HasHash[A](xs: View[A])(implicit z: Hash[A]) extends HasEq[A](xs)(z) {
-  override def toSet: ExSet[A] = xs.toHashSet
 }
