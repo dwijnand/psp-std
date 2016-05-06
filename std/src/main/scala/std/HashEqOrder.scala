@@ -1,10 +1,8 @@
 package psp
 package std
 
-
 import api._, all._
 import scala.math.Ordering
-import spire.{ algebra => sa }
 
 object Eq {
   val Inherited = hash[Any](_ == _)(_.##)
@@ -19,7 +17,7 @@ object Eq {
   final class HashImpl[A](e: Relation[A], h: ToInt[A]) extends EqImpl[A](e) with api.Hash[A] {
     def hash(x: A): Int = h(x)
   }
-  sealed class EqImpl[A](val e: Relation[A]) extends sa.Eq[A] with api.Eq[A] {
+  sealed class EqImpl[A](val e: Relation[A]) extends api.Eq[A] {
     def eqv(x: A, y: A) = e(x, y)
   }
   class EqComparator[A: Eq]() extends Comparator[A] {
@@ -56,8 +54,9 @@ object Order {
 
   def impl[A](order: api.Order[A]): Impl[A] = new FromApiOrder(order)
 
-  sealed abstract class Impl[A](f: OrderRelation[A]) extends sa.Order[A] with api.Order[A] {
-    def cmp(x: A, y: A): Cmp = f(x, y)
+  sealed abstract class Impl[A](f: OrderRelation[A]) extends api.Order[A] {
+    def eqv(x: A, y: A): Bool    = cmp(x, y) == Cmp.EQ
+    def cmp(x: A, y: A): Cmp     = f(x, y)
     def compare(x: A, y: A): Int = cmp(x, y).intValue
 
     def | [B: Order](f: A => B): Order[A] = apply((x, y) => cmp(x, y) | (f(x) compare f(y)))

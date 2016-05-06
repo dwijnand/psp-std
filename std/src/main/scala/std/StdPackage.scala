@@ -18,7 +18,7 @@ abstract class AllExplicit extends PspApi {
   final val NoUri         = jUri("")
   final val None          = scala.None
   final val Option        = scala.Option
-  final val SafeLong      = spire.math.SafeLong
+  // final val SafeLong      = spire.math.SafeLong
   final val Some          = scala.Some
   final val Success       = scala.util.Success
   final val Try           = scala.util.Try
@@ -83,10 +83,9 @@ abstract class AllExplicit extends PspApi {
   def zip[A, B](xs: (A->B)*): ZipView[A, B]   = Zip zip1 view(xs: _*)
 
   object indices {
-    def all: Indexed[Index]                      = Indexed(_.toIndex)
-    def from(start: SafeLong): Indexed[SafeLong] = Indexed(start + _.indexValue)
-    def from(start: BigInt): Indexed[BigInt]     = Indexed(start + _.indexValue)
-    def from(start: Long): Indexed[Long]         = Indexed(start + _.indexValue)
-    def from(start: Int): Indexed[Int]           = Indexed(start + _.getInt)
+    def all: Indexed[Index]                  = Indexed(_.toIndex)
+    def from(start: BigInt): Indexed[BigInt] = Indexed(start + _.indexValue)
+    def from(start: Long): Indexed[Long]     = Indexed(start + _.indexValue)
+    def from(start: Int): Indexed[Int]       = Indexed(start + _.getInt)
   }
 }

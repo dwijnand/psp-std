@@ -25,10 +25,10 @@ import Api._
 sealed trait Size extends Any
 sealed trait Atomic extends Any with Size
 final case object Infinite extends Atomic
-final class Precise private[api] (val get: SafeLong) extends AnyVal with Atomic {
-  def *(n: SafeLong): Precise = Size(get * n)
-  def +(n: SafeLong): Precise = Size(get + n)
-  def -(n: SafeLong): Precise = Size(get - n)
+final class Precise private[api] (val get: Long) extends AnyVal with Atomic {
+  def *(n: Long): Precise = Size(get * n)
+  def +(n: Long): Precise = Size(get + n)
+  def -(n: Long): Precise = Size(get - n)
   def getLong: Long           = get.toLong
   def getInt: Int             = get.toInt
   override def toString       = s"$get"
@@ -38,7 +38,7 @@ final case class Bounded private[api] (lo: Precise, hi: Atomic) extends Size
 object Finite extends (Long => Precise) {
   final class Extractor(val get: Long) extends AnyVal { def isEmpty = get < 0 }
 
-  def apply(n: Long): Precise        = new Precise( if (n < 0) 0 else n )
+  def apply(n: Long): Precise        = new Precise(cond(n < 0, 0, n))
   def unapply(n: Precise): Extractor = new Extractor(n.getLong)
 
   object Range {
@@ -70,7 +70,7 @@ object Size {
     case (Size.Range(l1, h1), Size.Range(l2, h2)) => Range(max(l1, l2), max(h1, h2))
   }
 
-  def apply(size: SafeLong): Precise = new Precise( if (size < 0L) 0L else size )
+  def apply(size: Long): Precise = new Precise( if (size < 0L) 0L else size )
 
   object Range {
     /** Preserving associativity/commutativity of Size prevents us from

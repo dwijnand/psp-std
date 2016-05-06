@@ -21,9 +21,8 @@ trait FbtBuild {
   def jars          = unmanagedJars in Compile
   def testJars      = unmanagedJars in Test
 
-  def spire    = "org.spire-math"           %%     "spire"     %            "0.11.0"
-  def jsr305   = "com.google.code.findbugs" %     "jsr305"     %             "3.0.1"
-  def ammonite = "com.lihaoyi"              %  "ammonite-repl" % "0.5.7" cross CrossVersion.full
+  def jsr305   = "com.google.code.findbugs" %    "jsr305"     %             "3.0.1"
+  def ammonite = "com.lihaoyi"              % "ammonite-repl" % "0.5.7" cross CrossVersion.full
 
   def toolsJar                    = Seq("..", "lib", "tools.jar").foldLeft(file(sys.props("java.home")))(new java.io.File(_, _))
   def javaSpecVersion: String     = sys.props("java.specification.version")

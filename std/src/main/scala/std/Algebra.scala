@@ -3,6 +3,8 @@ package std
 
 import api._, exp._
 
+trait BooleanAlgebra[A] extends Any with spire.Bool[A]
+
 object Algebras {
   final case class Not[A](f: ToBool[A]) extends ToBool[A] with ShowSelf {
     def apply(x: A): Boolean = !f(x)

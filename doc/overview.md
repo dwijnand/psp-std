@@ -1,13 +1,3 @@
-overview
-=========
-
-The subprojects are prefixed with psp- because unprefixed names like api and
-std are too confusing in our world of many interacting namespaces. I'll omit
-the prefix where I can.
-
- - **psp-api**: interfaces, type classes, and sealed ADTs. Highest stability.
- - **psp-std**: what scala-library should have been. Depends on spire.
-
 naming
 ======
 
