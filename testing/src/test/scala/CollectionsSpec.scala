@@ -96,6 +96,7 @@ class StringExtensions extends ScalacheckBundle {
   def bundle = "String Extensions"
 
   def s = "123 monkey dog ^^.* hello mother 456"
+  val pf: Char ?=> Char = { case 'a' => 'z' }
 
   def scalaOps(s: String) = new StringOps(s)
 
@@ -105,6 +106,7 @@ class StringExtensions extends ScalacheckBundle {
     def apply[R](f: (StringOps, B) => R)(g: (String, B) => R)(implicit z1: Arb[B], z2: Eq[R]): Prop =
     forAll((s: String, x: B) => sameBehavior(f(scalaOps(s), x), g(s, x)))
   }
+
 
   // dropRight and takeRight have the domain limited because of a scala bug with
   // take/dropRight with values around MinInt.
@@ -126,6 +128,7 @@ class StringExtensions extends ScalacheckBundle {
     expectValue("")("".capitalize),
     expectValue("Bob")("bob".capitalize),
     expectValue("Bob johnson")("bob johnson".capitalize),
+    expectValue("zbc")("abc" mapIf pf force),
     // expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines mk_s ' '),
     expectValue("\u0001\u0002b\u0020b\u0003".sanitize)("??b b?")
   )
@@ -217,7 +220,7 @@ class ViewBasic extends ScalacheckBundle {
     vec[NamedProp](
       "take/drop vs. slice" -> sameOutcomes[Triple[IntRange, Int, Int], IntRange](
         { case (xs, (start, len)) => xs drop start take len },
-        { case (xs, (start, len)) => xs.slice(start, (start max 0).toLong + len) }
+        { case (xs, (start, len)) => xs.slice(start, max(start, 0).toLong + len) }
       ),
       "drop/apply" -> sameOutcomes[RTriple, Int](
         { case xs -> (idx -> size) => (xs drop size)(idx) },

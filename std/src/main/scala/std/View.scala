@@ -1,6 +1,5 @@
 package psp
 package std
-package ops
 
 import api._, all._
 
@@ -16,8 +15,6 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def indexWhere(p: ToBool[A]): Index                = xs.zipIndex findLeft p map snd or NoIndex
   def isEmpty: Boolean                               = xs.size.isZero || !exists(true)
   def last: A                                        = xs takeRight 1 head
-  def max(implicit z: Order[A]): A                   = reducel(_ max _)
-  def maxOf[B: Order](f: A => B): B                  = xs map f max
   def nonEmpty: Boolean                              = xs.size.isNonZero || exists(true)
   def reducel(f: BinOp[A]): A                        = xs.tail.foldl(head)(f)
   def reducer(f: BinOp[A]): A                        = xs.init.foldr(last)(f)
@@ -27,11 +24,21 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def zreducel(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducel(f))
   def zreducer(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducer(f))
 
+  // Show[A]
   def joinLines(implicit z: Show[A]): String         = this mk_s EOL
   def join_s(implicit z: Show[A]): String            = this mk_s ""
   def mk_s(sep: Char)(implicit z: Show[A]): String   = this mk_s sep.to_s
   def mk_s(sep: String)(implicit z: Show[A]): String = xs map z.show zreducel ((l, r) => cond(l == "", "", l ~ sep) ~ r)
   def to_s(implicit z: Show[A]): String              = "[ " + ( xs mk_s ", " ) + " ]"
+
+  // Order[A]
+  def max(implicit z: Order[A]): A  = reducel(all.max)
+  def maxOf[B: Order](f: A => B): B = xs map f max
+
+  def byEquals         = new EqViewOps[A](xs)(Eq.Inherited)
+  def byRef            = new EqViewOps[Ref[A]](xs.toRefs)(Eq.Reference)
+  def byString         = new EqViewOps[A](xs)(Eq.ToString)
+  def by(eqv: Hash[A]) = new EqViewOps[A](xs)(eqv)
 }
 
 final case class AView[A, B](xs: View[A], op: Op[A, B]) extends View[B] {
@@ -108,7 +115,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   )
 }
 
-final class View2DOps[A](val xss: View2D[A]) {
+final class View2DOps[A](val xss: View2D[A]) extends AnyVal {
   def column(vdex: Vdex): View[A]   = xss flatMap (_ drop vdex.sizeExcluding take 1)
   def transpose: View2D[A]          = indices.all map column
   def flatten: View[A]              = xss flatMap identity

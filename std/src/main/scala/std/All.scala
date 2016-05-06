@@ -9,7 +9,55 @@ import sc.{ mutable => scm, immutable => sci }
  *  This choice is mutually exclusive: everything which is in exp is in all.
  */
 object exp extends AllExplicit
-object all extends AllExplicit with AllImplicit
+object all extends AllExplicit with AllImplicit {
+  implicit class JavaIteratorOps[A](it: jIterator[A]) {
+    def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
+  }
+  implicit class CmpEnumOps(val cmp: Cmp) {
+    def |(that: => Cmp): Cmp = if (cmp == Cmp.EQ) that else cmp
+  }
+  implicit class BuildsTcOps[Elem, To](z: Builds[Elem, To]) {
+    def map[Next](f: To => Next): Builds[Elem, Next] = Builds(xs => f(z build xs))
+    def scalaBuilder: scmBuilder[Elem, To]           = sciVector.newBuilder[Elem] mapResult (z build _.toEach)
+  }
+  implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
+    def contains(x: A): Boolean = xs exists (_ === x)
+    def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
+    def indexOf(x: A): Index    = xs indexWhere (_ === x)
+    def toExSet: ExSet[A]       = xs.toExSet
+  }
+  implicit class ViewOpOps[A, B](op: Op[A, B]) {
+    def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
+    def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
+  }
+
+  /** Extension methods for scala library classes.
+   *  We'd like to get away from all such classes,
+   *  but scala doesn't allow it.
+   */
+  implicit class OptionOps[A](val x: Option[A]) extends AnyVal {
+    def or(alt: => A): A              = x getOrElse alt
+    def toVec: Vec[A]                 = this zfold (x => vec(x))
+    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
+    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
+    def | (alt: => A): A              = x getOrElse alt
+  }
+  implicit class TryOps[A](val x: Try[A]) extends AnyVal {
+    def | (expr: => A): A = x.toOption | expr
+    def fold[B](f: Throwable => B, g: A => B): B = x match {
+      case Success(x) => g(x)
+      case Failure(t) => f(t)
+    }
+  }
+  // implicit class InputStreamOps(val in: InputStream) extends AnyVal {
+  //   def buffered: BufferedInputStream = in match {
+  //     case in: BufferedInputStream => in
+  //     case _                       => new BufferedInputStream(in)
+  //   }
+  //   def slurp(): Array[Byte]             = lowlevel.Streams slurp buffered
+  //   def slurp(len: Precise): Array[Byte] = lowlevel.Streams.slurp(buffered, len)
+  // }
+}
 
 abstract class AllExplicit extends ApiValues {
   final val ->            = Pair
@@ -51,12 +99,12 @@ abstract class AllExplicit extends ApiValues {
   def hashBy[A]  = new HashBy[A]
 
   def render[A](x: A)(implicit z: Show[A]): String = z show x
-  // def lexicalOrder: Order[String]                  = Order.fromInt(_ compareTo _)
   def inheritShow[A] : Show[A]                     = Show.Inherited
-  def inheritEq[A] : Hash[A]                       = Eq.Inherited
-  def referenceEq[A <: AnyRef] : Hash[A]           = Eq.Reference
-  def stringEq[A] : Hash[A]                        = Eq.ToString
-  // def shownEq[A: Show] : Hash[A]                   = hashBy[A](x => render(x))(Eq.ToString)
+
+  def byEquals[A] : Hash[A]              = Eq.Inherited
+  def byReference[A <: AnyRef] : Hash[A] = Eq.Reference
+  def byString[A] : Hash[A]              = Eq.ToString
+  def byShown[A: Show] : Hash[A]         = hashBy[A](x => render(x))(byString)
 
   def inView[A](mf: Suspended[A]): View[A] = new LinearView(Each(mf))
 
