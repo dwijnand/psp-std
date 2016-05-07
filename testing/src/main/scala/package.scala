@@ -45,6 +45,8 @@ package object tests {
 
   import Prop._
 
+  def intUpTo(lo: Int, hi: Int): Gen[Int] = Gen.choose(lo, hi)
+
   def junitAssert(body: => Boolean): Unit = org.junit.Assert assertTrue body
 
   def assert(assertion: => Boolean, msg: => Any)(implicit z: Assertions): Unit =
@@ -94,9 +96,6 @@ package object tests {
     def filter(f: (A, B, C) => Boolean)   = Gen.zip(g._1, g._2, g._3) suchThat f.tupled
     def map[D](f: (A, B, C) => D): Gen[D] = Gen.zip(g._1, g._2, g._3) map f.tupled
     def ^^[D](f: (A, B, C) => D): Gen[D]  = map(f)
-  }
-  implicit class TestIntOps(val x: Int) extends AnyVal {
-    def upTo(max: Int): Gen[Int] = Gen.choose(x, max)
   }
   implicit class TestLongOps(val x: Long) extends AnyVal {
     def upTo(max: Long): Gen[Long] = Gen.choose(x, max)

@@ -50,8 +50,7 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
   def takeRight(n: Vdex): Vec[A] = new Vec[A](underlying takeRight n.getInt)
 
   @inline def foreach(f: A => Unit): Unit = {
-    if (!isEmpty)
-      ll.foreachConsecutive(0, lastIntIndex, i => f(applyInt(i)))
+    ll.foreachInt(0, lastIntIndex, i => f(applyInt(i)))
   }
 }
 object FunctionGrid {

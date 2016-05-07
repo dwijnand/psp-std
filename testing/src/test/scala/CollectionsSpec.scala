@@ -200,7 +200,7 @@ class ViewBasic extends ScalacheckBundle {
 
   lazy val rangeProps = {
     type Triple[A, B, C] = A -> (B -> C)
-    type RTriple = Triple[IntRange, Index, Precise]
+    type RTriple = Triple[LongRange, Index, Precise]
 
     // A size and and index each no greater than the halfway point lets
     // us formulate lots of relationships without creating out-of-bounds
@@ -208,29 +208,29 @@ class ViewBasic extends ScalacheckBundle {
     val len  = 100
     val half = len / 2
 
-    def pair(r: IntRange): Gen[Index -> Precise] = for {
+    def pair(r: LongRange): Gen[Index -> Precise] = for {
       i <- 0 upTo half
       s <- 0 upTo half
     } yield Index(i) -> Size(s)
 
-    implicit val arbRange = Arb[IntRange](Gen const (0 until len))
+    implicit val arbRange = Arb[LongRange](Gen const (0 until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))
     implicit val emptyInt = Empty[Int](MinInt)
 
     vec[NamedProp](
-      "take/drop vs. slice" -> sameOutcomes[Triple[IntRange, Int, Int], IntRange](
+      "take/drop vs. slice" -> sameOutcomes[Triple[LongRange, Int, Int], LongRange](
         { case (xs, (start, len)) => xs drop start take len },
         { case (xs, (start, len)) => xs.slice(start, max(start, 0).toLong + len) }
       ),
-      "drop/apply" -> sameOutcomes[RTriple, Int](
-        { case xs -> (idx -> size) => (xs drop size)(idx) },
+      "drop/apply" -> sameOutcomes[RTriple, Long](
+        { case xs -> (idx -> size) => (xs drop size)(idx.getInt) },
         { case xs -> (idx -> size) => xs(idx + size.getLong) }
       ),
-      "dropRight/apply" -> sameOutcomes[RTriple, Int](
+      "dropRight/apply" -> sameOutcomes[RTriple, Long](
         { case xs -> (idx -> size) => (xs dropRight size)(idx) },
         { case xs -> (idx -> size) => xs(idx) }
       ),
-      "splitAt/drop" -> sameOutcomes[RTriple, View[Int]](
+      "splitAt/drop" -> sameOutcomes[RTriple, View[Long]](
         { case xs -> (idx -> size) => xs.m splitAt idx onRight (_ drop size) },
         { case xs -> (idx -> size) => xs.m drop size splitAt idx onRight identity }
       ),
@@ -347,12 +347,6 @@ class CollectionsSpec extends ScalacheckBundle {
       make(Array(1, 2, 3))(_ flatMap (x => vec(x))),
       make(Array(1, 2, 3))(_ map (_.toString) map (_.toInt)),
       make(Array(1, 2, 3))(_ map (_.toString) flatMap (_.toString) map (_.toInt)),
-      make0[Array[Int]](1 to 10),
-      make0[Array[Int]](1 to 10 m),
-      make0[Array[Int]](1 to 10 toVec),
-      make1[Array](1 to 10),
-      make1[Array](1 to 10 m),
-      make1[Array](1 to 10 toVec),
       arr.inPlace map identity,
       arr.inPlace.reverse,
       arr ++ arr,
@@ -368,6 +362,12 @@ class CollectionsSpec extends ScalacheckBundle {
       arr.m.flatMap(x => vec(x)).force[Array[Int]]
     ),
     expectTypes[Array[Long]](
+      make0[Array[Long]](1 to 10),
+      make0[Array[Long]](1 to 10 m),
+      make0[Array[Long]](1 to 10 toVec),
+      make1[Array](1 to 10),
+      make1[Array](1 to 10 m),
+      make1[Array](1 to 10 toVec),
       make0[Array[Long]](1L to 10L),
       make0[Array[Long]](1L to 10L m),
       make0[Array[Long]](1L to 10L toVec),

@@ -93,7 +93,6 @@ trait StdOps3 extends StdOps2 {
 
   implicit def opsChar(x: Char): CharOps                = new CharOps(x)
   implicit def opsFun[A, B](f: Fun[A, B]): FunOps[A, B] = new FunOps(f)
-  implicit def opsInt(x: Int): IntOps                   = new IntOps(x)
   implicit def opsLong(x: Long): LongOps                = new LongOps(x)
   implicit def opsPrecise(x: Precise): PreciseOps       = new PreciseOps(x)
 

@@ -10,10 +10,10 @@ package gen {
     def anchor(c: Char): Gen[String]  = frequency(3 -> "", 1 -> c.toString)
     def apply(): Gen[Regex]           = (concatenate, anchor('^'), anchor('$')) map ((re, s, e) => re.surround(s, e))
     def atom: Gen[Regex]              = oneOf(literal, range, quantified)
-    def concatenate: Gen[Regex]       = simple * (1 upTo 3) ^^ (_.m reducel (_ | _))
+    def concatenate: Gen[Regex]       = simple * intUpTo(1, 3) ^^ (_.m reducel (_ | _))
     def group: Gen[Regex]             = atom ^^ (_.capturingGroup)
     def letterPair: Gen[Char -> Char] = (letter, letter) filter (_ <= _)
-    def literal: Gen[Regex]           = letter * (0 upTo 5) ^^ (_.join_s.r)
+    def literal: Gen[Regex]           = letter * intUpTo(0, 5) ^^ (_.join_s.r)
     def quantified: Gen[Regex]        = (literal zipWith oneOf("+?*".charSeq))(_ append _.to_s)
     def range: Gen[Regex]             = (oneOf("", "^"), letterPair) map { case (neg, (s, e)) => s"[$neg$s-$e]".r }
     def simple: Gen[Regex]            = oneOf(atom, group, alternative)
@@ -25,7 +25,7 @@ package gen {
   }
 
   object regex extends RegexGenerator(alphaLowerChar)
-  object text extends TextGenerator(alphaNumChar, 1 upTo 8, 3 upTo 7)
+  object text extends TextGenerator(alphaNumChar, intUpTo(1, 8), intUpTo(3, 7))
 }
 
 package object gen {
@@ -40,19 +40,19 @@ package object gen {
 
   def indexTo(max: Int): Gen[Index] = (0 upTo max) ^^ (n => Index(n))
   def index: Gen[Index]             = frequency(10 -> zeroPlusIndex, 1 -> NoIndex)
-  def int: Gen[Int]                 = MinInt upTo MaxInt
+  def int: Gen[Int]                 = intUpTo(MinInt, MaxInt)
   def long: Gen[Long]               = MinLong upTo MaxLong
-  def posInt: Gen[Int]              = 1 upTo MaxInt
+  def posInt: Gen[Int]              = intUpTo(1, MaxInt)
   def posLong: Gen[Long]            = 1L upTo MaxLong
   def zeroPlusIndex: Gen[Index]     = zeroPlusLong map Index
-  def zeroPlusInt: Gen[Int]         = 0 upTo MaxInt
+  def zeroPlusInt: Gen[Int]         = intUpTo(0, MaxInt)
   def zeroPlusLong: Gen[Long]       = 0L upTo MaxLong
 
-  def intRange(start: Gen[Int], end: Gen[Int]): Gen[IntRange]     = (start, end) >> (_ to _)
+  def intRange(start: Gen[Int], end: Gen[Int]): Gen[IntRange]     = (start, end) >> all.intRange
   def longRange(start: Gen[Long], end: Gen[Long]): Gen[LongRange] = (start, end) >> (_ to _)
   def letterFrom(s: String): Gen[Char]                            = oneOf(s.charSeq)
-  def indexFrom[A](r: Consecutive[A]): Gen[Vdex]                  = frequency(1 -> NoIndex, 1 -> Index(0), 20 -> oneOf(r.indices.seq), 1 -> r.lastIndex.next)
-  def indexRangeFrom(sMax: Int, eMax: Int): Gen[VdexRange]      = intRange(0 upTo sMax, 0 upTo eMax) ^^ (_ map (_.toLong) map Index)
+  def indexFrom[A](r: Consecutive.Closed[A]): Gen[Vdex]           = frequency(1 -> NoIndex, 1 -> Index(0), 20 -> oneOf(r.indices.seq), 1 -> r.lastIndex.next)
+  def indexRangeFrom(sMax: Long, eMax: Long): Gen[VdexRange]      = longRange(0 upTo sMax, 0 upTo eMax) ^^ (_ map Index)
   def validIndexFrom(r: IntRange): Gen[Vdex]                      = oneOf(r.indices.seq)
   def subsizeOf(r: IntRange): Gen[Precise]                        = validIndexFrom(r) ^^ (_.sizeIncluding)
 

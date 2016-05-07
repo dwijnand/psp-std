@@ -40,14 +40,10 @@ final class CharOps(val ch: Char) extends AnyVal {
   def toUpper      = jl.Character toUpperCase ch
   def to_s         = ch.toString
 }
-final class IntOps(val self: Int) extends AnyVal {
-  def takeNext(len: Precise): IntRange = until(self + len.getInt)
-  def to(end: Int): IntRange           = Consecutive.to(self, end)
-  def until(end: Int): IntRange        = Consecutive.until(self, end)
-}
 final class LongOps(val self: Long) extends AnyVal {
-  def to(end: Long): LongRange    = safeLongToInt(self) to safeLongToInt(end) map (_.toLong)
-  def until(end: Long): LongRange = safeLongToInt(self) until safeLongToInt(end) map (_.toLong)
+  def takeNext(len: Precise): LongRange = LongInterval(self, len) map identity
+  def to(end: Long): LongRange          = Consecutive.to(self, end)
+  def until(end: Long): LongRange       = Consecutive.until(self, end)
 }
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def head: A = apply(Index(0))
@@ -60,12 +56,10 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def indices: VdexRange = indexRange(0, xs.size.getInt)
   def lastIndex: Index   = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
-  def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
+  def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
-  @inline def foreachIndex(f: Vdex => Unit): Unit = (
-    if (xs.size.isNonZero)
-      ll.foreachConsecutive(0, lastIndex.getInt, i => f(Index(i)))
-  )
+  @inline def foreachIndex(f: Vdex => Unit): Unit =
+    ll.foreachInt(0, lastIndex.getInt, i => f(Index(i)))
 }
 
 final class ForeachOps[A](val xs: Foreach[A]) {
@@ -95,7 +89,7 @@ final class PreciseOps(val size: Precise) {
 
   def + (n: Precise): Precise            = size + n.get
   def - (n: Precise): Precise            = size - n.get
-  def containsIndex(vdex: Vdex): Boolean = indices containsInt vdex.getInt
+  def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
   def min(rhs: Precise): Precise = all.min(size, rhs)
 }
