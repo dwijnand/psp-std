@@ -40,12 +40,12 @@ object Builds {
 class RemakeHelper[R](xs: R) {
   def apply[A](f: R => View[A])(implicit z: Builds[A, R]): R = z build f(xs)
 }
-class MakeHelper[R] {
+class MakeHelper0[R] {
   def apply[A](expr: => View[A])(implicit z: Builds[A, R]): R = z build expr
 }
 class MakeHelper1[CC[_]] {
   def apply[A](expr: => View[A])(implicit z: Builds[A, CC[A]]): CC[A] = z build expr
 }
-// class MakeHelper2[CC[_, _]] {
-//   def apply[K, V](expr: => ZipView[K, V])(implicit z: Builds[K->V, CC[K, V]]): CC[K, V] = z build expr.pairs
-// }
+class MakeHelper2[CC[_, _]] {
+  def apply[K, V](expr: => ZipView[K, V])(implicit z: Builds[K->V, CC[K, V]]): CC[K, V] = z build expr.pairs
+}

@@ -58,7 +58,10 @@ object LongInterval {
 }
 
 sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
+  type CC[X] <: Consecutive[X]
   def in: LongInterval
+  def map[B](g: A => B): CC[B]
+
   def startLong: Long = in.startLong
   def to_s = s"Consec($in, <f>)"
 }
@@ -70,11 +73,16 @@ object Consecutive {
   def apply[A](in: LongInterval.Open, f: Long => A): Open[A]     = new Open(in, f)
 
   final class Open[+A](val in: LongInterval.Open, f: Long => A) extends Consecutive[A] with Indexed[A] {
+    type CC[X] = Open[X]
+
     def size                        = Infinite
     def elemAt(vdex: Vdex): A       = f(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (f andThen g)
+    def map[B](g: A => B): Open[B]  = in map (f andThen g)
   }
   final class Closed[+A](val in: LongInterval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
+    type CC[X] = Closed[X]
+
     def containsLong(n: Long): Bool  = in contains n
     def elemAt(vdex: Vdex): A        = f(in(vdex))
     def foreach(g: A => Unit): Unit  = in foreach (f andThen g)

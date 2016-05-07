@@ -98,36 +98,31 @@ abstract class AllExplicit extends ApiValues {
   def showBy[A]  = new ShowBy[A]
   def hashBy[A]  = new HashBy[A]
 
-  def render[A](x: A)(implicit z: Show[A]): String = z show x
-  def inheritShow[A] : Show[A]                     = Show.Inherited
-
   def byEquals[A] : Hash[A]              = Eq.Inherited
   def byReference[A <: AnyRef] : Hash[A] = Eq.Reference
   def byString[A] : Hash[A]              = Eq.ToString
   def byShown[A: Show] : Hash[A]         = hashBy[A](x => render(x))(byString)
 
-  def inView[A](mf: Suspended[A]): View[A] = new LinearView(Each(mf))
-
-  private def stdout                    = scala.Console.out
-  // private def putOut(msg: Any): Unit = sideEffect(stdout print msg, stdout.flush())
-  private def echoOut(msg: Any): Unit   = stdout println msg
-
-  // def print[A: Show](x: A): Unit   = putOut(render(x))
-  def println[A: Show](x: A): Unit = echoOut(render(x))
-  // def anyprintln(x: Any): Unit     = echoOut(aops(x).any_s)
-
-  def classNameOf(x: Any): String                 = JvmName asScala x.getClass short
-  def classFilter[A: CTag] : Partial[Any, A]      = Partial(isInstance[A], cast[A])
-  def bufferMap[A, B: Empty](): scmMap[A, B]      = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def indexRange(start: Int, end: Int): VdexRange = LongInterval.until(start, end) map Index
-  def lformat[A](n: Int): FormatFun               = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def classFilter[A: CTag] : Partial[Any, A]       = Partial(isInstance[A], cast[A])
+  def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
+  def inheritShow[A] : Show[A]                     = Show.Inherited
+  def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
+  def render[A](x: A)(implicit z: Show[A]): String = z show x
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
-  def make0[R] : MakeHelper[R]         = new MakeHelper[R]
+  def make0[R] : MakeHelper0[R]        = new MakeHelper0[R]
   def make1[CC[_]] : MakeHelper1[CC]   = new MakeHelper1[CC]
-  // def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
+  def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def intRange(start: Int, end: Int): IntRange = LongInterval.until(start, end) map (_.toInt)
+  def bufferMap[A, B: Empty](): scmMap[A, B]         = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def inView[A](mf: Suspended[A]): View[A]           = new LinearView(Each(mf))
+  def indexRange(start: Long, end: Long): VdexRange  = longRange(start, end) map Index
+  def intRange(start: Int, end: Int): IntRange       = longRange(start, end) map (_.toInt)
+  def longRange(start: Long, end: Long): LongRange   = LongInterval.until(start, end) map identity
+  def longsFrom(start: Long): Consecutive.Open[Long] = LongInterval open start map identity
+  def intsFrom(start: Int): Consecutive.Open[Int]    = longsFrom(start) map (_.toInt)
+
   def arr[A: CTag](xs: A*): Array[A]           = xs.toArray[A]
   def list[A](xs: A*): Plist[A]                = new Conversions(view(xs: _*)) toPlist
   def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]  = ExMap fromScala (xs map tuple toMap)
@@ -138,8 +133,5 @@ abstract class AllExplicit extends ApiValues {
 
   object indices {
     def all: Indexed[Index]                  = Indexed(_.toIndex)
-    def from(start: BigInt): Indexed[BigInt] = Indexed(start + _.indexValue)
-    def from(start: Long): Indexed[Long]     = LongInterval.open(start) map identity
-    def from(start: Int): Indexed[Int]       = LongInterval.open(start) map (_.toInt)
   }
 }
