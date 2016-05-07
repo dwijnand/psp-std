@@ -7,8 +7,8 @@ import org.openjdk.jmh.annotations._
 
 object Values {
   final val max        = 1000
-  final val scalaElems = 1 to max toScalaVector
-  final val pspElems   = 1 to max toVec
+  final val scalaElems = intRange(1, max + 1).toScalaVector
+  final val pspElems   = intRange(1, max + 1).toVec
 }
 
 @BenchmarkMode(Array(Mode.AverageTime))
