@@ -13,7 +13,7 @@ object ll {
    *  @param last     the last int
    *  @param f        the function to apply
    */
-  @inline final def foreachConsecutive(start: Int, last: Int, f: Int => Unit): Unit = {
+  @inline def foreachIntNonEmpty(start: Int, last: Int, f: Int => Unit): Unit = {
     var elem = start - 1
     while (true) {
       elem += 1
@@ -21,6 +21,20 @@ object ll {
       if (elem == last) return
     }
   }
+  @inline def foreachLongNonEmpty(start: Long, last: Long, f: Long => Unit): Unit = {
+    var elem = start - 1
+    while (true) {
+      elem += 1
+      f(elem)
+      if (elem == last) return
+    }
+  }
+
+  @inline def foreachLong(start: Long, last: Long, f: Long => Unit): Unit =
+    if (start <= last) foreachLongNonEmpty(start, last, f)
+
+  @inline def foreachInt(start: Int, last: Int, f: Int => Unit): Unit =
+    if (start <= last) foreachIntNonEmpty(start, last, f)
 
   /** Here's the bytecode the above produces. We'd like a test which ensures it
    *  stays this way. There is some code in the scala distribution which verifies bytecode

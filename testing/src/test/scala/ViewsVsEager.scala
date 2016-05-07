@@ -7,8 +7,8 @@ import org.scalacheck._, Prop.forAll, Gen._
 class OperationCounts extends ScalacheckBundle {
   import Op._
 
-  type IntOp = Op[Int, Int]
-  def numComposite                = 2 upTo 4
+  type LongOp = Op[Long, Long]
+  def numComposite = intUpTo(2, 4)
 
   private[this] var displaysRemaining = maxDisplay
 
@@ -25,31 +25,31 @@ class OperationCounts extends ScalacheckBundle {
 
   private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, label)
 
-  private def divides(n: Int)  = lop(s"/$n", (_: Int) % n == 0)
-  private def less(n: Int)     = lop(s"<$n", (_: Int) < n)
-  private def multiply(n: Int) = lop(s"*$n", (_: Int) * n)
-  private def pairup           = lop("=>(x,x)", (x: Int) => view(x, x))
+  private def divides(n: Long)  = lop(s"/$n", (_: Long) % n == 0)
+  private def less(n: Long)     = lop(s"<$n", (_: Long) < n)
+  private def multiply(n: Long) = lop(s"*$n", (_: Long) * n)
+  private def pairup            = lop("=>(x,x)", (x: Long) => view(x, x))
 
-  def genOneOp: Gen[IntOp] = oneOf(
-    lowHalf     ^^ (n => Drop[Int](n)),
-    highHalf    ^^ (n => Take[Int](n)),
-    chooseMax   ^^ (n => DropRight[Int](n)),
-    chooseMax   ^^ (n => TakeRight[Int](n)),
+  def genOneOp: Gen[LongOp] = oneOf(
+    lowHalf     ^^ (n => Drop[Long](n)),
+    highHalf    ^^ (n => Take[Long](n)),
+    chooseMax   ^^ (n => DropRight[Long](n)),
+    chooseMax   ^^ (n => TakeRight[Long](n)),
     lowHalf     ^^ (n => DropWhile(less(n))),
     lowHalf     ^^ (n => TakeWhile(less(n))),
     chooseSmall ^^ (n => Maps(multiply(n))),
     chooseSmall ^^ (n => Filter(divides(n))),
-    chooseSmall ^^ (n => Collect(Partial(divides(n), (_: Int) / n))),
+    chooseSmall ^^ (n => Collect(Partial(divides(n), (_: Long) / n))),
     chooseSmall ^^ (n => FlatMap(pairup)),
-    chooseRange ^^ (r => Slice[Int](r))
+    chooseRange ^^ (r => Slice[Long](r))
   )
-  def genCompositeOp: Gen[IntOp] = genOneOp * numComposite ^^ (_ reducel (_ ~ _))
+  def genCompositeOp: Gen[LongOp] = genOneOp * numComposite ^^ (_ reducel (_ ~ _))
 
   def composite: Gen[CompositeOp] = genCompositeOp ^^ CompositeOp
 
   val counter = OperableCounter(1 to max)
 
-  case class CompositeOp(op: IntOp) {
+  case class CompositeOp(op: LongOp) {
     lazy val (maybeRes, views, eager) = counter(op ~ Take(3))
     lazy val countsPass = views.accesses <= eager.accesses && views.allocations <= eager.allocations
     lazy val isPass = maybeRes.isRight && countsPass
@@ -130,8 +130,8 @@ object OperableCounter {
     }
   }
 
-  class Compared(range: IntRange) {
-    def apply(op: Op[Int, Int]) = {
+  class Compared(range: LongRange) {
+    def apply(op: Op[Long, Long]) = {
       val c1 = new OpCount("views")
       val c2 = new OpCount("eager")
       val r1 = op[View](new CountXs(range, c1)).force
@@ -145,5 +145,5 @@ object OperableCounter {
     }
   }
 
-  def apply(range: IntRange) = new Compared(range)
+  def apply(range: LongRange) = new Compared(range)
 }

@@ -1,8 +1,5 @@
-comment:
-  layout: "header, diff, trends, uncovered"
-  range: "30...80"
-
 coverage:
+  range: "30...80"
   notify:
     gitter:
       default:
@@ -10,8 +7,10 @@ coverage:
         - master
         threshold: 0
         url: https://webhooks.gitter.im/e/0334e6f55c6dfb45637c
+  status:
+    project: yes
+    patch: no
+    changes: no
 
-status:
-  project: yes
-  patch: no
-  changes: no
+comment:
+  layout: "header, diff, trends, sunburst, uncovered"

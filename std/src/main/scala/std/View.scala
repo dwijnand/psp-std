@@ -82,7 +82,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs filter (regex isMatch _)
   def init: View[A]                                    = xs dropRight 1
   def mapIf(pf: Partial[A, A]): View[A]                = xs map (x => pf.applyOr(x, x))
-  def slice(range: VdexRange): View[A]                 = xs drop range.startInt take range.size
+  def slice(range: VdexRange): View[A]                 = xs drop range.startLong take range.size
   def sorted(implicit z: Order[A]): View[A]            = xs.toRefArray.inPlace.sort
   def tail: View[A]                                    = xs drop 1
 

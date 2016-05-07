@@ -54,7 +54,7 @@ object Operable {
       case Drop(n)         => in - n
       case TakeRight(n)    => in min n
       case DropRight(n)    => in - n
-      case Slice(range)    => in - range.startInt min range.size
+      case Slice(range)    => in - range.startLong min range.size
       case TakeWhile(_)    => in.atMost
       case DropWhile(_)    => in.atMost
       case Filter(p)       => in.atMost
