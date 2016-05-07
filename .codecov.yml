@@ -1,6 +1,6 @@
 comment:
   layout: "header, diff, trends, uncovered"
-  range: "55...100"
+  range: "30...80"
 
 coverage:
   notify:
