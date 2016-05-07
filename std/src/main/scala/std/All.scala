@@ -119,7 +119,7 @@ abstract class AllExplicit extends ApiValues {
   def classNameOf(x: Any): String                 = JvmName asScala x.getClass short
   def classFilter[A: CTag] : Partial[Any, A]      = Partial(isInstance[A], cast[A])
   def bufferMap[A, B: Empty](): scmMap[A, B]      = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
+  def indexRange(start: Int, end: Int): VdexRange = LongInterval.until(start, end) map Index
   def lformat[A](n: Int): FormatFun               = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
@@ -127,7 +127,7 @@ abstract class AllExplicit extends ApiValues {
   def make1[CC[_]] : MakeHelper1[CC]   = new MakeHelper1[CC]
   // def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def intRange(start: Int, end: Int): IntRange = LongInterval(start, Size(end - start)) map (_.toInt)
+  def intRange(start: Int, end: Int): IntRange = LongInterval.until(start, end) map (_.toInt)
   def arr[A: CTag](xs: A*): Array[A]           = xs.toArray[A]
   def list[A](xs: A*): Plist[A]                = new Conversions(view(xs: _*)) toPlist
   def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]  = ExMap fromScala (xs map tuple toMap)
@@ -139,7 +139,7 @@ abstract class AllExplicit extends ApiValues {
   object indices {
     def all: Indexed[Index]                  = Indexed(_.toIndex)
     def from(start: BigInt): Indexed[BigInt] = Indexed(start + _.indexValue)
-    def from(start: Long): Indexed[Long]     = Indexed(start + _.indexValue)
-    def from(start: Int): Indexed[Int]       = Indexed(start + _.getInt)
+    def from(start: Long): Indexed[Long]     = LongInterval.open(start) map identity
+    def from(start: Int): Indexed[Int]       = LongInterval.open(start) map (_.toInt)
   }
 }

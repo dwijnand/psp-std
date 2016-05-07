@@ -41,9 +41,9 @@ final class CharOps(val ch: Char) extends AnyVal {
   def to_s         = ch.toString
 }
 final class LongOps(val self: Long) extends AnyVal {
-  def takeNext(len: Precise): LongRange = LongInterval(self, len) map identity
-  def to(end: Long): LongRange          = Consecutive.to(self, end)
-  def until(end: Long): LongRange       = Consecutive.until(self, end)
+  def takeNext(len: Precise): LongRange = LongInterval.closed(self, len) map identity
+  def to(end: Long): LongRange          = LongInterval.to(self, end) map identity
+  def until(end: Long): LongRange       = LongInterval.until(self, end) map identity
 }
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def head: A = apply(Index(0))
