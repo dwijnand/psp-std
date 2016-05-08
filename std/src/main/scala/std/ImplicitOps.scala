@@ -53,7 +53,7 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
 
   def reverse: Direct[A] = Direct reversed xs
   def apply(i: Vdex): A  = xs elemAt i
-  def indices: VdexRange = indexRange(0, xs.size.getInt)
+  def indices: VdexRange = xs.size.indices
   def lastIndex: Index   = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
   def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
@@ -83,12 +83,11 @@ final class DocOps(val lhs: Doc) extends AnyVal {
 }
 
 final class PreciseOps(val size: Precise) {
-  def toInt: Int         = size.getInt
-  def indices: VdexRange = indexRange(0, size.getInt)
+  def indices: VdexRange = indexRange(0, size.getLong)
   def lastIndex: Index   = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
-  def + (n: Precise): Precise            = size + n.get
-  def - (n: Precise): Precise            = size - n.get
+  def + (n: Precise): Precise            = size + n.getLong
+  def - (n: Precise): Precise            = size - n.getLong
   def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
   def min(rhs: Precise): Precise = all.min(size, rhs)

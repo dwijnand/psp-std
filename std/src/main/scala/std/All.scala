@@ -43,13 +43,14 @@ object all extends AllExplicit with AllImplicit {
     def keySet: ExSet[K]                  = lookup.keys
     def keyVector: Vec[K]                 = keys.toVec
     def entries: Zip[K, V]                = keyVector mapAndZip lookup
-    def map[V1](g: V => V1): ExMap[K, V1] = ExMap(keySet, f mapOut g)
+    def map[V1](g: V => V1): ExMap[K, V1] = keySet mapWith (f mapOut g)
     def apply(key: K): V                  = lookup(key)
   }
   implicit class ExSetOps[A](val xs: ExSet[A]) {
     private implicit def equiv = xs.equiv
 
-    def union(that: ExSet[A]): ExSet[A] = xs.m ++ that.m toExSet
+    def mapWith[B](f: Fun[A, B]): ExMap[A, B] = ExMap(xs, f)
+    def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
   }
 
   /** Extension methods for scala library classes.

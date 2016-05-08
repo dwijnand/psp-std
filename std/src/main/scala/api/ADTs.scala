@@ -29,9 +29,8 @@ final class Precise private[api] (val get: Long) extends AnyVal with Atomic {
   def *(n: Long): Precise = Size(get * n)
   def +(n: Long): Precise = Size(get + n)
   def -(n: Long): Precise = Size(get - n)
-  def getLong: Long           = get.toLong
-  def getInt: Int             = get.toInt
-  override def toString       = s"$get"
+  def getLong: Long       = get.toLong
+  override def toString   = s"$get"
 }
 final case class Bounded private[api] (lo: Precise, hi: Atomic) extends Size
 
@@ -123,6 +122,10 @@ final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])      extends Fun[A, 
 final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C])  extends Fun[A, C]
 final case class ExMap[A, +B](keys: ExSet[A], f: Fun[A, B])      extends Fun[A, B]
 
+object Fun {
+  def apply[A, B](f: A => B): Opaque[A, B] = Opaque(f)
+}
+
 /** A not very impressive attempt to improve on string
  *  representations.
  */
@@ -160,14 +163,12 @@ final class Vindex[Base] private[api] (val indexValue: Long) extends AnyVal {
   def sizeExcluding: Precise = Size(indexValue)
   def sizeIncluding: Precise = Size(nthValue)
 
-  // def to(that: This): Consecutive[This] = indexValue to that.indexValue map create
-  // def until(that: This): Consecutive[This] = getInt until that.getInt map (x => create(x))
-  // def %(size: Precise): This            = mapLong(_ % sizeIncluding.getLong)
-  def +(n: Long): This                     = mapLong(_ + n)
-  def -(n: Long): This                     = mapLong(_ - n)
-  // def /(size: Precise): This            = mapLong(_ / sizeIncluding.getLong)
-  def next: This                           = this + 1
-  // def prev: This                        = this - 1
+  // def %(size: Precise): This = mapLong(_ % sizeIncluding.getLong)
+  def +(n: Long): This          = mapLong(_ + n)
+  def -(n: Long): This          = mapLong(_ - n)
+  // def /(size: Precise): This = mapLong(_ / sizeIncluding.getLong)
+  def next: This                = this + 1
+  // def prev: This             = this - 1
 }
 
 object Vindex {

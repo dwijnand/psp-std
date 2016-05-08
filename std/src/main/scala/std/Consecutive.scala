@@ -34,18 +34,18 @@ object LongInterval {
   final case class Closed private[LongInterval] (startLong: Long, size: Precise) extends LongInterval {
     type This = Closed
 
-    def exclusiveEnd: Long = startLong + size.get
+    def exclusiveEnd: Long = startLong + size.getLong
     def lastLong: Long     = exclusiveEnd - 1
 
     def contains(n: Long): Bool                     = startLong <= n && n <= lastLong
-    def drop(n: Precise): Closed                    = closed(startLong + n.get, size - n)
+    def drop(n: Precise): Closed                    = closed(startLong + n.getLong, size - n)
     def dropRight(n: Precise): Closed               = closed(startLong, size - n)
     def foreach(f: Long => Unit): Unit              = ll.foreachLong(startLong, lastLong, f)
     def isEmpty: Bool                               = size.isZero
-    def isPoint: Bool                               = size.get == 1L
+    def isPoint: Bool                               = size.getLong == 1L
     def map[A](f: Long => A): Consecutive.Closed[A] = Consecutive(this, f)
     def take(n: Precise): Closed                    = closed(startLong, size min n)
-    def takeRight(n: Precise): Closed               = (size min n) |> (s => closed(exclusiveEnd - s.get, s))
+    def takeRight(n: Precise): Closed               = (size min n) |> (s => closed(exclusiveEnd - s.getLong, s))
 
     def to_s: String = if (isEmpty) "[0,0)"else if (isPoint) s"[$startLong]" else s"[$startLong..$lastLong]"
   }
@@ -54,7 +54,7 @@ object LongInterval {
     type This = Open
 
     def contains(n: Long): Bool                   = startLong <= n
-    def drop(n: Precise): Open                    = open(startLong + n.get)
+    def drop(n: Precise): Open                    = open(startLong + n.getLong)
     def dropRight(n: Precise): Open               = this
     def foreach(f: Long => Unit): Unit            = ll.foreachLong(startLong, MaxLong, f)
     def map[A](f: Long => A): Consecutive.Open[A] = Consecutive(this, f)

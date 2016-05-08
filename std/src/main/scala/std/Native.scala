@@ -75,13 +75,14 @@ class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
 }
 
 object Pset {
-  def fromJava[A](xs: jSet[A]): Pset[A]   = fromScala(xs.to[sciSet].toSet) // toSet is actually needed
-  def fromScala[A](xs: scSet[A]): Pset[A] = new Pset[A](xs.toSet)
+  def fromJava[A](xs: jSet[A]): ExSet[A]   = new Pset[A](xs.toScalaSet)
+  def fromScala[A](xs: scSet[A]): ExSet[A] = new Pset[A](xs.toSet)
 }
 object Pmap {
-  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]   = ExMap[K, V](Pset fromJava xs.keySet, Opaque[K, V](xs get _))
-  def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V] = ExMap[K, V](xs.keys.byEquals.toExSet, Opaque(xs))
+  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]   = xs.keySet.byEquals.toExSet mapWith Fun(xs get _)
+  def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V] = xs.keys.byEquals.toExSet mapWith Fun(xs)
 }
+
 object Plist {
   def empty[A] : Plist[A]                 = cast(Pnil)
   def newBuilder[A] : Builds[A, Plist[A]] = new Builds(xs => ll.foldRight[A, Plist[A]](xs, empty[A], _ :: _))
