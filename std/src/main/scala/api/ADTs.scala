@@ -29,9 +29,8 @@ final class Precise private[api] (val get: Long) extends AnyVal with Atomic {
   def *(n: Long): Precise = Size(get * n)
   def +(n: Long): Precise = Size(get + n)
   def -(n: Long): Precise = Size(get - n)
-  def getLong: Long           = get.toLong
-  def getInt: Int             = get.toInt
-  override def toString       = s"$get"
+  def getLong: Long       = get.toLong
+  override def toString   = s"$get"
 }
 final case class Bounded private[api] (lo: Precise, hi: Atomic) extends Size
 
@@ -101,7 +100,7 @@ sealed abstract class Fun[-A, +B] {
     case Defaulted(g, u) => if (u isDefinedAt x) u(x) else g(x)
     case FilterIn(_, u)  => u(x) // filter is checked at isDefinedAt
     case AndThen(u1, u2) => u2(u1(x))
-    case FiniteDom(_, g) => g(x)
+    case ExMap(_, g)     => g(x)
   }
   final def isDefinedAt(x: A): Boolean = this match {
     case Opaque(_)       => true
@@ -109,7 +108,7 @@ sealed abstract class Fun[-A, +B] {
     case FilterIn(p, u)  => p(x) && (u isDefinedAt x)
     case Defaulted(_, u) => u isDefinedAt x
     case AndThen(u1, u2) => (u1 isDefinedAt x) && (u2 isDefinedAt u1(x))
-    case FiniteDom(p, _) => p(x)
+    case ExMap(ks, _)    => ks(x)
   }
   def toPartial: A ?=> B = new (A ?=> B) {
     def isDefinedAt(x: A) = self isDefinedAt x
@@ -121,7 +120,11 @@ final case class Defaulted[-A, +B](g: A => B, u: Fun[A, B])      extends Fun[A, 
 final case class FilterIn[-A, +B](p: A => Boolean, u: Fun[A, B]) extends Fun[A, B]
 final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])      extends Fun[A, B]
 final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C])  extends Fun[A, C]
-final case class FiniteDom[A, +B](keys: ExSet[A], f: Fun[A, B])  extends Fun[A, B]
+final case class ExMap[A, +B](keys: ExSet[A], f: Fun[A, B])      extends Fun[A, B]
+
+object Fun {
+  def apply[A, B](f: A => B): Opaque[A, B] = Opaque(f)
+}
 
 /** A not very impressive attempt to improve on string
  *  representations.
@@ -160,14 +163,12 @@ final class Vindex[Base] private[api] (val indexValue: Long) extends AnyVal {
   def sizeExcluding: Precise = Size(indexValue)
   def sizeIncluding: Precise = Size(nthValue)
 
-  // def to(that: This): Consecutive[This] = indexValue to that.indexValue map create
-  // def until(that: This): Consecutive[This] = getInt until that.getInt map (x => create(x))
-  // def %(size: Precise): This            = mapLong(_ % sizeIncluding.getLong)
-  def +(n: Long): This                     = mapLong(_ + n)
-  def -(n: Long): This                     = mapLong(_ - n)
-  // def /(size: Precise): This            = mapLong(_ / sizeIncluding.getLong)
-  def next: This                           = this + 1
-  // def prev: This                        = this - 1
+  // def %(size: Precise): This = mapLong(_ % sizeIncluding.getLong)
+  def +(n: Long): This          = mapLong(_ + n)
+  def -(n: Long): This          = mapLong(_ - n)
+  // def /(size: Precise): This = mapLong(_ / sizeIncluding.getLong)
+  def next: This                = this + 1
+  // def prev: This             = this - 1
 }
 
 object Vindex {

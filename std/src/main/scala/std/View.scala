@@ -76,7 +76,6 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   // def withSize(size: Size): View[A]                                  = new Each.Impl[A](size, xs foreach _)
   // def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B                = find(pf.isDefinedAt).fold(z.empty)(pf)
 
-  def cross[B](ys: View[B]): View[A -> B]              = for (x <- xs ; y <- ys) yield x -> y
   def filter(p: ToBool[A]): View[A]                    = xs withFilter p
   def filterNot(p: ToBool[A]): View[A]                 = xs withFilter !p
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs filter (regex isMatch _)
@@ -97,10 +96,12 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
 
-  def mapZip[B](f: A => B): ZipView[A, B]                        = Zip.zip2(xs, xs map f)
-  def zipIndex: ZipView[A, Index]                                = xs zip indices.all
-  def zip[B](ys: View[B]): ZipView[A, B]                         = Zip.zip2[A, B](xs, ys)
-  def zipped[L, R](implicit z: Splitter[A, L, R]): ZipView[L, R] = Zip.zip0[A, L, R](xs)(z)
+  def cross[B](ys: View[B]): Zip[A, B]                       = crossViews(xs, ys)
+  def mapAndCross[B](f: A => B): Zip[A, B]                   = crossViews(xs, xs map f)
+  def mapAndZip[B](f: A => B): Zip[A, B]                     = zipViews(xs, xs map f)
+  def zipIndex: Zip[A, Index]                                = zipViews(xs, indexStream)
+  def zip[B](ys: View[B]): Zip[A, B]                         = zipViews[A, B](xs, ys)
+  def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
 
   def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))
   def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
@@ -117,7 +118,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
 
 final class View2DOps[A](val xss: View2D[A]) extends AnyVal {
   def column(vdex: Vdex): View[A]   = xss flatMap (_ drop vdex.sizeExcluding take 1)
-  def transpose: View2D[A]          = indices.all map column
+  def transpose: View2D[A]          = indexStream map column
   def flatten: View[A]              = xss flatMap identity
   def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
 }

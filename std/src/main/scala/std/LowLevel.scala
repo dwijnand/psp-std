@@ -2,7 +2,6 @@ package psp
 package std
 
 import api._, all._
-import scala.Tuple2
 import java.io.{ ByteArrayOutputStream, BufferedInputStream }
 
 object ll {
@@ -132,10 +131,6 @@ object ll {
   def foreachDropRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit =
     foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
 
-  final class ArrowAssocRef[A](val self: A) extends AnyVal {
-    @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
-  }
-
   /** Circular Buffer. */
   private case class CBuf[A](capacity: Precise) extends Direct[A] {
     assert(!capacity.isZero, "CBuf capacity cannot be 0")
@@ -144,7 +139,7 @@ object ll {
     private[this] val buffer              = newArray[Any](cap)
     private[this] var seen                = 0L
     private[this] def writePointer: Int   = (seen % cap).toInt
-    private[this] def readPointer         = if (isFull) writePointer else 0
+    private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
     @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
@@ -169,7 +164,7 @@ object ll {
       sideEffect(loop(), in.close())
     }
     def slurp(in: BufferedInputStream, size: Precise): Array[Byte] = {
-      val len = size.toInt
+      val len = size.getLong.toInt
       val buf = newArray[Byte](len)
       def loop(remaining: Int): Array[Byte] = {
         if (remaining == 0) buf

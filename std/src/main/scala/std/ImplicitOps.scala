@@ -41,9 +41,9 @@ final class CharOps(val ch: Char) extends AnyVal {
   def to_s         = ch.toString
 }
 final class LongOps(val self: Long) extends AnyVal {
-  def takeNext(len: Precise): LongRange = LongInterval(self, len) map identity
-  def to(end: Long): LongRange          = Consecutive.to(self, end)
-  def until(end: Long): LongRange       = Consecutive.until(self, end)
+  def takeNext(len: Precise): LongRange = LongInterval.closed(self, len) map identity
+  def to(end: Long): LongRange          = LongInterval.to(self, end) map identity
+  def until(end: Long): LongRange       = LongInterval.until(self, end) map identity
 }
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def head: A = apply(Index(0))
@@ -53,13 +53,13 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
 
   def reverse: Direct[A] = Direct reversed xs
   def apply(i: Vdex): A  = xs elemAt i
-  def indices: VdexRange = indexRange(0, xs.size.getInt)
+  def indices: VdexRange = xs.size.indices
   def lastIndex: Index   = Index(xs.size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
   def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
   @inline def foreachIndex(f: Vdex => Unit): Unit =
-    ll.foreachInt(0, lastIndex.getInt, i => f(Index(i)))
+    ll.foreachLong(0, lastIndex.indexValue, i => f(Index(i)))
 }
 
 final class ForeachOps[A](val xs: Foreach[A]) {
@@ -83,12 +83,11 @@ final class DocOps(val lhs: Doc) extends AnyVal {
 }
 
 final class PreciseOps(val size: Precise) {
-  def toInt: Int         = size.getInt
-  def indices: VdexRange = indexRange(0, size.getInt)
+  def indices: VdexRange = indexRange(0, size.getLong)
   def lastIndex: Index   = Index(size.getLong - 1)  // effectively maps both undefined and zero to no index.
 
-  def + (n: Precise): Precise            = size + n.get
-  def - (n: Precise): Precise            = size - n.get
+  def + (n: Precise): Precise            = size + n.getLong
+  def - (n: Precise): Precise            = size - n.getLong
   def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
   def min(rhs: Precise): Precise = all.min(size, rhs)
@@ -144,8 +143,8 @@ final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
   def zfold[C: Empty](x: A)(g: B => C): C   = cond(f isDefinedAt x, g(f(x)), emptyValue)
   def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
   def get(x: A): Option[B]                  = zfold(x)(some)
-  def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Fun(g), f)
-  def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Fun(g))
+  def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Opaque(g), f)
+  def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Opaque(g))
 
   def defaulted(g: A => B): Defaulted[A, B] = f match {
     case Defaulted(_, u) => Defaulted(g, u)

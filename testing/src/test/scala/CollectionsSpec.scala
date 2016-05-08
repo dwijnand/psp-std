@@ -51,7 +51,7 @@ class ArraySpec extends ScalacheckBundle {
 class ADTSpec extends ScalacheckBundle {
   def bundle = "ADTs defined in psp-api"
 
-  val f1 = Fun((_: Int) * 2)
+  val f1 = Opaque((_: Int) * 2)
   val f2 = f1 mapOut (_ * 3)
   val f3 = f2 filterIn (_ <= 2)
   val f4 = f3 defaulted (_ => 99)
@@ -135,13 +135,14 @@ class StringExtensions extends ScalacheckBundle {
 }
 
 class GridSpec extends ScalacheckBundle {
+  type LongGrid = View2D[Long]
   def bundle = "Grid Operations"
 
-  def primePartition                            = (indices from 2).m mpartition (xs => _ % xs.head == 0)
-  def primePartitionGrid(n: Int): View2D[Int]   = primePartition take n map (_ take n)
-  def primePartitionGrid_t(n: Int): View2D[Int] = primePartition.transpose take n map (_ take n)
+  def primePartition: LongGrid               = longsFrom(2).m mpartition (xs => _ % xs.head == 0)
+  def primePartitionGrid(n: Int): LongGrid   = primePartition take n map (_ take n)
+  def primePartitionGrid_t(n: Int): LongGrid = primePartition.transpose take n map (_ take n)
 
-  def showGrid(xss: View2D[Int]): String = {
+  def showGrid(xss: LongGrid): String = {
     val yss   = xss mmap (_.render)
     val width = yss.flatten maxOf (_.length)
     val fmt   = lformat(width)
@@ -179,7 +180,7 @@ class ViewBasic extends ScalacheckBundle {
   def pvector = vec(1, 2, 3)
   def parray  = Array(1, 2, 3)
   def pseq    = Each.elems(1, 2, 3)
-  def punfold = indices from 1
+  def punfold = intsFrom(1)
 
   case class Bippy(s: String, i: Int) {
     override def toString = s
@@ -194,7 +195,7 @@ class ViewBasic extends ScalacheckBundle {
 
   // def closure              = transitiveClosure(parray)(x => view(x.init.force, x.tail.force))
   // def closureBag           = closure flatMap (x => x) toBag // That's my closure bag, baby
-  def xxNumbers: View[Int] = (indices from 0).m grep """^(.*)\1""".r
+  def xxNumbers: View[Int] = intsFrom(0).m grep """^(.*)\1""".r
 
   def props = miscProps ++ vecProps ++ rangeProps
 
@@ -252,7 +253,7 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", pvector ++ pvector force),
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray ++ parray force),
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray.m ++ parray.m force),
-    showsAs("[ 1, 2, 3, ... ]", punfold),
+    showsAs("[1..)", punfold),
     // showsAs("[ 1, 2, 3 ], [ 1, 2 ], [ 1 ], [  ], [ 2 ], [ 2, 3 ], [ 3 ]", closure mk_s ", "),
     // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries.to[Vec[Int -> Precise]] mk_s ", "),
     seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),

@@ -26,12 +26,18 @@ final case object Pnil extends Plist[Nothing] {
   def head = abort("Pnil.head")
   def tail = abort("Pnil.tail")
 }
+final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
+  def basis                 = xs.m
+  def equiv                 = byEquals
+  def apply(x: A): Bool     = xs(x)
+  def foreach(f: A => Unit) = xs foreach f
+  def size: Precise         = xs.size
+}
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
-  def isEmpty       = length <= 0
-  def nonEmpty      = length > 0
-  def lastIntIndex  = length - 1
-  def length: Int   = underlying.length
-  def size: Precise = Size(length)
+  def isEmpty            = length <= 0
+  def length: Int        = underlying.length
+  def size: Precise      = Size(length)
+  def elemAt(i: Vdex): A = underlying(i.getInt)
 
   def updated(i: Vdex, elem: A): Vec[A] = new Vec[A](underlying.updated(i.getInt, elem))
   def :+(elem: A): Vec[A] = new Vec[A](underlying :+ elem)
@@ -42,16 +48,13 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
     else new Vec[A](underlying ++ that.trav)
   )
 
-  def applyInt(index: Int): A    = underlying(index)
   def drop(n: Vdex): Vec[A]      = new Vec[A](underlying drop n.getInt)
   def dropRight(n: Vdex): Vec[A] = new Vec[A](underlying dropRight n.getInt)
-  def elemAt(i: Vdex): A         = underlying(i.getInt)
   def take(n: Vdex): Vec[A]      = new Vec[A](underlying take n.getInt)
   def takeRight(n: Vdex): Vec[A] = new Vec[A](underlying takeRight n.getInt)
 
-  @inline def foreach(f: A => Unit): Unit = {
-    ll.foreachInt(0, lastIntIndex, i => f(applyInt(i)))
-  }
+  @inline def foreach(f: A => Unit): Unit =
+    ll.foreachInt(0, length - 1, i => f(underlying(i)))
 }
 object FunctionGrid {
   def apply[A](xs: View[A])(columns: ToString[A]*): FunctionGrid[A, String] = new FunctionGrid(xs, columns.toVec)
@@ -69,6 +72,15 @@ class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
     rows map (formatFns zip _ map (_ apply _) mk_s ' ')
   }
   def render(implicit z: Show[B]): String = renderLines mk_s EOL
+}
+
+object Pset {
+  def fromJava[A](xs: jSet[A]): ExSet[A]   = new Pset[A](xs.toScalaSet)
+  def fromScala[A](xs: scSet[A]): ExSet[A] = new Pset[A](xs.toSet)
+}
+object Pmap {
+  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]   = xs.keySet.byEquals.toExSet mapWith Fun(xs get _)
+  def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V] = xs.keys.byEquals.toExSet mapWith Fun(xs)
 }
 
 object Plist {

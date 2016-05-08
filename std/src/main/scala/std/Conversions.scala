@@ -37,17 +37,17 @@ trait ConversionsImpl[A] extends Any {
   def to[CC[X]](implicit z: Builds[A, CC[A]]): CC[A] = z build xs
 
   def toArray(implicit z: CTag[A]): Array[A]   = to[Array]
-  // def toDirect: Direct[A]                      = to[Direct]
-  // def toEach: Each[A]                          = to[Each]
+  // def toDirect: Direct[A]                   = to[Direct]
+  // def toEach: Each[A]                       = to[Each]
   def toExSet(implicit z: Eq[A]): ExSet[A]     = to[ExSet]
   def toHashSet(implicit z: Hash[A]): ExSet[A] = to[ExSet]
-  // def toJavaList: jList[A]                     = to[jList]
+  // def toJavaList: jList[A]                  = to[jList]
   def toJavaSet: jSet[A]                       = to[jSet]
   def toPlist: Plist[A]                        = to[Plist]
-  // def toRefArray(): Array[Ref[A]]              = Builds.array[Ref[A]] build xs.toRefs
-  // def toScalaList: sciList[A]                  = to[sciList]
-  // def toScalaSeq: sciSeq[A]                    = to[sciSeq]
-  // def toScalaSet: sciSet[A]                    = to[sciSet]
+  // def toRefArray(): Array[Ref[A]]           = Builds.array[Ref[A]] build xs.toRefs
+  // def toScalaList: sciList[A]               = to[sciList]
+  // def toScalaSeq: sciSeq[A]                 = to[sciSeq]
+  def toScalaSet: sciSet[A]                    = to[sciSet]
   def toScalaVector: sciVector[A]              = to[sciVector]
   def toVec: Vec[A]                            = to[Vec]
 

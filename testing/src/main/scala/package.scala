@@ -150,7 +150,7 @@ package object tests {
 
   implicit class PropOps(p: Prop) {
     def mapParams(f: ToSelf[TestParams]): Prop = new NamedProp.MapParams(p, f)
-    def minSuccessful(size: Precise): Prop    = mapParams(_ withMinSuccessfulTests size.toInt)
+    def minSuccessful(size: Precise): Prop    = mapParams(_ withMinSuccessfulTests size.getLong.toInt)
     def unary_! : Prop                        = p map (r => !r)
   }
   implicit class PropResultOps(r: Prop.Result) {

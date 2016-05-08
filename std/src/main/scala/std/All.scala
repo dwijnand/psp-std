@@ -4,12 +4,16 @@ package std
 import psp.api._
 import scala.{ collection => sc }
 import sc.{ mutable => scm, immutable => sci }
+import scala.Tuple2
 
 /** One import which includes the implicits, one which doesn't.
  *  This choice is mutually exclusive: everything which is in exp is in all.
  */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+  implicit class ArrowAssocRef[A](val self: A) extends AnyVal {
+    @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
+  }
   implicit class JavaIteratorOps[A](it: jIterator[A]) {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
@@ -29,6 +33,24 @@ object all extends AllExplicit with AllImplicit {
   implicit class ViewOpOps[A, B](op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
+  }
+  implicit class ExMapOps[K, V](val lookup: ExMap[K, V]) {
+    import lookup._
+    type Entry = K -> V
+
+    def keys: View[K]                     = keySet.m
+    // def values: View[V]                = keyVector map xs.lookup
+    def keySet: ExSet[K]                  = lookup.keys
+    def keyVector: Vec[K]                 = keys.toVec
+    def entries: Zip[K, V]                = keyVector mapAndZip lookup
+    def map[V1](g: V => V1): ExMap[K, V1] = keySet mapWith (f mapOut g)
+    def apply(key: K): V                  = lookup(key)
+  }
+  implicit class ExSetOps[A](val xs: ExSet[A]) {
+    private implicit def equiv = xs.equiv
+
+    def mapWith[B](f: Fun[A, B]): ExMap[A, B] = ExMap(xs, f)
+    def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
   }
 
   /** Extension methods for scala library classes.
@@ -98,48 +120,43 @@ abstract class AllExplicit extends ApiValues {
   def showBy[A]  = new ShowBy[A]
   def hashBy[A]  = new HashBy[A]
 
-  def render[A](x: A)(implicit z: Show[A]): String = z show x
-  def inheritShow[A] : Show[A]                     = Show.Inherited
-
   def byEquals[A] : Hash[A]              = Eq.Inherited
   def byReference[A <: AnyRef] : Hash[A] = Eq.Reference
   def byString[A] : Hash[A]              = Eq.ToString
   def byShown[A: Show] : Hash[A]         = hashBy[A](x => render(x))(byString)
 
-  def inView[A](mf: Suspended[A]): View[A] = new LinearView(Each(mf))
-
-  private def stdout                    = scala.Console.out
-  // private def putOut(msg: Any): Unit = sideEffect(stdout print msg, stdout.flush())
-  private def echoOut(msg: Any): Unit   = stdout println msg
-
-  // def print[A: Show](x: A): Unit   = putOut(render(x))
-  def println[A: Show](x: A): Unit = echoOut(render(x))
-  // def anyprintln(x: Any): Unit     = echoOut(aops(x).any_s)
-
-  def classNameOf(x: Any): String                 = JvmName asScala x.getClass short
-  def classFilter[A: CTag] : Partial[Any, A]      = Partial(isInstance[A], cast[A])
-  def bufferMap[A, B: Empty](): scmMap[A, B]      = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def indexRange(start: Int, end: Int): VdexRange = Consecutive.until(start, end) map (x => Index(x))
-  def lformat[A](n: Int): FormatFun               = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def classFilter[A: CTag] : Partial[Any, A]       = Partial(isInstance[A], cast[A])
+  def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
+  def inheritShow[A] : Show[A]                     = Show.Inherited
+  def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
+  def render[A](x: A)(implicit z: Show[A]): String = z show x
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
-  def make0[R] : MakeHelper[R]         = new MakeHelper[R]
+  def make0[R] : MakeHelper0[R]        = new MakeHelper0[R]
   def make1[CC[_]] : MakeHelper1[CC]   = new MakeHelper1[CC]
-  // def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
+  def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def intRange(start: Int, end: Int): IntRange = LongInterval(start, Size(end - start)) map (_.toInt)
-  def arr[A: CTag](xs: A*): Array[A]           = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]                = new Conversions(view(xs: _*)) toPlist
-  def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]  = ExMap fromScala (xs map tuple toMap)
-  def set[A: Eq](xs: A*): ExSet[A]             = new Conversions(view(xs: _*)) toExSet
-  def vec[A](xs: A*): Vec[A]                   = new Vec[A](xs.toVector)
-  def view[A](xs: A*): DirectView[A, Vec[A]]   = new DirectView[A, Vec[A]](vec(xs: _*))
-  def zip[A, B](xs: (A->B)*): ZipView[A, B]    = Zip zip1 view(xs: _*)
+  def bufferMap[A, B: Empty](): scmMap[A, B]         = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def inView[A](mf: Suspended[A]): View[A]           = new LinearView(Each(mf))
+  def indexRange(start: Long, end: Long): VdexRange  = longRange(start, end) map Index
+  def indexStream: Indexed[Index]                    = LongInterval open 0 map Index
+  def intRange(start: Int, end: Int): IntRange       = longRange(start, end) map (_.toInt)
+  def intsFrom(start: Int): Consecutive.Open[Int]    = longsFrom(start) map (_.toInt)
+  def longRange(start: Long, end: Long): LongRange   = LongInterval.until(start, end) map identity
+  def longsFrom(start: Long): Consecutive.Open[Long] = LongInterval open start map identity
 
-  object indices {
-    def all: Indexed[Index]                  = Indexed(_.toIndex)
-    def from(start: BigInt): Indexed[BigInt] = Indexed(start + _.indexValue)
-    def from(start: Long): Indexed[Long]     = Indexed(start + _.indexValue)
-    def from(start: Int): Indexed[Int]       = Indexed(start + _.getInt)
-  }
+  def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]                         = new Zip.CrossViews(l, r)
+  def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
+  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                 = new Zip.ZipPairs(xs)
+  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)
+  def zipWith[A, B](l: View[A], f: A => B): Zip[A, B]                             = new Zip.ZipWith(l, f)
+
+  def arr[A: CTag](xs: A*): Array[A]          = xs.toArray[A]
+  def list[A](xs: A*): Plist[A]               = new Conversions(view(xs: _*)) toPlist
+  def rel[A: Eq, B](xs: (A->B)*): ExMap[A, B] = ExMap(set[A](xs map fst: _*), Pmap fromScala (xs map tuple toMap))
+  def set[A: Eq](xs: A*): ExSet[A]            = new Conversions(view(xs: _*)) toExSet // can't use toSet, doesn't honor Eq[A]
+  def vec[A](xs: A*): Vec[A]                  = new Vec[A](xs.toVector)
+  def view[A](xs: A*): DirectView[A, Vec[A]]  = new DirectView[A, Vec[A]](vec(xs: _*))
+  def zip[A, B](xs: (A->B)*): Zip[A, B]       = zipPairs(view(xs: _*))
 }
