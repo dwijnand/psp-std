@@ -15,7 +15,7 @@ Suggested contents for a basic `build.sbt` follows. Note that the console transc
               scalaVersion :=  "2.11.8"
                  resolvers +=  Opts.resolver.sonatypeReleases
              scalacOptions ++= Seq("-language:_", "-Yno-predef")
-initialCommands in console :=  "import psp._, std._, all._, api._, StdEq._, StdShow._"
+initialCommands in console :=  "import psp._, std._, all._, api._, StdShow._"
        libraryDependencies +=  "org.improving" %% "psp-std" % "0.6.1"
 ```
 

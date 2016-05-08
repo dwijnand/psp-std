@@ -71,6 +71,16 @@ object all extends AllExplicit with AllImplicit {
       case Failure(t) => f(t)
     }
   }
+
+  implicit class Product2HomoOps[A](val x: A -> A) extends AnyVal {
+    def each = new PairAsEach[A](x)
+  }
+  implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
+    def mapLeft[C](f: A => C): C -> B          = f(fst(x)) -> snd(x)
+    def mapRight[C](f: B => C): A -> C         = fst(x) -> f(snd(x))
+    def unify[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
+  }
+
   // implicit class InputStreamOps(val in: InputStream) extends AnyVal {
   //   def buffered: BufferedInputStream = in match {
   //     case in: BufferedInputStream => in
@@ -81,28 +91,31 @@ object all extends AllExplicit with AllImplicit {
   // }
 }
 
-abstract class AllExplicit extends ApiValues {
-  final val ->            = Pair
-  final val Array         = scala.Array
-  final val ConstantFalse = (x: scala.Any) => false
-  final val ConstantTrue  = (x: scala.Any) => true
-  final val Failure       = scala.util.Failure
-  final val Nil           = scala.collection.immutable.Nil
-  final val NoFile        = jFile("")
-  final val NoIndex       = Index.invalid
-  final val NoPath        = jPath("")
-  final val NoUri         = jUri("")
-  final val None          = scala.None
-  final val Option        = scala.Option
-  final val Some          = scala.Some
-  final val Success       = scala.util.Success
-  final val Try           = scala.util.Try
-  final val sciList       = sci.List
-  final val sciMap        = sci.Map
-  final val sciSeq        = sci.Seq
-  final val sciSet        = sci.Set
-  final val sciVector     = sci.Vector
-  final val scmMap        = scm.Map
+abstract class AllExplicit extends ApiValues with StdEq {
+  final val ->        = Pair
+  final val Array     = scala.Array
+  final val Failure   = scala.util.Failure
+  final val Nil       = scala.collection.immutable.Nil
+  final val NoFile    = jFile("")
+  final val NoIndex   = Index.invalid
+  final val NoPath    = jPath("")
+  final val NoUri     = jUri("")
+  final val None      = scala.None
+  final val Option    = scala.Option
+  final val Some      = scala.Some
+  final val Success   = scala.util.Success
+  final val Try       = scala.util.Try
+  final val sciList   = sci.List
+  final val sciMap    = sci.Map
+  final val sciSeq    = sci.Seq
+  final val sciSet    = sci.Set
+  final val sciVector = sci.Vector
+  final val scmMap    = scm.Map
+
+  final val ConstantFalse  = (x: scala.Any) => false
+  final val ConstantTrue   = (x: scala.Any) => true
+  final val ConstantFalse2 = (x: scala.Any, y: scala.Any) => false
+  final val ConstantTrue2  = (x: scala.Any, y: scala.Any) => true
 
   // Type aliases I don't like enough to have in the API.
   type Bag[A]               = ExMap[A, Precise]
@@ -110,6 +123,7 @@ abstract class AllExplicit extends ApiValues {
   type VdexRange            = Consecutive.Closed[Vdex]
   type IntRange             = Consecutive.Closed[Int]
   type LongRange            = Consecutive.Closed[Long]
+  type CharRange            = Consecutive.Closed[Char]
   type Renderer             = Show[Doc]
   type UnbuildsAs[+A, R]    = Unbuilds[R] { type Elem <: A }
   type View2D[+A]           = View[View[A]]
@@ -146,7 +160,10 @@ abstract class AllExplicit extends ApiValues {
   def longRange(start: Long, end: Long): LongRange   = LongInterval.until(start, end) map identity
   def longsFrom(start: Long): Consecutive.Open[Long] = LongInterval open start map identity
 
-  def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]                         = new Zip.CrossViews(l, r)
+  def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]          = heteroViews(l, r).cross
+  def homoViews[A](l: View[A], r: View[A]): Split[A]               = Split(l, r)
+  def heteroViews[A, B](l: View[A], r: View[B]): SplitHetero[A, B] = SplitHetero(l, r)
+
   def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
   def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                 = new Zip.ZipPairs(xs)
   def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)

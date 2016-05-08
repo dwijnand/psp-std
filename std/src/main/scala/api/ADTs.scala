@@ -125,6 +125,10 @@ final case class ExMap[A, +B](keys: ExSet[A], f: Fun[A, B])      extends Fun[A, 
 object Fun {
   def apply[A, B](f: A => B): Opaque[A, B] = Opaque(f)
 }
+object Vindex {
+  val Zero = new AnyRef
+  val One  = new AnyRef
+}
 
 /** A not very impressive attempt to improve on string
  *  representations.
@@ -163,17 +167,10 @@ final class Vindex[Base] private[api] (val indexValue: Long) extends AnyVal {
   def sizeExcluding: Precise = Size(indexValue)
   def sizeIncluding: Precise = Size(nthValue)
 
-  // def %(size: Precise): This = mapLong(_ % sizeIncluding.getLong)
-  def +(n: Long): This          = mapLong(_ + n)
-  def -(n: Long): This          = mapLong(_ - n)
-  // def /(size: Precise): This = mapLong(_ / sizeIncluding.getLong)
-  def next: This                = this + 1
-  // def prev: This             = this - 1
-}
-
-object Vindex {
-  val Zero = new AnyRef
-  val One  = new AnyRef
+  def +(n: Long): This = mapLong(_ + n)
+  def -(n: Long): This = mapLong(_ - n)
+  def next: This       = this + 1
+  def prev: This       = this - 1
 }
 
 /** A valid index is always non-negative. All negative indices are

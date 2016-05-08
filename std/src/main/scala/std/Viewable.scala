@@ -1,15 +1,17 @@
 package psp
 package std
 
-import api._, exp._
-
+import api._, exp._, StdShow._
 
 /** Op and Operable
  *
  *  It's tricky to abstract smoothly over the type constructor of a collection
  *  and its elements simultaneously.
  */
-sealed trait Op[-A, +B] extends Any
+sealed trait Op[-A, +B] extends Any {
+  type In  >: A
+  type Out <: B
+}
 
 trait Operable[M[X]] {
   def apply[A, B](xs: M[A])(op: Op[A, B]): M[B]
@@ -22,7 +24,10 @@ trait Operable[M[X]] {
 // trait RangeOp[A]  extends OpType {               type Out = In }
 // trait FilterOp[A] extends OpType { type In = A ; type Out = A  }
 // trait MapOp[A, B] extends OpType { type In = A ; type Out = B  }
+
 object Op {
+  def apply[A](label: String): Identity[A] = Identity[A](label)
+
   /** We'd like to categorize view operations as is done above for OpType.
    *  This seems to be impossible or far too much trouble.
    *  So instead we give in and add pointless type parameters to the Range ops.
@@ -81,7 +86,7 @@ object Operable {
       case Drop(n)         => str(in, "drop", n)
       case TakeRight(n)    => str(in, "takeR", n)
       case DropRight(n)    => str(in, "dropR", n)
-      case Slice(range)    => str(in, "slice", range)
+      case Slice(range)    => str(in, "slice", render(range))
       case TakeWhile(p)    => str(in, "takeW", p)
       case DropWhile(p)    => str(in, "dropW", p)
       case Filter(p)       => str(in, "filter", p)
@@ -91,6 +96,7 @@ object Operable {
       case Compose(o1, o2) => apply(apply(in)(o1))(o2)
     }
   }
+
   // No matter what hints we provide, scala won't figure out that
   // for a particular Op[A, B], A and B are the same type. So we
   // always have to cast.

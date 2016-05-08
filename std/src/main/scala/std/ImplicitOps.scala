@@ -2,7 +2,7 @@ package psp
 package std
 
 import java.{ lang => jl }
-import api._, all._, StdEq._
+import api._, all._
 
 final class AnyOps[A](val x: A) extends AnyVal {
   def any_s: String                         = s"$x"
@@ -39,6 +39,10 @@ final class CharOps(val ch: Char) extends AnyVal {
   // def isSpace      = jl.Character isWhitespace ch
   def toUpper      = jl.Character toUpperCase ch
   def to_s         = ch.toString
+
+  def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
+  def to(end: Char): CharRange          = LongInterval.to(ch.toLong, end) map (_.toChar)
+  def until(end: Char): CharRange       = LongInterval.until(ch.toLong, end) map (_.toChar)
 }
 final class LongOps(val self: Long) extends AnyVal {
   def takeNext(len: Precise): LongRange = LongInterval.closed(self, len) map identity
@@ -94,7 +98,7 @@ final class PreciseOps(val size: Precise) {
 }
 
 final class SizeOps(val lhs: Size) extends AnyVal {
-  import Size._, StdEq._
+  import Size._
 
   def getInt: Int = lhs match {
     case Finite(n) => n.toInt

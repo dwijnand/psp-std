@@ -47,7 +47,7 @@ object LongInterval {
     def take(n: Precise): Closed                    = closed(startLong, size min n)
     def takeRight(n: Precise): Closed               = (size min n) |> (s => closed(exclusiveEnd - s.getLong, s))
 
-    def to_s: String = if (isEmpty) "[0,0)"else if (isPoint) s"[$startLong]" else s"[$startLong..$lastLong]"
+    def to_s: String = if (isEmpty) "[0,0)" else if (isPoint) s"[$startLong]" else s"[$startLong..$lastLong]"
   }
 
   final case class Open private[LongInterval] (startLong: Long) extends LongInterval {
@@ -64,7 +64,7 @@ object LongInterval {
   }
 }
 
-sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
+sealed abstract class Consecutive[+A] extends Indexed[A] {
   type CC[X] <: Consecutive[X]
   def in: LongInterval
   def map[B](g: A => B): CC[B]
@@ -73,7 +73,9 @@ sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
   def viewLongs: View[Long]  = Each.construct[Long](in.size, in foreach _).m
   def zipLongs: Zip[Long, A] = zipWith(viewLongs, applyLong)
   def startLong: Long        = in.startLong
-  def to_s: String           = in.to_s
+
+  import StdShow._
+  override def toString = showEach[Any](inheritShow, ?) show this
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](LongInterval.empty, indexOutOfBoundsException)
@@ -90,6 +92,7 @@ object Consecutive {
     def elemAt(vdex: Vdex): A       = f(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (f andThen g)
     def map[B](g: A => B): Open[B]  = in map (f andThen g)
+    def head: A                     = elemAt(Index(0))
   }
   final class Closed[+A](val in: LongInterval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
@@ -101,6 +104,8 @@ object Consecutive {
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size
 
+    def head: A                            = elemAt(Index(0))
+    def last: A                            = elemAt(size.lastIndex)
     def drop(n: Precise): Closed[A]        = Consecutive(in drop n, f)
     def dropRight(n: Precise): Closed[A]   = Consecutive(in dropRight n, f)
     def take(n: Precise): Closed[A]        = Consecutive(in take n, f)

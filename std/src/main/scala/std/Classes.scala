@@ -36,7 +36,34 @@ object JvmName {
 //   def to_s: String       = new String(chars)
 // }
 
-object StdEq extends EqOrderInstances
+trait StdEq0 {
+  implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] = Order.fromInt[A](_ compareTo _)
+}
+trait StdEq extends StdEq0 {
+  implicit def eqUnbuilds[R, A](implicit b: UnbuildsAs[A, R], z: Eq[A]): Eq[R] =
+    Eq[R]((xs, ys) => (b unbuild xs).view zip (b unbuild ys).view corresponds z.eqv)
+
+  implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] =
+    orderBy[A](_.ordinal)
+
+  implicit def boolOrder: Order[Bool]                              = orderBy[Bool](x => if (x) 1 else 0)
+  implicit def charOrder: Order[Char]                              = Order.fromInt[Char](_ - _)
+  implicit def intOrder: Order[Int]                                = Order.fromInt[Int](_ - _)
+  implicit def longOrder: Order[Long]                              = Order.fromLong[Long](_ - _)
+  implicit def vindexOrder: Order[Vdex]                            = orderBy[Vdex](_.indexValue)
+  implicit def preciseOrder: Order[Precise]                        = orderBy[Precise](_.get)
+  implicit def stringOrder: Order[String]                          = Order.fromLong[String](_ compareTo _)
+  implicit def tuple2Order[A: Order, B: Order] : Order[(A, B)]     = orderBy[(A, B)](fst) | snd
+
+  implicit def classEq: Hash[Class[_]] = byEquals
+  implicit def sizeEq: Hash[Size]      = byEquals
+
+  implicit def tryEq[A](implicit z1: Eq[A], z2: Eq[Throwable]): Eq[Try[A]] = Eq {
+    case (Success(x), Success(y)) => x === y
+    case (Failure(x), Failure(y)) => x === y
+    case _                        => false
+  }
+}
 object StdShow extends ShowInstances {
   implicit def convertHasShowDocOps[A: Show](x: A): DocOps      = new DocOps(Doc(x))
   implicit def convertHasShowDoc[A](x: A)(implicit z: Show[A]): Doc = Doc(x)

@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import std._, api._, all._, StdEq._, StdShow._
+import std._, api._, all._, StdShow._
 import Prop.forAll
 import Unsafe._
 
@@ -285,26 +285,26 @@ class ViewBasic extends ScalacheckBundle {
 class ViewSplitZip extends ScalacheckBundle {
   def bundle = "Views, Split/Zip"
 
-  def pvec   = 1 to 6 toVec
-  def span   = pvec span (_ <= 3)
-  def mod    = pvec partition (_ % 2 == 0)
-  def zipped = mod.left zip mod.right
-  def mixed  = mod.intersperse
-  def sums   = zipped map (_ + _)
+  def pvec     = 1 to 6 toVec
+  def span     = pvec span (_ <= 3)
+  def mod      = pvec partition (_ % 2 === 0)
+  def zipped   = mod.zip
+  def collated = mod.collate
+  def sums     = zipped map (_ + _)
 
   def props: Direct[NamedProp] = vec(
-    showsAs("[ 1, 2, 3 ]", span.left),
-    showsAs("[ 4, 5, 6 ]", span.right),
-    showsAs("[ 2, 4, 6 ]", mod.left),
-    showsAs("[ 1, 3, 5 ]", mod.right),
+    showsAs("[ 1, 2, 3 ]", span.leftView),
+    showsAs("[ 4, 5, 6 ]", span.rightView),
+    showsAs("[ 2, 4, 6 ]", mod.leftView),
+    showsAs("[ 1, 3, 5 ]", mod.rightView),
     showsAs("[ 2, 4, 6 ]", zipped.lefts),
     showsAs("[ 1, 3, 5 ]", zipped.rights),
     showsAs("[ 2 -> 1, 4 -> 3, 6 -> 5 ]", zipped),
     showsAs("[ 20 -> 1, 40 -> 3, 60 -> 5 ]", zipped mapLeft (_ * 10)),
     showsAs("[ 3, 7, 11 ]", sums),
     showsAs("[ 3 ]", zipped filterLeft (_ == 4) rights),
-    showsAs("[ 2, 4, 6, 1, 3, 5 ]", mod.rejoin),
-    showsAs("[ 2, 1, 4, 3, 6, 5 ]", mixed),
+    showsAs("[ 2, 4, 6, 1, 3, 5 ]", mod.join),
+    showsAs("[ 2, 1, 4, 3, 6, 5 ]", collated),
     showsAs("6 -> 5", zipped findLeft (_ == 6)),
     showsAs("[ 2 -> 1 ]", zipped takeWhileFst (_ < 4)),
     showsAs("[ 5 -> 6 ]", zipped dropWhileSnd (_ < 4) map swap),
@@ -446,7 +446,6 @@ class CollectionsSpec extends ScalacheckBundle {
   }
 
   def pspProps: Vec[NamedProp] = {
-    import StdEq._
     val pset = set("a" -> 1, "b" -> 2, "c" -> 3)
     val pvec = vec("a" -> 1, "b" -> 2, "c" -> 3)
 

@@ -28,20 +28,23 @@ import api._, exp._ // no implicit conversions in this file
 //  1 int2bigInt
 trait AllImplicit extends scala.AnyRef
       with StdEmpty
-      with PrimitiveInstances
-      with AlgebraInstances
       with StdImplicits
 {
   self =>
 
-  implicit def conforms[A] : (A <:< A)                           = new conformance[A]
-  implicit def constantPredicate[A](value: Boolean): ToBool[A]   = cond(value, ConstantTrue, ConstantFalse)
-  implicit def defaultRenderer: FullRenderer                     = new FullRenderer
-  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B = f.toPartial
-  implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]         = new DirectOps(xs)
-  implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]      = new ForeachOps(xs)
-  implicit def promoteSize(x: Long): Precise                     = Size(x)
+  def id[A](value: Boolean)(implicit z: BooleanAlgebra[A]): A = cond(value, z.one, z.zero)
 
+  // implicit def algebraConstant[A](value: Boolean)(implicit z: BooleanAlgebra[A]): A                  = cond(value, z.one, z.zero)
+
+  implicit def conforms[A] : (A <:< A)                                                               = new conformance[A]
+  // implicit def constantPredicate[A](value: Boolean): ToBool[A]                                       = cond(value, ConstantTrue, ConstantFalse)
+  implicit def defaultRenderer: FullRenderer                                                         = new FullRenderer
+  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B                                     = f.toPartial
+  implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]                                             = new DirectOps(xs)
+  implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]                                          = new ForeachOps(xs)
+  implicit def predicate1Algebra[A] : BooleanAlgebra[ToBool[A]]                                      = new Algebras.Predicate1Algebra[A]
+  implicit def predicate2Algebra[A, B] : BooleanAlgebra[ToBool2[A, B]]                               = new Algebras.Predicate2Algebra[A, B]
+  implicit def promoteSize(x: Long): Precise                                                         = Size(x)
   implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]                  = Unbuilds[A, CC[A]](Each java _)
   implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
   implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
@@ -134,8 +137,4 @@ trait StdBuilds extends StdBuilds1 {
   implicit def unbuildPspString: UnbuildsAs[Char, String]          = Unbuilds(Direct string _)
   implicit def buildPspString: Builds[Char, String]                = Builds.string
   implicit def viewPspString(xs: String): DirectView[Char, String] = new DirectView(Direct string xs)
-}
-
-trait AlgebraInstances {
-  implicit def predicateAlgebra[A] : BooleanAlgebra[ToBool[A]] = new Algebras.PredicateAlgebra[A]
 }

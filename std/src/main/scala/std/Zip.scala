@@ -6,16 +6,26 @@ import api._, all._
 /** When a View is split into two disjoint views.
  *  Notably, that's span, partition, and splitAt.
  */
-final case class Split[A](left: View[A], right: View[A]) {
+final case class Split[A](leftView: View[A], rightView: View[A]) extends TwoViews[A] {
   type V = View[A]
 
-  def intersperse: V                   = zipped flatMap (vec(_, _))
-  def mapLeft(f: ToSelf[V]): Split[A]  = Split(f(left), right)
-  def mapRight(f: ToSelf[V]): Split[A] = Split(left, f(right))
-  def onLeft[B](f: V => B): B          = f(left)
-  def onRight[B](f: V => B): B         = f(right)
-  def rejoin: V                        = left ++ right
-  def zipped: Zip[A, A]                = zipViews(left, right)
+  def collate: V                       = zip.pairs flatMap (_.each)
+  def mapLeft(f: ToSelf[V]): Split[A]  = Split(f(leftView), rightView)
+  def mapRight(f: ToSelf[V]): Split[A] = Split(leftView, f(rightView))
+  def onLeft[B](f: V => B): B          = f(leftView)
+  def onRight[B](f: V => B): B         = f(rightView)
+  def join: V                          = leftView ++ rightView
+}
+final case class SplitHetero[L, R](leftView: View[L], rightView: View[R]) extends TwoHeteroViews[L, R]
+
+trait TwoViews[+A] extends Any with TwoHeteroViews[A, A]
+
+trait TwoHeteroViews[+L, +R] extends Any {
+  def leftView: View[L]
+  def rightView: View[R]
+
+  def zip: Zip[L, R]   = Zip.ZipViews(leftView, rightView)
+  def cross: Zip[L, R] = Zip.ZipPairs( for (x <- leftView ; y <- rightView) yield x -> y )
 }
 
 /** When a View presents as a sequence of pairs.
@@ -25,7 +35,18 @@ trait Zip[+A1, +A2] extends Any {
   def lefts: View[A1]        // the left element of each pair. Moral equivalent of pairs map fst.
   def rights: View[A2]       // the right element of each pair. Moral equivalent of pairs map snd.
   def pairs: View[A1 -> A2]  // the pairs. Moral equivalent of lefts zip rights.
+  def size: Size
 }
+trait ZipFromViews[+A1, +A2] extends Any with Zip[A1, A2] {
+  def pairs: View[A1 -> A2] = inView(mf => this.foreach((x, y) => mf(x -> y)))
+  def size                  = pairs.size
+}
+trait ZipFromPairs[+A1, +A2] extends Any with Zip[A1, A2] {
+  def lefts: View[A1]  = pairs map fst
+  def rights: View[A2] = pairs map snd
+  def size             = lefts.size min rights.size
+}
+
 object Zip {
   /** A Zip has similar operations to a View, but with the benefit of
    *  being aware each element has a left and a right.
@@ -57,15 +78,19 @@ object Zip {
       case (xs, ys: Direct[A2])             => (xs take ys.size).zipIndex map ((x, i) => f(x, ys(i)))
       case _                                => lefts.iterator |> (it => rights foreach (y => if (it.hasNext) f(it.next, y) else return))
     }
+
+    def corresponds(p: BothPred): Bool            = forall(p) && (lefts.size === rights.size)
     def drop(n: Precise): This                    = zipViews(lefts drop n, rights drop n)
     def dropWhileFst(p: LPred): This              = pairs dropWhile (xy => p(fst(xy))) zipped
     def dropWhileSnd(p: RPred): This              = pairs dropWhile (xy => p(snd(xy))) zipped
+    def exists(p: BothPred): Bool                 = find(p).isDefined
     def filter(p: BothPred): This                 = withFilter(p)
     def filterLeft(p: LPred): This                = withFilter((x, _) => p(x))
     def filterRight(p: RPred): This               = withFilter((_, y) => p(y))
     def findLeft(p: LPred): OptPair               = find((x, _) => p(x))
     def findRight(p: RPred): OptPair              = find((_, y) => p(y))
     def flatMap[B](f: MapTo[Foreach[B]]): View[B] = inView(mf => foreach((x, y) => f(x, y) foreach mf))
+    def forall(p: BothPred): Bool                 = find(!p).isEmpty
     def mapLeft[B1](f: A1 => B1): Zip[B1, A2]     = zipViews(lefts map f, rights)
     def mapRight[B2](f: A2 => B2): Zip[A1, B2]    = zipViews(lefts, rights map f)
     def map[B](f: MapTo[B]): View[B]              = inView(mf => foreach((x, y) => mf(f(x, y))))
@@ -74,7 +99,6 @@ object Zip {
     def takeWhileSnd(p: RPred): This              = pairs takeWhile (xy => p(snd(xy))) zipped
     def withFilter(p: BothPred): This             = inView[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))).zipped
 
-    def to[R](implicit z: Builds[Both, R]): R    = force[R]
     def force[R](implicit z: Builds[Both, R]): R = z build pairs
   }
 
@@ -83,26 +107,13 @@ object Zip {
    *  Zip2 means there are two separate views, a View[A1] and a View[A2].
    *  This is plus or minus only a performance-related implementation detail.
    */
-  final case class ZipSplit[A, A1, A2](xs: View[A])(implicit z: Splitter[A, A1, A2]) extends Zip[A1, A2] {
-    def lefts  = xs map (x => fst(z split x))
-    def rights = xs map (x => snd(z split x))
-    def pairs  = xs map z.split
+  final case class ZipSplit[A, A1, A2](xs: View[A])(implicit z: Splitter[A, A1, A2]) extends ZipFromPairs[A1, A2] {
+    def pairs = xs map z.split
   }
-  final case class ZipPairs[A1, A2](pairs: View[A1 -> A2]) extends Zip[A1, A2] {
-    def lefts  = pairs map fst
-    def rights = pairs map snd
+  final case class ZipViews[A1, A2](lefts: View[A1], rights: View[A2]) extends ZipFromViews[A1, A2]
+  final case class ZipWith[A1, A2](lefts: View[A1], f: A1 => A2) extends ZipFromViews[A1, A2] {
+    def rights = lefts map f
   }
-  final case class ZipViews[A1, A2](lefts: View[A1], rights: View[A2]) extends Zip[A1, A2] {
-    def pairs: View[A1 -> A2] = inView(mf => this.foreach((x, y) => mf(x -> y)))
-  }
-  final case class ZipWith[A1, A2](xs: View[A1], f: A1 => A2) extends Zip[A1, A2] {
-    def lefts  = xs
-    def rights = xs map f
-    def pairs  = lefts zip rights pairs
-  }
-  final case class CrossViews[A1, A2](xs: View[A1], ys: View[A2]) extends Zip[A1, A2] {
-    def lefts  = pairs map fst
-    def rights = pairs map snd
-    def pairs  = for (x <- xs ; y <- ys) yield x -> y
-  }
+
+  final case class ZipPairs[A1, A2](pairs: View[A1 -> A2]) extends ZipFromPairs[A1, A2]
 }
