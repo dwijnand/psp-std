@@ -49,7 +49,7 @@ object ExMap {
     // def values: View[V]                = keyVector map xs.lookup
     def keySet: ExSet[K]                  = lookup.keys
     def keyVector: Vec[K]                 = keys.toVec
-    def entries: ZipView[K, V]            = keyVector mapZip lookup
+    def entries: ZipView[K, V]            = keyVector mapAndZip lookup
     def map[V1](g: V => V1): ExMap[K, V1] = ExMap(keySet, f mapOut g)
     def apply(key: K): V                  = lookup(key)
   }

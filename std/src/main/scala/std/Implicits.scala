@@ -55,14 +55,13 @@ trait AllImplicit extends scala.AnyRef
 trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps {
   self =>
 
-  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A]                = new ll.ArrowAssocRef(x)
-  implicit def convertViewEach[A](xs: View[A]): Each[A]                   = Each(xs foreach _)
-  implicit def opsAny[A](x: A): AnyOps[A]                                 = new AnyOps[A](x)
-  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V]    = ExMap impl x
-  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]             = ExSet impl x
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]             = Order impl z
-  implicit def promoteApiZipView[A, B](xs: ZipView[A, B]): Zip.Impl[A, B] = Zip impl xs
-  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]         = Cleaver[A -> B, A, B](((_, _)), fst, snd)
+  implicit def arrowAssocRef[A](x: A): ll.ArrowAssocRef[A]             = new ll.ArrowAssocRef(x)
+  implicit def convertViewEach[A](xs: View[A]): Each[A]                = Each(xs foreach _)
+  implicit def opsAny[A](x: A): AnyOps[A]                              = new AnyOps[A](x)
+  implicit def promoteApiExMap[K, V](x: ExMap[K, V]): ExMap.Impl[K, V] = ExMap impl x
+  implicit def promoteApiExSet[A](x: ExSet[A]): ExSet.Impl[A]          = ExSet impl x
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]          = Order impl z
+  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B]      = Cleaver[A -> B, A, B](((_, _)), fst, snd)
 
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = xs match {
     case xs: AtomicView[_, _] => cast(xs)

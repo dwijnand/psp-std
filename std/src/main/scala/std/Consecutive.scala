@@ -3,12 +3,13 @@ package std
 
 import api._, all._
 
-sealed abstract class LongInterval extends (Vdex => Long) {
+sealed abstract class LongInterval extends (Vdex => Long) with ShowSelf {
   type This <: LongInterval
 
   def contains(n: Long): Bool
   def drop(n: Precise): This
   def dropRight(n: Precise): This
+  def foreach(f: Long => Unit): Unit
   def map[A](f: Long => A): Consecutive[A]
   def size: Atomic
   def startLong: Long
@@ -40,10 +41,15 @@ object LongInterval {
     def drop(n: Precise): Closed                    = closed(startLong + n.get, size - n)
     def dropRight(n: Precise): Closed               = closed(startLong, size - n)
     def foreach(f: Long => Unit): Unit              = ll.foreachLong(startLong, lastLong, f)
+    def isEmpty: Bool                               = size.isZero
+    def isPoint: Bool                               = size.get == 1L
     def map[A](f: Long => A): Consecutive.Closed[A] = Consecutive(this, f)
     def take(n: Precise): Closed                    = closed(startLong, size min n)
     def takeRight(n: Precise): Closed               = (size min n) |> (s => closed(exclusiveEnd - s.get, s))
+
+    def to_s: String = if (isEmpty) "[0,0)"else if (isPoint) s"[$startLong]" else s"[$startLong..$lastLong]"
   }
+
   final case class Open private[LongInterval] (startLong: Long) extends LongInterval {
     type This = Open
 
@@ -54,6 +60,7 @@ object LongInterval {
     def map[A](f: Long => A): Consecutive.Open[A] = Consecutive(this, f)
     def size                                      = Infinite
     def take(n: Precise): Closed                  = closed(startLong, n)
+    def to_s: String                              = s"[$startLong..)"
   }
 }
 
@@ -61,9 +68,12 @@ sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
   type CC[X] <: Consecutive[X]
   def in: LongInterval
   def map[B](g: A => B): CC[B]
+  def applyLong(x: Long): A
 
-  def startLong: Long = in.startLong
-  def to_s = s"Consec($in, <f>)"
+  def viewLongs: View[Long]      = Each.construct[Long](in.size, in foreach _).m
+  def zipLongs: ZipView[Long, A] = zipWith(viewLongs, applyLong)
+  def startLong: Long            = in.startLong
+  def to_s: String               = in.to_s
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](LongInterval.empty, indexOutOfBoundsException)
@@ -75,6 +85,7 @@ object Consecutive {
   final class Open[+A](val in: LongInterval.Open, f: Long => A) extends Consecutive[A] with Indexed[A] {
     type CC[X] = Open[X]
 
+    def applyLong(x: Long): A       = f(x)
     def size                        = Infinite
     def elemAt(vdex: Vdex): A       = f(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (f andThen g)
@@ -83,6 +94,7 @@ object Consecutive {
   final class Closed[+A](val in: LongInterval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
 
+    def applyLong(x: Long): A        = f(x)
     def containsLong(n: Long): Bool  = in contains n
     def elemAt(vdex: Vdex): A        = f(in(vdex))
     def foreach(g: A => Unit): Unit  = in foreach (f andThen g)

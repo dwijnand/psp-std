@@ -118,10 +118,17 @@ abstract class AllExplicit extends ApiValues {
   def bufferMap[A, B: Empty](): scmMap[A, B]         = scmMap[A, B]() withDefaultValue emptyValue[B]
   def inView[A](mf: Suspended[A]): View[A]           = new LinearView(Each(mf))
   def indexRange(start: Long, end: Long): VdexRange  = longRange(start, end) map Index
+  def indexStream: Indexed[Index]                    = LongInterval open 0 map Index
   def intRange(start: Int, end: Int): IntRange       = longRange(start, end) map (_.toInt)
+  def intsFrom(start: Int): Consecutive.Open[Int]    = longsFrom(start) map (_.toInt)
   def longRange(start: Long, end: Long): LongRange   = LongInterval.until(start, end) map identity
   def longsFrom(start: Long): Consecutive.Open[Long] = LongInterval open start map identity
-  def intsFrom(start: Int): Consecutive.Open[Int]    = longsFrom(start) map (_.toInt)
+
+  def crossViews[A, B](l: View[A], r: View[B]): ZipView[A, B]                         = new ZipView.CrossViews(l, r)
+  def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): ZipView[A, B] = new ZipView.ZipSplit(xs)
+  def zipPairs[A, B](xs: View[A -> B]): ZipView[A, B]                                 = new ZipView.ZipPairs(xs)
+  def zipViews[A, B](l: View[A], r: View[B]): ZipView[A, B]                           = new ZipView.ZipViews(l, r)
+  def zipWith[A, B](l: View[A], f: A => B): ZipView[A, B]                             = new ZipView.ZipWith(l, f)
 
   def arr[A: CTag](xs: A*): Array[A]           = xs.toArray[A]
   def list[A](xs: A*): Plist[A]                = new Conversions(view(xs: _*)) toPlist
@@ -129,9 +136,5 @@ abstract class AllExplicit extends ApiValues {
   def set[A: Eq](xs: A*): ExSet[A]             = new Conversions(view(xs: _*)) toExSet
   def vec[A](xs: A*): Vec[A]                   = new Vec[A](xs.toVector)
   def view[A](xs: A*): DirectView[A, Vec[A]]   = new DirectView[A, Vec[A]](vec(xs: _*))
-  def zip[A, B](xs: (A->B)*): ZipView[A, B]    = Zip zip1 view(xs: _*)
-
-  object indices {
-    def all: Indexed[Index]                  = Indexed(_.toIndex)
-  }
+  def zip[A, B](xs: (A->B)*): ZipView[A, B]    = zipPairs(view(xs: _*))
 }
