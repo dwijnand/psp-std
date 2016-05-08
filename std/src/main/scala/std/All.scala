@@ -30,6 +30,23 @@ object all extends AllExplicit with AllImplicit {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
   }
+  implicit class ExMapOps[K, V](val lookup: ExMap[K, V]) {
+    import lookup._
+    type Entry = K -> V
+
+    def keys: View[K]                     = keySet.m
+    // def values: View[V]                = keyVector map xs.lookup
+    def keySet: ExSet[K]                  = lookup.keys
+    def keyVector: Vec[K]                 = keys.toVec
+    def entries: Zip[K, V]                = keyVector mapAndZip lookup
+    def map[V1](g: V => V1): ExMap[K, V1] = ExMap(keySet, f mapOut g)
+    def apply(key: K): V                  = lookup(key)
+  }
+  implicit class ExSetOps[A](val xs: ExSet[A]) {
+    private implicit def equiv = xs.equiv
+
+    def union(that: ExSet[A]): ExSet[A] = xs.m ++ that.m toExSet
+  }
 
   /** Extension methods for scala library classes.
    *  We'd like to get away from all such classes,
@@ -124,17 +141,17 @@ abstract class AllExplicit extends ApiValues {
   def longRange(start: Long, end: Long): LongRange   = LongInterval.until(start, end) map identity
   def longsFrom(start: Long): Consecutive.Open[Long] = LongInterval open start map identity
 
-  def crossViews[A, B](l: View[A], r: View[B]): ZipView[A, B]                         = new ZipView.CrossViews(l, r)
-  def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): ZipView[A, B] = new ZipView.ZipSplit(xs)
-  def zipPairs[A, B](xs: View[A -> B]): ZipView[A, B]                                 = new ZipView.ZipPairs(xs)
-  def zipViews[A, B](l: View[A], r: View[B]): ZipView[A, B]                           = new ZipView.ZipViews(l, r)
-  def zipWith[A, B](l: View[A], f: A => B): ZipView[A, B]                             = new ZipView.ZipWith(l, f)
+  def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]                         = new Zip.CrossViews(l, r)
+  def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
+  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                 = new Zip.ZipPairs(xs)
+  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)
+  def zipWith[A, B](l: View[A], f: A => B): Zip[A, B]                             = new Zip.ZipWith(l, f)
 
-  def arr[A: CTag](xs: A*): Array[A]           = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]                = new Conversions(view(xs: _*)) toPlist
-  def rel[K: Eq, V](xs: (K->V)*): ExMap[K, V]  = ExMap fromScala (xs map tuple toMap)
-  def set[A: Eq](xs: A*): ExSet[A]             = new Conversions(view(xs: _*)) toExSet
-  def vec[A](xs: A*): Vec[A]                   = new Vec[A](xs.toVector)
-  def view[A](xs: A*): DirectView[A, Vec[A]]   = new DirectView[A, Vec[A]](vec(xs: _*))
-  def zip[A, B](xs: (A->B)*): ZipView[A, B]    = zipPairs(view(xs: _*))
+  def arr[A: CTag](xs: A*): Array[A]          = xs.toArray[A]
+  def list[A](xs: A*): Plist[A]               = new Conversions(view(xs: _*)) toPlist
+  def rel[A: Eq, B](xs: (A->B)*): ExMap[A, B] = ExMap(set[A](xs map fst: _*), Pmap fromScala (xs map tuple toMap))
+  def set[A: Eq](xs: A*): ExSet[A]            = new Conversions(view(xs: _*)) toExSet // can't use toSet, doesn't honor Eq[A]
+  def vec[A](xs: A*): Vec[A]                  = new Vec[A](xs.toVector)
+  def view[A](xs: A*): DirectView[A, Vec[A]]  = new DirectView[A, Vec[A]](vec(xs: _*))
+  def zip[A, B](xs: (A->B)*): Zip[A, B]       = zipPairs(view(xs: _*))
 }

@@ -26,6 +26,13 @@ final case object Pnil extends Plist[Nothing] {
   def head = abort("Pnil.head")
   def tail = abort("Pnil.tail")
 }
+final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
+  def basis                 = xs.m
+  def equiv                 = byEquals
+  def apply(x: A): Bool     = xs(x)
+  def foreach(f: A => Unit) = xs foreach f
+  def size: Precise         = xs.size
+}
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   def isEmpty       = length <= 0
   def nonEmpty      = length > 0
@@ -71,6 +78,14 @@ class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
   def render(implicit z: Show[B]): String = renderLines mk_s EOL
 }
 
+object Pset {
+  def fromJava[A](xs: jSet[A]): Pset[A]   = fromScala(xs.to[sciSet].toSet) // toSet is actually needed
+  def fromScala[A](xs: scSet[A]): Pset[A] = new Pset[A](xs.toSet)
+}
+object Pmap {
+  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]   = ExMap[K, V](Pset fromJava xs.keySet, Opaque[K, V](xs get _))
+  def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V] = ExMap[K, V](xs.keys.byEquals.toExSet, Opaque(xs))
+}
 object Plist {
   def empty[A] : Plist[A]                 = cast(Pnil)
   def newBuilder[A] : Builds[A, Plist[A]] = new Builds(xs => ll.foldRight[A, Plist[A]](xs, empty[A], _ :: _))

@@ -144,8 +144,8 @@ final class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
   def zfold[C: Empty](x: A)(g: B => C): C   = cond(f isDefinedAt x, g(f(x)), emptyValue)
   def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
   def get(x: A): Option[B]                  = zfold(x)(some)
-  def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Fun(g), f)
-  def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Fun(g))
+  def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Opaque(g), f)
+  def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Opaque(g))
 
   def defaulted(g: A => B): Defaulted[A, B] = f match {
     case Defaulted(_, u) => Defaulted(g, u)

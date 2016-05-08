@@ -51,7 +51,7 @@ class ArraySpec extends ScalacheckBundle {
 class ADTSpec extends ScalacheckBundle {
   def bundle = "ADTs defined in psp-api"
 
-  val f1 = Fun((_: Int) * 2)
+  val f1 = Opaque((_: Int) * 2)
   val f2 = f1 mapOut (_ * 3)
   val f3 = f2 filterIn (_ <= 2)
   val f4 = f3 defaulted (_ => 99)

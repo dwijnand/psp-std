@@ -101,7 +101,7 @@ sealed abstract class Fun[-A, +B] {
     case Defaulted(g, u) => if (u isDefinedAt x) u(x) else g(x)
     case FilterIn(_, u)  => u(x) // filter is checked at isDefinedAt
     case AndThen(u1, u2) => u2(u1(x))
-    case FiniteDom(_, g) => g(x)
+    case ExMap(_, g)     => g(x)
   }
   final def isDefinedAt(x: A): Boolean = this match {
     case Opaque(_)       => true
@@ -109,7 +109,7 @@ sealed abstract class Fun[-A, +B] {
     case FilterIn(p, u)  => p(x) && (u isDefinedAt x)
     case Defaulted(_, u) => u isDefinedAt x
     case AndThen(u1, u2) => (u1 isDefinedAt x) && (u2 isDefinedAt u1(x))
-    case FiniteDom(p, _) => p(x)
+    case ExMap(ks, _)    => ks(x)
   }
   def toPartial: A ?=> B = new (A ?=> B) {
     def isDefinedAt(x: A) = self isDefinedAt x
@@ -121,7 +121,7 @@ final case class Defaulted[-A, +B](g: A => B, u: Fun[A, B])      extends Fun[A, 
 final case class FilterIn[-A, +B](p: A => Boolean, u: Fun[A, B]) extends Fun[A, B]
 final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])      extends Fun[A, B]
 final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C])  extends Fun[A, C]
-final case class FiniteDom[A, +B](keys: ExSet[A], f: Fun[A, B])  extends Fun[A, B]
+final case class ExMap[A, +B](keys: ExSet[A], f: Fun[A, B])      extends Fun[A, B]
 
 /** A not very impressive attempt to improve on string
  *  representations.

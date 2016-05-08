@@ -31,8 +31,14 @@ trait View[+A]    extends Any with Foreach[A]
 trait Indexed[+A] extends Any with Each[A]    { def elemAt(i: Vdex): A }
 trait Direct[+A]  extends Any with Indexed[A] { def size: Precise      }
 
-trait ExSet[A]     extends Any with Each[A] { def apply(x: A): Boolean    }
-trait ExMap[K, +V] extends Any              { def lookup: FiniteDom[K, V] }
+trait InSet[-A] extends Any {
+  def apply(x: A): Bool
+}
+trait ExSet[A] extends Any with Each[A] with InSet[A] {
+  def basis: Each[A]
+  def equiv: Hash[A]
+  def size: Precise
+}
 
 /** When a Show type class is more trouble than it's worth.
  *  Not overriding toString here to leave open the possibility of

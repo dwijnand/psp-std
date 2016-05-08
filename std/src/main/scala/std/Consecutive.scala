@@ -70,10 +70,10 @@ sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
   def map[B](g: A => B): CC[B]
   def applyLong(x: Long): A
 
-  def viewLongs: View[Long]      = Each.construct[Long](in.size, in foreach _).m
-  def zipLongs: ZipView[Long, A] = zipWith(viewLongs, applyLong)
-  def startLong: Long            = in.startLong
-  def to_s: String               = in.to_s
+  def viewLongs: View[Long]  = Each.construct[Long](in.size, in foreach _).m
+  def zipLongs: Zip[Long, A] = zipWith(viewLongs, applyLong)
+  def startLong: Long        = in.startLong
+  def to_s: String           = in.to_s
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](LongInterval.empty, indexOutOfBoundsException)

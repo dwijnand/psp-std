@@ -96,12 +96,12 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
 
-  def cross[B](ys: View[B]): ZipView[A, B]                       = crossViews(xs, ys)
-  def mapAndCross[B](f: A => B): ZipView[A, B]                   = crossViews(xs, xs map f)
-  def mapAndZip[B](f: A => B): ZipView[A, B]                     = zipViews(xs, xs map f)
-  def zipIndex: ZipView[A, Index]                                = zipViews(xs, indexStream)
-  def zip[B](ys: View[B]): ZipView[A, B]                         = zipViews[A, B](xs, ys)
-  def zipped[L, R](implicit z: Splitter[A, L, R]): ZipView[L, R] = zipSplit[A, L, R](xs)(z)
+  def cross[B](ys: View[B]): Zip[A, B]                       = crossViews(xs, ys)
+  def mapAndCross[B](f: A => B): Zip[A, B]                   = crossViews(xs, xs map f)
+  def mapAndZip[B](f: A => B): Zip[A, B]                     = zipViews(xs, xs map f)
+  def zipIndex: Zip[A, Index]                                = zipViews(xs, indexStream)
+  def zip[B](ys: View[B]): Zip[A, B]                         = zipViews[A, B](xs, ys)
+  def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
 
   def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))
   def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
