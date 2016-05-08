@@ -4,12 +4,16 @@ package std
 import psp.api._
 import scala.{ collection => sc }
 import sc.{ mutable => scm, immutable => sci }
+import scala.Tuple2
 
 /** One import which includes the implicits, one which doesn't.
  *  This choice is mutually exclusive: everything which is in exp is in all.
  */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+  implicit class ArrowAssocRef[A](val self: A) extends AnyVal {
+    @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
+  }
   implicit class JavaIteratorOps[A](it: jIterator[A]) {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }

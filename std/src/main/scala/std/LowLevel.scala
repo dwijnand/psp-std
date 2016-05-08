@@ -2,7 +2,6 @@ package psp
 package std
 
 import api._, all._
-import scala.Tuple2
 import java.io.{ ByteArrayOutputStream, BufferedInputStream }
 
 object ll {
@@ -131,10 +130,6 @@ object ll {
   // Precondition: n > 0
   def foreachDropRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit =
     foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
-
-  final class ArrowAssocRef[A](val self: A) extends AnyVal {
-    @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
-  }
 
   /** Circular Buffer. */
   private case class CBuf[A](capacity: Precise) extends Direct[A] {

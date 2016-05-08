@@ -59,7 +59,7 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
   @inline def foreachIndex(f: Vdex => Unit): Unit =
-    ll.foreachInt(0, lastIndex.getInt, i => f(Index(i)))
+    ll.foreachLong(0, lastIndex.indexValue, i => f(Index(i)))
 }
 
 final class ForeachOps[A](val xs: Foreach[A]) {
