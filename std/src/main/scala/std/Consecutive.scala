@@ -64,7 +64,7 @@ object LongInterval {
   }
 }
 
-sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
+sealed abstract class Consecutive[+A] extends Indexed[A] {
   type CC[X] <: Consecutive[X]
   def in: LongInterval
   def map[B](g: A => B): CC[B]
@@ -74,15 +74,11 @@ sealed abstract class Consecutive[+A] extends Indexed[A] with ShowSelf {
   def zipLongs: Zip[Long, A] = zipWith(viewLongs, applyLong)
   def startLong: Long        = in.startLong
 
-  def to_s: String = Consecutive.showConsecutive[A](inheritShow) show this
+  import StdShow._
+  override def toString = showEach[Any](inheritShow, ?) show this
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](LongInterval.empty, indexOutOfBoundsException)
-
-  implicit def showConsecutive[A: Show] : Show[Consecutive[A]] = Show {
-    case x: Consecutive.Open[_]   => s"[${x.head}..)"
-    case x: Consecutive.Closed[_] => if (x.isEmpty) "[]" else s"[${x.head}..${x.last}]"
-  }
 
   def empty[A] : Closed[A]                                       = Empty
   def apply[A](in: LongInterval.Closed, f: Long => A): Closed[A] = new Closed(in, f)

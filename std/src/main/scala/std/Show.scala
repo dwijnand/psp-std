@@ -7,6 +7,12 @@ class FullRenderer extends Renderer {
   def minElements: Precise = 3
   def maxElements: Precise = 10
 
+  def showEach[A: Show](xs: Each[A]): String = xs match {
+    case x: Consecutive.Open[A]   => pp"[${x.head}..)"
+    case x: Consecutive.Closed[A] => if (x.isEmpty) "[]" else pp"[${x.head}..${x.last}]"
+    case _                        => showView(xs.m map (_.doc))
+  }
+
   def showView(xs: View[Doc]): String = "[ " + (xs splitAt maxElements.lastIndex match {
     case Split(xs, ys) if ys.isEmpty => xs map show mk_s ", "
     case Split(xs, _)                => (xs take minElements map show mk_s ", ") + ", ..."
@@ -66,16 +72,15 @@ object Show {
 trait ShowInstances extends ShowEach {
   implicit def showBoolean: Show[Boolean]     = inheritShow
   implicit def showChar: Show[Char]           = inheritShow
-  // implicit def showDouble: Show[Double]       = inheritShow
+  implicit def showDouble: Show[Double]       = inheritShow
   implicit def showInt: Show[Int]             = inheritShow
   implicit def showLong: Show[Long]           = inheritShow
-  // implicit def showPath: Show[jPath]          = inheritShow
   implicit def showString: Show[String]       = inheritShow
-  // implicit def showThrowable: Show[Throwable] = inheritShow
+  implicit def showThrowable: Show[Throwable] = inheritShow
 
   implicit def showClass: Show[jClass]                   = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]              = Show(_.to_s)
-  implicit def showIndex: Show[Vdex]                     = showBy(_.indexValue)
+  implicit def showVdex: Show[Vdex]                      = showBy(_.indexValue)
   implicit def showOption[A: Show] : Show[Option[A]]     = Show(_.fold("-")(_.render))
   implicit def showPair[A: Show, B: Show] : Show[A -> B] = Show(x => x._1 ~ " -> " ~ x._2 render)
   implicit def showOp[A, B]: Show[Op[A, B]]              = Show(op => op[ConstString](""))
@@ -90,11 +95,11 @@ trait ShowInstances extends ShowEach {
   }
 }
 trait ShowEach0 {
-  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(xs => z showView (xs.view map (_.doc)))
   implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
 }
 trait ShowEach extends ShowEach0 {
-  implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]    = Show(xs => FunctionGrid(xs.entries.pairs)(_.render).render(inheritShow))
-  implicit def showZipped[A1: Show, A2: Show] : Show[Zip[A1, A2]] = showBy[Zip[A1, A2]](_.pairs)
-  implicit def showArray[A: Show] : Show[Array[A]]                = showBy[Array[A]](_.toVec)
+  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
+  implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]            = Show(xs => FunctionGrid(xs.entries.pairs)(_.render).render(inheritShow))
+  implicit def showZipped[A1: Show, A2: Show] : Show[Zip[A1, A2]]         = showBy[Zip[A1, A2]](_.pairs)
+  implicit def showArray[A: Show] : Show[Array[A]]                        = showBy[Array[A]](_.toVec)
 }

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, exp._
+import api._, exp._, StdShow._
 
 /** Op and Operable
  *
@@ -86,7 +86,7 @@ object Operable {
       case Drop(n)         => str(in, "drop", n)
       case TakeRight(n)    => str(in, "takeR", n)
       case DropRight(n)    => str(in, "dropR", n)
-      case Slice(range)    => str(in, "slice", range)
+      case Slice(range)    => str(in, "slice", render(range))
       case TakeWhile(p)    => str(in, "takeW", p)
       case DropWhile(p)    => str(in, "dropW", p)
       case Filter(p)       => str(in, "filter", p)
