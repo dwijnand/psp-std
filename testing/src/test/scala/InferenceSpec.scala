@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import psp.std._, all._, api._, StdEq._, StdShow._
+import psp.std._, all._, api._, StdShow._
 
 class SliceSpec extends ScalacheckBundle {
   def bundle = "Slice Operations"

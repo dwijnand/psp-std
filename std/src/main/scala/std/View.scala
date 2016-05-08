@@ -13,9 +13,9 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def forall(p: ToBool[A]): Boolean                  = foldl(true)((_, x) => p(x) || { return false })
   def head: A                                        = (xs take 1).force.head
   def indexWhere(p: ToBool[A]): Index                = xs.zipIndex findLeft p map snd or NoIndex
-  def isEmpty: Boolean                               = xs.size.isZero || !exists(true)
+  def isEmpty: Boolean                               = xs.size.isZero || !exists(id[ToBool[A]](true))
   def last: A                                        = xs takeRight 1 head
-  def nonEmpty: Boolean                              = xs.size.isNonZero || exists(true)
+  def nonEmpty: Boolean                              = xs.size.isNonZero || exists(id[ToBool[A]](true))
   def reducel(f: BinOp[A]): A                        = xs.tail.foldl(head)(f)
   def reducer(f: BinOp[A]): A                        = xs.init.foldr(last)(f)
   def zfoldl[B: Empty](f: (B, A) => B): B            = ll.foldLeft(xs, emptyValue[B], f)
@@ -101,6 +101,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def mapAndZip[B](f: A => B): Zip[A, B]                     = zipViews(xs, xs map f)
   def zipIndex: Zip[A, Index]                                = zipViews(xs, indexStream)
   def zip[B](ys: View[B]): Zip[A, B]                         = zipViews[A, B](xs, ys)
+
   def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
 
   def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))

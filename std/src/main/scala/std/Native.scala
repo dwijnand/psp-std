@@ -56,6 +56,19 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
   @inline def foreach(f: A => Unit): Unit =
     ll.foreachInt(0, length - 1, i => f(underlying(i)))
 }
+final case class PairAsEach[A](x: A -> A) extends AnyVal with Direct[A] {
+  def size = 2
+  def elemAt(idx: Vdex): A = idx.indexValue match {
+    case 0 => fst(x)
+    case 1 => snd(x)
+    case _ => noSuchElementException(idx)
+  }
+  def foreach(f: A => Unit): Unit = {
+    f(fst(x))
+    f(snd(x))
+  }
+}
+
 object FunctionGrid {
   def apply[A](xs: View[A])(columns: ToString[A]*): FunctionGrid[A, String] = new FunctionGrid(xs, columns.toVec)
 }

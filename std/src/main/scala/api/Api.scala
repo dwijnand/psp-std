@@ -23,6 +23,7 @@ trait ApiTypes extends ExternalTypes {
   type Relation[-A]      = (A, A) => Bool
   type Suspended[+A]     = ToUnit[ToUnit[A]]
   type ToBool[-A]        = A => Bool
+  type ToBool2[-A, -B]   = (A, B) => Bool
   type ToInt[-A]         = A => Int
   type ToSelf[A]         = A => A
   type ToString[-A]      = A => String

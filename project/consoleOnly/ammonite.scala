@@ -10,7 +10,7 @@ object ReplMain {
   def storage = Ref(Storage(defaultAmmoniteHome, None))
   def initImports = sm"""
     |import psp._, std._, all._, api._
-    |import StdShow._, StdEq._, INREPL._
+    |import StdShow._, INREPL._
     |import Unsafe.promoteIndex
   """
   // Working around ammonite bugs.

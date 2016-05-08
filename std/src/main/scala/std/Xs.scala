@@ -6,26 +6,40 @@ import api._, all._, StdShow._
 /** Reboot of view code.
  */
 object Xs {
+  type RepOf[Rep, CC[X], A] = RepInfo[Rep] {
+    type MapTo[X] = CC[X]
+    type Elem     = A
+  }
   trait RepInfo[Rep] {
+    type Repr = Rep
     type MapTo[X]
     type Elem
 
     def sizeOf(xs: Rep): Size
     def foreachView[B](xs: Rep, op: Op[Elem, B], f: B => Unit): Unit
   }
-  trait RepOf[Rep, CC[X], A] extends RepInfo[Rep] {
+  private trait RepInfoTyped[Rep, CC[X], A] extends RepInfo[Rep] {
     type MapTo[X] = CC[X]
     type Elem     = A
   }
 
-  implicit def sciVectorRepOf[A] : RepOf[sciVector[A], sciVector, A] = new RepOf[sciVector[A], sciVector, A] {
-    def sizeOf(xs: sciVector[A]): Precise                                  = xs.length
-    def foreachView[B](xs: sciVector[A], op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
-  }
-  implicit def sciListRepOf[A] : RepOf[sciList[A], sciList, A] = new RepOf[sciList[A], sciList, A] {
-    def sizeOf(xs: sciList[A]): Size                                     = cond(xs.isEmpty, Size.Zero, Size.NonEmpty)
-    def foreachView[B](xs: sciList[A], op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
-  }
+  implicit def sciVectorRepOf[A] : RepOf[sciVector[A], sciVector, A] =
+    new RepInfoTyped[sciVector[A], sciVector, A] {
+      def sizeOf(xs: Repr): Precise                                  = xs.length
+      def foreachView[B](xs: Repr, op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
+    }
+
+  implicit def sciListRepOf[A] : RepOf[sciList[A], sciList, A] =
+    new RepInfoTyped[sciList[A], sciList, A] {
+      def sizeOf(xs: Repr): Size                                     = cond(xs.isEmpty, Size.Zero, Size.NonEmpty)
+      def foreachView[B](xs: Repr, op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
+    }
+
+  implicit def stringRepOf[R <: jCharSequence] : RepOf[R, Each, Char] =
+    new RepInfoTyped[R, Each, Char] {
+      def sizeOf(xs: Repr): Precise                                     = xs.length
+      def foreachView[B](xs: Repr, op: Op[Char, B], f: B => Unit): Unit = op(xs.toString.m) foreach f
+    }
 
   class RepWithOp[Rep, CC[X], Elem, A](val xs: Rep, val op: Op[Elem, A], val info: RepOf[Rep, CC, Elem]) extends ShowSelf {
     type MapTo[B] = RepWithOp[Rep, CC, Elem, B]
@@ -43,8 +57,8 @@ object Xs {
     def takeWhile(p: ToBool[A]): MapTo[A]        = Op.TakeWhile(p)
     def withFilter(p: ToBool[A]): MapTo[A]       = Op.Filter(p)
 
-    object force { def apply[That](implicit z: Builds[A, That]): That = z build Each(foreach _) }
-    def build(implicit z: Builds[A, Rep]): Rep                        = force[Rep]
+    def force[That]()(implicit z: Builds[A, That]): That = z build Each(foreach _)
+    def build(implicit z: Builds[A, Rep]): Rep           = force[Rep]()
 
     def foreach(f: A => Unit): Unit = info.foreachView(xs, op, f)
     def size: Size                  = op[ConstSize](info sizeOf xs)
@@ -52,5 +66,5 @@ object Xs {
   }
 
   def apply[R, CC[X], A](xs: R)(implicit info: RepOf[R, CC, A]): RepWithOp[R, CC, A, A] =
-    new RepWithOp(xs, Op.Identity(classNameOf(xs)), info)
+    new RepWithOp(xs, Op(classNameOf(xs)), info)
 }
