@@ -23,6 +23,11 @@ trait Operable[M[X]] {
 // trait FilterOp[A] extends OpType { type In = A ; type Out = A  }
 // trait MapOp[A, B] extends OpType { type In = A ; type Out = B  }
 object Op {
+  // object SliceOp {
+  //   def unapply[A](op: Op[A, A]): Option[Op[A, A]] = op match {
+  //     case Slice
+
+
   /** We'd like to categorize view operations as is done above for OpType.
    *  This seems to be impossible or far too much trouble.
    *  So instead we give in and add pointless type parameters to the Range ops.
@@ -42,6 +47,13 @@ object Op {
   final case class Maps[A, B](f: A => B)                      extends Op[A, B]
   final case class FlatMap[A, B](f: A => Foreach[B])          extends Op[A, B]
   final case class Compose[A, B, C](p: Op[A, B], q: Op[B, C]) extends Op[A, C]
+
+  // final case class Split[R, A, B](implicit tc: Splitter[R, A, B]) extends Op[R, A -> B]
+  // final case class Join[R, A, B](implicit tc: Joiner[R, A, B]) extends Op[A -> B, R]
+
+  // def optimize[A, B](op: Op[A, B]): Op[A, B] = op match {
+  //   case Compose
+  // }
 }
 
 object Operable {
