@@ -3,9 +3,7 @@ package std
 
 import api._, all._, StdShow._
 
-class FullRenderer extends Renderer {
-  def minElements: Precise = 3
-  def maxElements: Precise = 10
+class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
 
   def showEach[A: Show](xs: Each[A]): String = xs match {
     case x: Consecutive.Open[A]   => pp"[${x.head}..)"
@@ -20,7 +18,7 @@ class FullRenderer extends Renderer {
 
   def show(x: Doc): String = x match {
     case Doc.NoDoc           => ""
-    case Doc.Cat(l, r)       => show(l) + show(r)
+    case Doc.Cat(l, r)       => show(l) append show(r)
     case Doc.Group(xs)       => showView(xs)
     case Doc.Shown(value, z) => z show value
     case Doc.Literal(s)      => s
@@ -82,10 +80,8 @@ trait ShowInstances extends ShowEach {
   implicit def showDirect: Show[ShowDirect]              = Show(_.to_s)
   implicit def showVdex: Show[Vdex]                      = showBy(_.indexValue)
   implicit def showOption[A: Show] : Show[Option[A]]     = Show(_.fold("-")(_.render))
-  implicit def showPair[A: Show, B: Show] : Show[A -> B] = Show(x => x._1 ~ " -> " ~ x._2 render)
+  implicit def showPair[A: Show, B: Show] : Show[A -> B] = Show { case a -> b => a ~ " -> " ~ b render }
   implicit def showOp[A, B]: Show[Op[A, B]]              = Show(op => op[ConstString](""))
-
-  // implicit def showStackTraceElement: Show[java.lang.StackTraceElement] = Show(x => s"\tat$x\n")
 
   implicit def showSize: Show[Size] = Show[Size] {
     case Finite(size)          => pp"$size"

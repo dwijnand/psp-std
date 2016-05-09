@@ -76,15 +76,6 @@ final class ForeachOps[A](val xs: Foreach[A]) {
   def each: Each[A]               = Each(xs foreach _)
   def view: View[A]               = each
 }
-final class DocOps(val lhs: Doc) extends AnyVal {
-  def doc: Doc                             = lhs
-  def render(implicit z: Renderer): String = z show lhs
-  // def isEmpty: Boolean                     = lhs eq emptyValue[Doc]
-
-  def ~(rhs: Doc): Doc   = Doc.Cat(lhs, rhs)
-  // def <>(rhs: Doc): Doc  = if (lhs.isEmpty) rhs else if (rhs.isEmpty) lhs else lhs ~ rhs
-  // def <+>(rhs: Doc): Doc = if (lhs.isEmpty) rhs else if (rhs.isEmpty) lhs else lhs ~ " " ~ rhs
-}
 
 final class PreciseOps(val size: Precise) {
   def indices: VdexRange = indexRange(0, size.getLong)

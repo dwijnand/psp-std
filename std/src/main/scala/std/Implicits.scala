@@ -3,42 +3,12 @@ package std
 
 import api._, exp._ // no implicit conversions in this file
 
-// 49 promoteSize
-// 47 convertHasShowDoc
-// 39 liftPair
-// 24 apply
-// 13 viewPspDirect
-// 11 convertViewEach
-// 11 const
-// 10 applyNext
-//  7 funToPartialFunction
-//  7 convertViewBuilds
-//  6 promoteIndex
-//  5 viewPspString
-//  4 viewScalaCollection
-//  2 viewPspEach
-//  2 constantPredicate
-//  1 viewScalaIndexedSeq
-//  1 viewPspArray
-//  1 promoteApiExSet
-//  1 long2bigInt
-//  1 liftSeqPair
-//  1 liftPositional
-//  1 liftPartial
-//  1 int2bigInt
-trait AllImplicit extends scala.AnyRef
-      with StdEmpty
-      with StdImplicits
-{
+trait AllImplicit extends StdEmpty with StdImplicits {
   self =>
 
-  def id[A](value: Boolean)(implicit z: BooleanAlgebra[A]): A = cond(value, z.one, z.zero)
-
-  // implicit def algebraConstant[A](value: Boolean)(implicit z: BooleanAlgebra[A]): A                  = cond(value, z.one, z.zero)
-
   implicit def conforms[A] : (A <:< A)                                                               = new conformance[A]
-  // implicit def constantPredicate[A](value: Boolean): ToBool[A]                                       = cond(value, ConstantTrue, ConstantFalse)
-  implicit def defaultRenderer: FullRenderer                                                         = new FullRenderer
+  implicit def constantPredicate[A](value: Boolean): ToBool[A]                                       = cond(value, ConstantTrue, ConstantFalse)
+  implicit def defaultRenderer: FullRenderer                                                         = new FullRenderer(minElements = 3, maxElements = 10)
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B                                     = f.toPartial
   implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]                                             = new DirectOps(xs)
   implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]                                          = new ForeachOps(xs)
