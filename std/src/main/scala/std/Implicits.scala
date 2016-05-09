@@ -32,7 +32,9 @@ trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps {
   implicit def convertViewEach[A](xs: View[A]): Each[A]           = Each(xs foreach _)
   implicit def opsAny[A](x: A): AnyOps[A]                         = new AnyOps[A](x)
   implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]     = Order impl z
-  implicit def typeclassTupleCleave[A, B] : Cleaver[A -> B, A, B] = Cleaver[A -> B, A, B](((_, _)), fst, snd)
+
+  implicit def cleaverProduct2[A, B] : Cleaver[A -> B, A, B]                 = cleaver[A -> B, A, B](((_, _)), fst, snd)
+  implicit def cleaverProduct3[A, B, C] : Cleaver[`3->`[A, B, C], A, B -> C] = cleaver((x, y) => ((x, fst(y), snd(y))), _._1, x => pair(x._2, x._3))
 
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = xs match {
     case xs: AtomicView[_, _] => cast(xs)

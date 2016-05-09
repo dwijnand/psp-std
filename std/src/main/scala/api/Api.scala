@@ -1,7 +1,7 @@
 package psp
 package api
 
-import scala.{ Tuple2, collection => sc }
+import scala.{ Tuple2, Tuple3, collection => sc }
 import java.{ lang => jl }
 import java.nio.{ file => jnf }
 
@@ -12,6 +12,7 @@ private[api] final object Api extends ApiValues
 trait ApiTypes extends ExternalTypes {
   // Aliases for internal and external types.
   type ->[+A, +B]        = scala.Product2[A, B]        // A less overconstrained product type.
+  type `3->`[+A, +B, +C] = scala.Product3[A, B, C]
   type ?=>[-A, +B]       = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
   type BinOp[A]          = (A, A) => A                 // binary operation
   type Bool              = Boolean
@@ -25,6 +26,7 @@ trait ApiTypes extends ExternalTypes {
   type ToBool[-A]        = A => Bool
   type ToBool2[-A, -B]   = (A, B) => Bool
   type ToInt[-A]         = A => Int
+  type ToLong[-A]        = A => Long
   type ToSelf[A]         = A => A
   type ToString[-A]      = A => String
   type ToUnit[-A]        = A => Unit
@@ -52,32 +54,47 @@ abstract class ApiValues extends ApiTypes {
   def indexOutOfBoundsException(msg: Any): Nothing  = throw new IndexOutOfBoundsException(s"$msg")
   def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(s"$msg")
 
-  def ?[A](implicit value: A): A                    = value
-  def castRef[A](value: A): Ref[A]                  = cast(value)
-  def cast[A](value: Any): A                        = value.asInstanceOf[A]
-  def classOf[A: CTag](): Class[_ <: A]             = cast(classTag[A].runtimeClass)
-  def classTag[A: CTag] : CTag[A]                   = ?[CTag[A]]
-  def cond[A](p: Bool, thenp: => A, elsep: => A): A = if (p) thenp else elsep
-  def doto[A](x: A)(f: A => Unit): A                = sideEffect(x, f(x))
-  def emptyValue[A](implicit z: Empty[A]): A        = z.empty
-  def fst[A, B](x: A -> B): A                       = x._1
-  def identity[A](x: A): A                          = x
-  def isInstance[A: CTag](x: Any): Bool             = classOf[A]() isAssignableFrom x.getClass
-  def jFile(path: String): jFile                    = new jFile(path)
-  def jPath(path: String): jPath                    = jnf.Paths get path
-  def jUri(x: String): jUri                         = java.net.URI create x
-  def min[A](l: A, r: A)(implicit z: Order[A]): A   = cond(z.cmp(l, r) == Cmp.LT, l, r)
-  def max[A](l: A, r: A)(implicit z: Order[A]): A   = cond(z.cmp(l, r) == Cmp.LT, r, l)
-  def none[A](): Option[A]                          = scala.None
-  def nullAs[A] : A                                 = cast(null)
-  def pair[A, B](x: A, y: B): Tuple2[A, B]          = new Tuple2(x, y)
-  def show[A](implicit z: Show[A]): Show[A]         = z
-  def sideEffect[A](result: A, exprs: Any*): A      = result
-  def snd[A, B](x: A -> B): B                       = x._2
-  def some[A](x: A): Option[A]                      = scala.Some(x)
-  def swap[A, B](x: A, y: B): B -> A                = scala.Tuple2(y, x)
-  def tuple[A, B](x: A -> B): ((A, B))              = scala.Tuple2(fst(x), snd(x))
-  def zcond[A: Empty](p: Bool, thenp: => A): A      = cond(p, thenp, emptyValue[A])
+  def ?[A](implicit value: A): A                         = value
+  def castRef[A](value: A): Ref[A]                       = cast(value)
+  def cast[A](value: Any): A                             = value.asInstanceOf[A]
+  def classOf[A: CTag](): Class[_ <: A]                  = cast(classTag[A].runtimeClass)
+  def classTag[A: CTag] : CTag[A]                        = ?[CTag[A]]
+  def cond[A](p: Bool, thenp: => A, elsep: => A): A      = if (p) thenp else elsep
+  def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
+  def emptyValue[A](implicit z: Empty[A]): A             = z.empty
+  def fst[A, B](x: A -> B): A                            = x._1
+  def identity[A](x: A): A                               = x
+  def isInstance[A: CTag](x: Any): Bool                  = classOf[A]() isAssignableFrom x.getClass
+  def jFile(path: String): jFile                         = new jFile(path)
+  def jPath(path: String): jPath                         = jnf.Paths get path
+  def jUri(x: String): jUri                              = java.net.URI create x
+  def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, l, r)
+  def max[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, r, l)
+  def none[A](): Option[A]                               = scala.None
+  def nullAs[A] : A                                      = cast(null)
+  def pair[A, B](x: A, y: B): Tuple2[A, B]               = new Tuple2(x, y)
+  def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
+  def show[A](implicit z: Show[A]): Show[A]              = z
+  def sideEffect[A](result: A, exprs: Any*): A           = result
+  def snd[A, B](x: A -> B): B                            = x._2
+  def some[A](x: A): Option[A]                           = scala.Some(x)
+  def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
+  def tuple[A, B](x: A -> B): ((A, B))                   = scala.Tuple2(fst(x), snd(x))
+  def zcond[A: Empty](p: Bool, thenp: => A): A           = cond(p, thenp, emptyValue[A])
+
+  /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
+   *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
+   *  "to adhere firmly and closely as though evenly and securely glued" as well
+   *  as "to divide into two parts by a cutting blow".
+   */
+  def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
+  def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R  = f(x._1, x._2) }
+
+  def cleaver[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] =
+    new Cleaver[R, A, B] {
+      def split(x: R): A -> B = (l(x), r(x))
+      def join(x: A -> B): R  = f(x._1, x._2)
+    }
 
   /** Safe in the senses that it won't silently truncate values,
    *  and will translate MaxLong to MaxInt instead of -1.

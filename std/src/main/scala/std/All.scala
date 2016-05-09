@@ -85,7 +85,8 @@ object all extends AllExplicit with AllImplicit {
     def =!=(rhs: A): Boolean = !z.eqv(lhs, rhs)
   }
   implicit class HashOps[A](val lhs: A)(implicit z: Hash[A]) {
-    def hash: Int = z hash lhs
+    def hash: Long   = z hash lhs
+    def hashInt: Int = hash.toInt
   }
   implicit class OrderOps[A](val lhs: A)(implicit z: Order[A]) {
     def < (rhs: A): Boolean = z.cmp(lhs, rhs) eq Cmp.LT
