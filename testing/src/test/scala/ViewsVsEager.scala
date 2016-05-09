@@ -64,7 +64,7 @@ class OperationCounts extends ScalacheckBundle {
       case scala.Right(res) => res.to_s
       case scala.Left(err)  => err
     }
-    def pass_s = "|%s  %s  %s  // %s".format("%-70s".format(op.render), counts1, counts2, res_s)
+    def pass_s = "|%s  %s  %s  // %s".format("%-70s".format(op.doc.render), counts1, counts2, res_s)
     def fail_s = s"Inconsistent results for $op: $res_s"
 
     private def maybeShow(): Unit = {

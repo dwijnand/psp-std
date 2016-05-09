@@ -73,18 +73,16 @@ object FunctionGrid {
   def apply[A](xs: View[A])(columns: ToString[A]*): FunctionGrid[A, String] = new FunctionGrid(xs, columns.toVec)
 }
 class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
-  import StdShow._
   def rows: View2D[B]    = values map (v => functions map (f => f(v)))
   def columns: View2D[B] = rows.transpose
 
-  def renderLines(implicit z: Show[B]): Vec[String] = {
+  def renderLines(implicit s1: Show[B], s2: Show[String]): Vec[String] = {
     if (values.isEmpty || functions.isEmpty) return vec()
-    val widths    = columns map (_ map z.show map (_.length) max)
+    val widths    = columns map (_ map s1.show map (_.length) max)
     val formatFns = widths map lformat
 
     rows map (formatFns zip _ map (_ apply _) mk_s ' ')
   }
-  def render(implicit z: Show[B]): String = renderLines mk_s EOL
 }
 
 object Pset {

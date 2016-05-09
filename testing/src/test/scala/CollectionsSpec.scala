@@ -143,7 +143,7 @@ class GridSpec extends ScalacheckBundle {
   def primePartitionGrid_t(n: Int): LongGrid = primePartition.transpose take n map (_ take n)
 
   def showGrid(xss: LongGrid): String = {
-    val yss   = xss mmap (_.render)
+    val yss   = xss mmap (_.doc.render)
     val width = yss.flatten maxOf (_.length)
     val fmt   = lformat(width)
 
