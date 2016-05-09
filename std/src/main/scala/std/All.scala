@@ -52,13 +52,10 @@ object all extends AllExplicit with AllImplicit {
     def mapWith[B](f: Fun[A, B]): ExMap[A, B] = ExMap(xs, f)
     def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
   }
-  implicit class ShowDocOps[A](val lhs: A)(implicit shows: Show[A]) {
+  implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
     def doc: Doc                             = Doc(lhs)
-    def render(implicit z: Renderer): String = z show doc
-    def ~(rhs: Doc): Doc                     = Doc.Cat(doc, rhs)
+    // def render(implicit z: Renderer): String = z show doc
   }
-
-  implicit def implicitDoc[A](x: A)(implicit z: Show[A]): Doc = Doc(x)
 
   /** Extension methods for scala library classes.
    *  We'd like to get away from all such classes,

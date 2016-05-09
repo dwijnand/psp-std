@@ -3,6 +3,28 @@ package std
 
 import api._, all._, StdShow._
 
+/** A not very impressive attempt to improve on string
+ *  representations.
+ */
+sealed abstract class Doc
+
+object Doc {
+  final case object NoDoc                             extends Doc
+  final case class Group(xs: View[Doc])               extends Doc
+  final case class Cat(left: Doc, right: Doc)         extends Doc
+  final case class Shown[A](value: A, shows: Show[A]) extends Doc
+  final case class Literal(value: String)             extends Doc
+
+  def empty: Doc                                    = NoDoc
+  def apply[A](x: A)(implicit z: Show[A]): Shown[A] = Shown[A](x, z)
+  def apply(s: String): Literal                     = Literal(s)
+
+  implicit class DocOps(lhs: Doc) {
+    def render(implicit z: Renderer): String = z show lhs
+    def ~(rhs: Doc): Doc                     = Doc.Cat(lhs, rhs)
+  }
+}
+
 class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
 
   def showEach[A: Show](xs: Each[A]): String = xs match {
@@ -79,9 +101,11 @@ trait ShowInstances extends ShowEach {
   implicit def showClass: Show[jClass]                   = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]              = Show(_.to_s)
   implicit def showVdex: Show[Vdex]                      = showBy(_.indexValue)
-  implicit def showOption[A: Show] : Show[Option[A]]     = Show(_.fold("-")(_.render))
-  implicit def showPair[A: Show, B: Show] : Show[A -> B] = Show { case a -> b => a ~ " -> " ~ b render }
+  implicit def showOption[A: Show] : Show[Option[A]]     = Show(_.fold("-")(_.doc.render))
+  implicit def showPair[A: Show, B: Show] : Show[A -> B] = Show { case a -> b => a.doc ~ " -> " ~ b render }
   implicit def showOp[A, B]: Show[Op[A, B]]              = Show(op => op[ConstString](""))
+
+  implicit def showFunctionGrid[A, B](implicit z: Show[B]): Show[FunctionGrid[A, B]] = Show(_.renderLines.mk_s(EOL))
 
   implicit def showSize: Show[Size] = Show[Size] {
     case Finite(size)          => pp"$size"
@@ -95,7 +119,7 @@ trait ShowEach0 {
 }
 trait ShowEach extends ShowEach0 {
   implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
-  implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]            = Show(xs => FunctionGrid(xs.entries.pairs)(_.render).render(inheritShow))
+  implicit def showExMap[K: Show, V: Show] : Show[ExMap[K, V]]            = Show(xs => FunctionGrid(xs.entries.pairs)(_.doc.render).doc.render)
   implicit def showZipped[A1: Show, A2: Show] : Show[Zip[A1, A2]]         = showBy[Zip[A1, A2]](_.pairs)
   implicit def showArray[A: Show] : Show[Array[A]]                        = showBy[Array[A]](_.toVec)
 }

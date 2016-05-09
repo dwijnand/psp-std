@@ -130,26 +130,8 @@ object Vindex {
   val One  = new AnyRef
 }
 
-/** A not very impressive attempt to improve on string
- *  representations.
- */
-sealed abstract class Doc
-
-object Doc {
-  final case object NoDoc                             extends Doc
-  final case class Group(xs: View[Doc])               extends Doc
-  final case class Cat(left: Doc, right: Doc)         extends Doc
-  final case class Shown[A](value: A, shows: Show[A]) extends Doc
-  final case class Literal(value: String)             extends Doc
-
-  def empty: Doc                                    = NoDoc
-  def apply[A](x: A)(implicit z: Show[A]): Shown[A] = Shown[A](x, z)
-  def apply(s: String): Literal                     = Literal(s)
-}
-
 /** Virtual Index.
  */
-
 final class Vindex[Base] private[api] (val indexValue: Long) extends AnyVal {
   type This = Vindex[Base]
 

@@ -15,6 +15,7 @@ trait AllImplicit extends StdEmpty with StdImplicits {
   implicit def predicate1Algebra[A] : BooleanAlgebra[ToBool[A]]                                      = new Algebras.Predicate1Algebra[A]
   implicit def predicate2Algebra[A, B] : BooleanAlgebra[ToBool2[A, B]]                               = new Algebras.Predicate2Algebra[A, B]
   implicit def promoteSize(x: Long): Precise                                                         = Size(x)
+  implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc                                      = Doc(x)
   implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]                  = Unbuilds[A, CC[A]](Each java _)
   implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
   implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
