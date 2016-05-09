@@ -3,6 +3,11 @@ package std
 
 import api._, all._, Java._
 
+trait Unbuilds[Repr] extends Any {
+  type Elem
+  def unbuild(xs: Repr): Foreach[Elem]
+}
+
 final class Conversions[A](val xs: View[A]) extends AnyVal with ConversionsImpl[A]
 
 final class Unbuilder[A, Repr](repr: Repr)(implicit z: UnbuildsAs[A, Repr]) {
