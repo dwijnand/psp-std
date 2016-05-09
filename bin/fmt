@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#
+
+scalafmt --config .scalafmt -i -f std/src/main/scala
