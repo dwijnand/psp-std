@@ -21,10 +21,6 @@ object Foreach {
     def foreach(f: A => Unit): Unit = mf(f)
   }
 }
-final class Builds[-Elem, +To](val f: Foreach[Elem] => To) {
-  def build(xs: Foreach[Elem]): To   = f(xs)
-  def apply(mf: Suspended[Elem]): To = build(Foreach(mf, Size.Unknown))
-}
 
 trait Each[+A]    extends Any with Foreach[A]
 trait View[+A]    extends Any with Foreach[A]

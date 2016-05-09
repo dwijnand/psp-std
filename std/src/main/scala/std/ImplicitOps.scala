@@ -40,7 +40,7 @@ final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
   def tail    = xs.drop(1)
   def init    = xs.dropRight(1)
 
-  def reverse: Direct[A] = Direct reversed xs
+  def reverse: Direct[A] = Each reversed xs
   def apply(i: Vdex): A  = xs elemAt i
   def indices: VdexRange = xs.size.indices
   def lastIndex: Index   = Index(xs.size.getLong - 1) // effectively maps both undefined and zero to no index.

@@ -76,7 +76,7 @@ sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
   final def build(implicit z: Builds[A, Repr]): Repr       = force[Repr]
 }
 
-sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with View[A] {
+sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with View[A] with ConversionsMethods[A] {
   final def join(that: View[A]): View[A] = Joined(this, that)
 }
 

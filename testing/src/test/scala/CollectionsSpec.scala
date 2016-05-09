@@ -176,11 +176,11 @@ class GridSpec extends ScalacheckBundle {
 class ViewBasic extends ScalacheckBundle {
   def bundle = "Views, Basic"
 
-  def plist   = list(1, 2, 3)
-  def pvector = vec(1, 2, 3)
-  def parray  = Array(1, 2, 3)
-  def pseq    = Each.elems(1, 2, 3)
-  def punfold = intsFrom(1)
+  def plist: Plist[Int]     = elems(1, 2, 3)
+  def pvector: Vec[Int]     = elems(1, 2, 3)
+  def parray: Array[Int]    = arr(1, 2, 3)
+  def pseq: Each[Int]       = elems(1, 2, 3)
+  def punfold: Indexed[Int] = intsFrom(1)
 
   case class Bippy(s: String, i: Int) {
     override def toString = s
@@ -322,9 +322,9 @@ class CollectionsSpec extends ScalacheckBundle {
   val sseq = sciSeq("a" -> 1, "b" -> 2, "c" -> 3)
   val svec = sciVector("a" -> 1, "b" -> 2, "c" -> 3)
   val sset = sciSet("a" -> 1, "b" -> 2, "c" -> 3)
-  val jseq = Java.List("a" -> 1, "b" -> 2, "c" -> 3)
-  val jset = Java.Set("a" -> 1, "b" -> 2, "c" -> 3)
-  val jmap = Java.Map("a" -> 1, "b" -> 2, "c" -> 3)
+  val jseq = javaList("a" -> 1, "b" -> 2, "c" -> 3)
+  val jset = javaSet("a" -> 1, "b" -> 2, "c" -> 3)
+  val jmap = javaMap("a" -> 1, "b" -> 2, "c" -> 3)
 
   def paired[A](x: A): (A, Int) = x -> ("" + x).length
 
@@ -413,34 +413,29 @@ class CollectionsSpec extends ScalacheckBundle {
   )
 
   def javaProps = {
-    import Java._
-
     vec[NamedProp](
       expectTypes[jList[_]](
         jseq map identity build,
+        jseq map identity force,
         jseq.m.build,
         jseq.m map identity build,
-        jseq.m.map(fst).map(paired).force[jList[_]]
-        ),
+        jseq.m.map(fst).map(paired).force
+      ),
       expectTypes[jSet[_]](
         jset map identity build,
+        jset map identity force,
         jset.m build,
         jset.m map identity build,
         jset.m.map(fst) map paired build
-        ),
+      ),
       expectTypes[jMap[_, _]](
-        (jmap map identity).force[jMap[_, _]]
-        // jmap.m build,
-        // jmap.m map identity build,
-        // jmap.m map fst map identity map paired build
-        //
-        // After changing the package object to a regular object, the commented lines fail like:
-        //
-        // [error] could not find implicit value for parameter z: UnbuildsAs[this.Elem, jMap[String,Int]]
-        // [error]         jmap.m build,
-        // [error]         ^
-        //
-        // The "this.Elem" is a typical scala substitution bug.
+        jmap map identity build,
+        jmap map identity force,
+        jmap.m.build,
+        jmap.m.force,
+        jmap.m map identity build,
+        jmap.m map fst map identity map paired build,
+        jmap.m.toMap[jMap]
       )
     )
   }
@@ -463,7 +458,7 @@ class CollectionsSpec extends ScalacheckBundle {
         pvec.tail.force,
         pvec.m.build,
         pvec.m map identity build,
-        pvec.m.map(fst).map(paired).force[Vec[_]]
+        pvec.m map fst map paired force
       )
     )
   }
