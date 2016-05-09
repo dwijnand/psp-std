@@ -57,9 +57,8 @@ package macros {
         case Literal(Constant(s: String)) => s.trim
         case _                            => fail("not a literal string")
       }
-      val lines = code.lines.toVec map (_.trim) filterNot (_.length == 0) map check
-      val res = lines.foldr(q"Vec[Typechecked]()")((x, xs) => q"$x +: $xs")
-      c.Expr(res)
+      val lines = code.lines map (_.trim) filterNot (_.length == 0) map check seq;
+      c.Expr(q"vec(..$lines)")
     }
 
     def typechecked(expr: c.Expr[String]): c.Expr[Typechecked] = check(

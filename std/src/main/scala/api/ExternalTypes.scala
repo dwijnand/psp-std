@@ -106,10 +106,12 @@ trait ExternalTypes {
   type String               = jl.String
   type StringBuilder        = jl.StringBuilder
   type Thread               = jl.Thread
+  type jAbstractMap[K, V]   = ju.AbstractMap[K, V]
   type jArrayList[A]        = ju.ArrayList[A]
   type jCharSequence        = jl.CharSequence
   type jClass               = jl.Class[_]
   type jClassLoader         = jl.ClassLoader
+  type jCollection[A]       = ju.Collection[A]
   type jEnum[E <: jEnum[E]] = jl.Enum[E]
   type jEnumeration[A]      = ju.Enumeration[A]
   type jFile                = jio.File
@@ -119,6 +121,7 @@ trait ExternalTypes {
   type jIterator[+A]        = ju.Iterator[A @uV]
   type jList[A]             = ju.List[A]
   type jMap[K, V]           = ju.Map[K, V]
+  type jMapEntry[K, V]      = ju.Map.Entry[K, V]
   type jOptional[+A]        = ju.Optional[A @uV]
   type jPath                = jnf.Path
   type jSet[A]              = ju.Set[A]

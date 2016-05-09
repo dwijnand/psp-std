@@ -70,5 +70,5 @@ object INREPL {
   }
 
   implicit def showToAmmonite[A](implicit z: Show[A]): pprint.PPrinter[A] =
-    pprint.PPrinter[A]((t, c) => BiIterator[String](vec(z show t)))
+    pprint.PPrinter[A]((t, c) => vec(z show t).iterator)
 }

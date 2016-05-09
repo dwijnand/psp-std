@@ -5,6 +5,7 @@ import psp.api._
 import scala.{ collection => sc }
 import sc.{ mutable => scm, immutable => sci }
 import scala.Tuple2
+import java.io.BufferedInputStream
 
 /** One import which includes the implicits, one which doesn't.
   *  This choice is mutually exclusive: everything which is in exp is in all.
@@ -20,16 +21,6 @@ object all extends AllExplicit with AllImplicit {
   implicit class CmpEnumOps(val cmp: Cmp) {
     def |(that: => Cmp): Cmp = if (cmp == Cmp.EQ) that else cmp
   }
-  implicit class BuildsTcOps[Elem, To](z: Builds[Elem, To]) {
-    def map[Next](f: To => Next): Builds[Elem, Next] = Builds(xs => f(z build xs))
-    def scalaBuilder: scmBuilder[Elem, To]           = sciVector.newBuilder[Elem] mapResult (z build _.toEach)
-  }
-  implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
-    def contains(x: A): Boolean = xs exists (_ === x)
-    def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
-    def indexOf(x: A): Index    = xs indexWhere (_ === x)
-    def toExSet: ExSet[A]       = xs.toExSet
-  }
   implicit class ViewOpOps[A, B](op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
@@ -38,13 +29,13 @@ object all extends AllExplicit with AllImplicit {
     import lookup._
     type Entry = K -> V
 
-    def keys: View[K] = keySet.m
-    // def values: View[V]                = keyVector map xs.lookup
+    def apply(key: K): V                  = lookup(key)
+    def entries: Zip[K, V]                = keyVector mapAndZip lookup
     def keySet: ExSet[K]                  = lookup.keys
     def keyVector: Vec[K]                 = keys.toVec
-    def entries: Zip[K, V]                = keyVector mapAndZip lookup
+    def keys: View[K]                     = keySet.m
     def map[V1](g: V => V1): ExMap[K, V1] = keySet mapWith (f mapOut g)
-    def apply(key: K): V                  = lookup(key)
+    def values: View[V]                   = keyVector map lookup
   }
   implicit class ExSetOps[A](val xs: ExSet[A]) {
     private implicit def equiv = xs.equiv
@@ -52,11 +43,6 @@ object all extends AllExplicit with AllImplicit {
     def mapWith[B](f: Fun[A, B]): ExMap[A, B] = ExMap(xs, f)
     def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
   }
-  implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
-    def doc: Doc = Doc(lhs)
-    // def render(implicit z: Renderer): String = z show doc
-  }
-
   /** Extension methods for scala library classes.
     *  We'd like to get away from all such classes,
     *  but scala doesn't allow it.
@@ -74,6 +60,40 @@ object all extends AllExplicit with AllImplicit {
       case Success(x) => g(x)
       case Failure(t) => f(t)
     }
+  }
+  implicit class InputStreamOps(val in: InputStream) extends AnyVal {
+    def buffered: BufferedInputStream = in match {
+      case in: BufferedInputStream => in
+      case _                       => new BufferedInputStream(in)
+    }
+    def slurp(): Array[Byte]             = ll.Streams slurp buffered
+    def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
+  }
+  implicit class Product2HomoOps[A](val x: A -> A) extends AnyVal {
+    def each = new PairAsEach[A](x)
+  }
+  implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
+    def mapLeft[C](f: A => C): C -> B          = f(fst(x)) -> snd(x)
+    def mapRight[C](f: B => C): A -> C         = fst(x)    -> f(snd(x))
+    def unify[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
+  }
+
+  implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
+    def contains(x: A): Boolean = xs exists (_ === x)
+    def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
+    def indexOf(x: A): Index    = xs indexWhere (_ === x)
+    def toExSet: ExSet[A]       = xs.toExSet
+  }
+  implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
+    def doc: Doc = Doc(lhs)
+  }
+  /** Conversions which require the elements to be pairs. Obtaining evidence of that
+    *  up front simplifies everything else, because we don't have to mix and match
+    *  between arity-1 and arity-2 type constructors.
+    */
+  implicit class SplittableForeachOps[R, A, B](val xs: Foreach[R])(implicit sp: Splitter[R, A, B]) {
+    def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
+    def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
   }
   implicit class BooleanAlgebraOps[A](val lhs: A)(implicit z: BooleanAlgebra[A]) {
     def &&(rhs: A): A = z.and(lhs, rhs)
@@ -94,24 +114,9 @@ object all extends AllExplicit with AllImplicit {
     def >(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.GT
     def >=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.LT
   }
-
-  implicit class Product2HomoOps[A](val x: A -> A) extends AnyVal {
-    def each = new PairAsEach[A](x)
+  implicit class SplitterOps[R, A, B](val lhs: R)(implicit z: Splitter[R, A, B]) {
+    def toPair: A -> B = z split lhs
   }
-  implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
-    def mapLeft[C](f: A => C): C -> B          = f(fst(x)) -> snd(x)
-    def mapRight[C](f: B => C): A -> C         = fst(x)    -> f(snd(x))
-    def unify[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
-  }
-
-  // implicit class InputStreamOps(val in: InputStream) extends AnyVal {
-  //   def buffered: BufferedInputStream = in match {
-  //     case in: BufferedInputStream => in
-  //     case _                       => new BufferedInputStream(in)
-  //   }
-  //   def slurp(): Array[Byte]             = lowlevel.Streams slurp buffered
-  //   def slurp(len: Precise): Array[Byte] = lowlevel.Streams.slurp(buffered, len)
-  // }
 }
 
 abstract class AllExplicit extends ApiValues with StdEq {
@@ -192,11 +197,22 @@ abstract class AllExplicit extends ApiValues with StdEq {
   def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)
   def zipWith[A, B](l: View[A], f: A => B): Zip[A, B]                             = new Zip.ZipWith(l, f)
 
+  import Builders._
+
+  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R = z(xs foreach _)
+
   def arr[A : CTag](xs: A*): Array[A]            = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]                  = new Conversions(view(xs: _*)) toPlist
-  def rel[A : Eq, B](xs: (A -> B)*): ExMap[A, B] = ExMap(set[A](xs map fst: _*), Pmap fromScala (xs map tuple toMap))
-  def set[A : Eq](xs: A*): ExSet[A]              = new Conversions(view(xs: _*)) toExSet // can't use toSet, doesn't honor Eq[A]
-  def vec[A](xs: A*): Vec[A]                     = new Vec[A](xs.toVector)
-  def view[A](xs: A*): DirectView[A, Vec[A]]     = new DirectView[A, Vec[A]](vec(xs: _*))
+  def list[A](xs: A*): Plist[A]                  = elems(xs: _*)
+  def rel[A : Eq, B](xs: (A -> B)*): ExMap[A, B] = elems(xs: _*)
+  def set[A : Eq](xs: A*): ExSet[A]              = elems(xs: _*)
+  def vec[A](xs: A*): Vec[A]                     = elems(xs: _*)
+  def view[A](xs: A*): View[A]                   = inView(xs foreach _)
   def zip[A, B](xs: (A -> B)*): Zip[A, B]        = zipPairs(view(xs: _*))
+
+  def javaList[A](xs: A*): jList[A]               = elems(xs: _*)
+  def javaMap[K, V](xs: (K -> V)*): jMap[K, V]    = elems(xs: _*)
+  def javaSet[A](xs: A*): jSet[A]                 = elems(xs: _*)
+  def scalaList[A](xs: A*): sciList[A]            = elems(xs: _*)
+  def scalaMap[K, V](xs: (K -> V)*): sciMap[K, V] = elems(xs: _*)
+  def scalaSet[A](xs: A*): sciSet[A]              = elems(xs: _*)
 }

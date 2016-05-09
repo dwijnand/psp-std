@@ -78,9 +78,9 @@ class OperationCounts extends ScalacheckBundle {
   implicit def arbCompositeOp: Arbitrary[CompositeOp] = Arbitrary(composite)
 
   def compositeProp: Prop = forAll((_: CompositeOp).passed) minSuccessful minSuccessful
-  def props() = Vec[NamedProp](
-    NamedProp(s"Showing $maxDisplay/$minSuccessful ops, compares accesses/allocations views v. eager", Prop(true)),
-    NamedProp("views never performs more accesses or allocations than eager", compositeProp)
+  def props() = vec[NamedProp](
+    s"Showing $maxDisplay/$minSuccessful ops, compares accesses/allocations views v. eager" -> Prop(true),
+    "views never performs more accesses or allocations than eager" -> compositeProp
   )
 }
 
