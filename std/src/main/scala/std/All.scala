@@ -75,6 +75,24 @@ object all extends AllExplicit with AllImplicit {
       case Failure(t) => f(t)
     }
   }
+  implicit class BooleanAlgebraOps[A](val lhs: A)(implicit z: BooleanAlgebra[A]) {
+    def && (rhs: A): A = z.and(lhs, rhs)
+    def || (rhs: A): A = z.or(lhs, rhs)
+    def unary_! : A    = z complement lhs
+  }
+  implicit class EqOps[A](val lhs: A)(implicit z: Eq[A]) {
+    def ===(rhs: A): Boolean = z.eqv(lhs, rhs)
+    def =!=(rhs: A): Boolean = !z.eqv(lhs, rhs)
+  }
+  implicit class HashOps[A](val lhs: A)(implicit z: Hash[A]) {
+    def hash: Int = z hash lhs
+  }
+  implicit class OrderOps[A](val lhs: A)(implicit z: Order[A]) {
+    def < (rhs: A): Boolean = z.cmp(lhs, rhs) eq Cmp.LT
+    def <=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.GT
+    def > (rhs: A): Boolean = z.cmp(lhs, rhs) eq Cmp.GT
+    def >=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.LT
+  }
 
   implicit class Product2HomoOps[A](val x: A -> A) extends AnyVal {
     def each = new PairAsEach[A](x)

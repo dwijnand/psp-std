@@ -64,7 +64,7 @@ object INREPL {
   implicit final class ReplOpsWithShow[A, R](val xs: R)(implicit val z: UnbuildsAs[A, R]) {
     private def run(f: Each[A] => Each[String]): R = sideEffect(xs, f(Each(z unbuild xs foreach _)) foreach (x => println(x)))
 
-    def >                                            = run(_ map (_.any_s))
+    def > (implicit z: Show[A] = inheritShow)        = run(_ map z.show)
     def >>(implicit z: Show[A])                      = run(_ map z.show)
     def !>(implicit ord: Order[A], z: Show[A]): Unit = run(_.m.sorted map z.show)
   }
