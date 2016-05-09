@@ -14,34 +14,34 @@ final class ArrayOps[A](xs: Array[A]) {
 }
 
 final class InPlace[A](val xs: Array[A]) extends AnyVal {
-  private def lastIndex = xs.length - 1
+  private def lastIndex                   = xs.length - 1
   private def sortRef(cmp: Comparator[A]) = java.util.Arrays.sort[A](cast[Array[Ref[A]]](xs), cmp)
   private def isReference = (xs: Any) match {
-    case _: Array[AnyRef] => true
-    case _                => false
+    case _: Array [AnyRef] => true
+    case _                 => false
   }
-  private def midpoint: Int  = xs.length / 2
+  private def midpoint: Int = xs.length / 2
   private def swap(i1: Int, i2: Int): Unit = {
     val tmp = xs(i1)
     xs(i1) = xs(i2)
     xs(i2) = tmp
   }
   private def sortInPlace[A](xs: Array[A]): Unit = xs match {
-    case xs: Array[Byte]   => java.util.Arrays.sort(xs)
-    case xs: Array[Char]   => java.util.Arrays.sort(xs)
-    case xs: Array[Short]  => java.util.Arrays.sort(xs)
-    case xs: Array[Int]    => java.util.Arrays.sort(xs)
-    case xs: Array[Long]   => java.util.Arrays.sort(xs)
-    case xs: Array[Double] => java.util.Arrays.sort(xs)
-    case xs: Array[Float]  => java.util.Arrays.sort(xs)
+    case xs: Array [Byte]   => java.util.Arrays.sort(xs)
+    case xs: Array [Char]   => java.util.Arrays.sort(xs)
+    case xs: Array [Short]  => java.util.Arrays.sort(xs)
+    case xs: Array [Int]    => java.util.Arrays.sort(xs)
+    case xs: Array [Long]   => java.util.Arrays.sort(xs)
+    case xs: Array [Double] => java.util.Arrays.sort(xs)
+    case xs: Array [Float]  => java.util.Arrays.sort(xs)
     // case xs: Array[AnyRef] => java.util.Arrays.sort[AnyRef](xs, Eq.refComparator)
-    case _                 => ???
+    case _ => ???
   }
   private def randomPosInt(max: Int): Int = scala.util.Random.nextInt(max + 1)
 
   // def insertionSort(implicit z: Order[A]): Array[A] = sideEffect(xs, Sorting.insertionSort[A](xs)(z, null))
   // def quickSort(implicit z: Order[A]): Array[A]     = sideEffect(xs, Sorting.quickSort[A](xs)(z, null))
-  def sort(implicit z: Order[A]): Array[A]          = sideEffect(xs, if (isReference) sortRef(Order.comparator) else sortInPlace(xs))
+  def sort(implicit z: Order[A]): Array[A] = sideEffect(xs, if (isReference) sortRef(Order.comparator) else sortInPlace(xs))
   // def sortBy[B: Order](f: A => B): Array[A]         = sort(orderBy[A](f))
 
   def map(f: ToSelf[A]): Array[A] = sideEffect(xs, intRange(0, xs.length) foreach (i => xs(i) = f(xs(i))))

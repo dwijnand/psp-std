@@ -4,10 +4,10 @@ package std
 import api._, all._
 
 /** Motley objects for which a file of residence is not obvious.
- */
+  */
 class FormatFun(val fmt: String) extends (Any => String) with ShowSelf {
   def apply(x: Any): String = stringFormat(fmt, x)
-  def to_s = fmt
+  def to_s                  = fmt
 }
 class Partial[A, B](p: ToBool[A], f: A => B) extends (A ?=> B) {
   def isDefinedAt(x: A): Boolean            = p(x)
@@ -46,14 +46,14 @@ trait StdEq extends StdEq0 {
   implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] =
     orderBy[A](_.ordinal)
 
-  implicit def boolOrder: Order[Bool]                              = orderBy[Bool](x => if (x) 1 else 0)
-  implicit def charOrder: Order[Char]                              = Order.fromInt[Char](_ - _)
-  implicit def intOrder: Order[Int]                                = Order.fromInt[Int](_ - _)
-  implicit def longOrder: Order[Long]                              = Order.fromLong[Long](_ - _)
-  implicit def vindexOrder: Order[Vdex]                            = orderBy[Vdex](_.indexValue)
-  implicit def preciseOrder: Order[Precise]                        = orderBy[Precise](_.get)
-  implicit def stringOrder: Order[String]                          = Order.fromLong[String](_ compareTo _)
-  implicit def tuple2Order[A: Order, B: Order] : Order[(A, B)]     = orderBy[(A, B)](fst) | snd
+  implicit def boolOrder: Order[Bool]                           = orderBy[Bool](x => if (x) 1 else 0)
+  implicit def charOrder: Order[Char]                           = Order.fromInt[Char](_ - _)
+  implicit def intOrder: Order[Int]                             = Order.fromInt[Int](_ - _)
+  implicit def longOrder: Order[Long]                           = Order.fromLong[Long](_ - _)
+  implicit def vindexOrder: Order[Vdex]                         = orderBy[Vdex](_.indexValue)
+  implicit def preciseOrder: Order[Precise]                     = orderBy[Precise](_.get)
+  implicit def stringOrder: Order[String]                       = Order.fromLong[String](_ compareTo _)
+  implicit def tuple2Order[A : Order, B : Order]: Order[(A, B)] = orderBy[(A, B)](fst) | snd
 
   implicit def classEq: Hash[Class[_]] = byEquals
   implicit def sizeEq: Hash[Size]      = byEquals
@@ -67,15 +67,15 @@ trait StdEq extends StdEq0 {
 object StdShow extends ShowInstances
 object Unsafe {
   // implicit def inheritedEq[A] : Hash[A]       = inheritEq
-  implicit def promoteIndex(x: Long): Index      = Index(x)
-  implicit def inheritedShow[A] : Show[A]        = inheritShow
+  implicit def promoteIndex(x: Long): Index = Index(x)
+  implicit def inheritedShow[A]: Show[A]    = inheritShow
   // implicit def shownOrder[A: Show] : Order[A] = orderBy[A](render[A])
 }
 
-final class OrderBy[A] { def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = Order[A]((x, y) => z.cmp(f(x), f(y)))                     }
-final class ShowBy[A]  { def apply[B](f: A => B)(implicit z: Show[B]): Show[A]   = Show[A](f andThen z.show)                                 }
-final class HashBy[A]  { def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A]   = Eq.hash[A]((x, y) => z.eqv(f(x), f(y)))(x => z hash f(x)) }
-final class EqBy[A]    { def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A]       = Eq[A]((x, y) => z.eqv(f(x), f(y)))                        }
+final class OrderBy[A] { def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = Order[A]((x, y) => z.cmp(f(x), f(y))) }
+final class ShowBy[A] { def apply[B](f: A => B)(implicit z: Show[B]): Show[A]    = Show[A](f andThen z.show) }
+final class HashBy[A] { def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A]    = Eq.hash[A]((x, y) => z.eqv(f(x), f(y)))(x => z hash f(x)) }
+final class EqBy[A] { def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A]          = Eq[A]((x, y) => z.eqv(f(x), f(y))) }
 
 object +: {
   def unapply[A](xs: View[A]): Option[A -> View[A]] =
@@ -90,9 +90,10 @@ object Java {
   implicit def javaListBuilder[A]: Builds[A, jList[A]]          = genericJavaListBuilder(new jArrayList[A])
   implicit def javaMapBuilder[K, V]: Builds[K -> V, jMap[K, V]] = genericJavaMapBuilder(new jHashMap[K, V])
 
-  def genericJavaListBuilder[A, M[A] <: jList[A]](z: M[A]): Builds[A, M[A]]                 = Builds(xs => doto(z)(z => xs foreach (x => z add x)))
-  def genericJavaSetBuilder[A, M[A] <: jSet[A]](z: M[A]): Builds[A, M[A]]                   = Builds(xs => doto(z)(z => xs foreach (x => z add x)))
-  def genericJavaMapBuilder[K, V, M[K, V] <: jMap[K, V]](z: M[K, V]): Builds[K->V, M[K, V]] = Builds(xs => doto(z)(z => xs foreach (x => z.put(fst(x), snd(x)))))
+  def genericJavaListBuilder[A, M[A] <: jList[A]](z: M[A]): Builds[A, M[A]] = Builds(xs => doto(z)(z => xs foreach (x => z add x)))
+  def genericJavaSetBuilder[A, M[A] <: jSet[A]](z: M[A]): Builds[A, M[A]]   = Builds(xs => doto(z)(z => xs foreach (x => z add x)))
+  def genericJavaMapBuilder[K, V, M[K, V] <: jMap[K, V]](z: M[K, V]): Builds[K -> V, M[K, V]] =
+    Builds(xs => doto(z)(z => xs foreach (x => z.put(fst(x), snd(x)))))
 
   def List[A](xs: A*): jList[A]            = Built(xs)
   def Map[K, V](xs: (K -> V)*): jMap[K, V] = Built(xs)
@@ -100,13 +101,13 @@ object Java {
 }
 
 sealed abstract class <:<[-From, +To] extends (From => To)
-final class conformance[A] extends <:<[A, A] { def apply(x: A): A = x }
+final class conformance[A]            extends <:<[A, A] { def apply(x: A): A = x }
 
 final class LabeledFunction[-T, +R](f: T => R, val to_s: String) extends (T ?=> R) {
   def isDefinedAt(x: T) = f match {
-    case f: scala.PartialFunction[_,_] => f isDefinedAt x
-    case _                             => true
+    case f: scala.PartialFunction [_, _] => f isDefinedAt x
+    case _                               => true
   }
-  def apply(x: T): R = f(x)
+  def apply(x: T): R    = f(x)
   override def toString = to_s
 }

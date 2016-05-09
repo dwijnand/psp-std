@@ -18,8 +18,8 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def nonEmpty: Boolean                              = xs.size.isNonZero || exists(true)
   def reducel(f: BinOp[A]): A                        = xs.tail.foldl(head)(f)
   def reducer(f: BinOp[A]): A                        = xs.init.foldr(last)(f)
-  def zfoldl[B: Empty](f: (B, A) => B): B            = ll.foldLeft(xs, emptyValue[B], f)
-  def zfoldr[B: Empty](f: (A, B) => B): B            = ll.foldRight(xs, emptyValue[B], f)
+  def zfoldl[B : Empty](f: (B, A) => B): B           = ll.foldLeft(xs, emptyValue[B], f)
+  def zfoldr[B : Empty](f: (A, B) => B): B           = ll.foldRight(xs, emptyValue[B], f)
   def zhead(implicit z: Empty[A]): A                 = zcond(nonEmpty, head)
   def zreducel(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducel(f))
   def zreducer(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducer(f))
@@ -29,11 +29,11 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def join_s(implicit z: Show[A]): String            = this mk_s ""
   def mk_s(sep: Char)(implicit z: Show[A]): String   = this mk_s sep.to_s
   def mk_s(sep: String)(implicit z: Show[A]): String = xs map z.show zreducel ((l, r) => cond(l == "", "", l ~ sep) ~ r)
-  def to_s(implicit z: Show[A]): String              = "[ " + ( xs mk_s ", " ) + " ]"
+  def to_s(implicit z: Show[A]): String              = "[ " + (xs mk_s ", ") + " ]"
 
   // Order[A]
-  def max(implicit z: Order[A]): A  = reducel(all.max)
-  def maxOf[B: Order](f: A => B): B = xs map f max
+  def max(implicit z: Order[A]): A   = reducel(all.max)
+  def maxOf[B : Order](f: A => B): B = xs map f max
 
   def byEquals         = new EqViewOps[A](xs)(Eq.Inherited)
   def byRef            = new EqViewOps[Ref[A]](xs.toRefs)(Eq.Reference)
@@ -96,11 +96,11 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
 
-  def cross[B](ys: View[B]): Zip[A, B]                       = crossViews(xs, ys)
-  def mapAndCross[B](f: A => B): Zip[A, B]                   = crossViews(xs, xs map f)
-  def mapAndZip[B](f: A => B): Zip[A, B]                     = zipViews(xs, xs map f)
-  def zipIndex: Zip[A, Index]                                = zipViews(xs, indexStream)
-  def zip[B](ys: View[B]): Zip[A, B]                         = zipViews[A, B](xs, ys)
+  def cross[B](ys: View[B]): Zip[A, B]     = crossViews(xs, ys)
+  def mapAndCross[B](f: A => B): Zip[A, B] = crossViews(xs, xs map f)
+  def mapAndZip[B](f: A => B): Zip[A, B]   = zipViews(xs, xs map f)
+  def zipIndex: Zip[A, Index]              = zipViews(xs, indexStream)
+  def zip[B](ys: View[B]): Zip[A, B]       = zipViews[A, B](xs, ys)
 
   def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
 
@@ -109,11 +109,13 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
 
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
-    inView[View[A]](mf => xs partition p(xs) match {
+    inView[View[A]](
+      mf =>
+        xs partition p(xs) match {
       case Split(xs, ys) =>
         mf(xs)
         ys mpartition p foreach mf
-    })
+  })
   )
 }
 

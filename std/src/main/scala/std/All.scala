@@ -7,12 +7,12 @@ import sc.{ mutable => scm, immutable => sci }
 import scala.Tuple2
 
 /** One import which includes the implicits, one which doesn't.
- *  This choice is mutually exclusive: everything which is in exp is in all.
- */
+  *  This choice is mutually exclusive: everything which is in exp is in all.
+  */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
   implicit class ArrowAssocRef[A](val self: A) extends AnyVal {
-    @inline def -> [B](y: B): Tuple2[A, B] = Tuple2(self, y)
+    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
   }
   implicit class JavaIteratorOps[A](it: jIterator[A]) {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
@@ -38,7 +38,7 @@ object all extends AllExplicit with AllImplicit {
     import lookup._
     type Entry = K -> V
 
-    def keys: View[K]                     = keySet.m
+    def keys: View[K] = keySet.m
     // def values: View[V]                = keyVector map xs.lookup
     def keySet: ExSet[K]                  = lookup.keys
     def keyVector: Vec[K]                 = keys.toVec
@@ -53,32 +53,32 @@ object all extends AllExplicit with AllImplicit {
     def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
   }
   implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
-    def doc: Doc                             = Doc(lhs)
+    def doc: Doc = Doc(lhs)
     // def render(implicit z: Renderer): String = z show doc
   }
 
   /** Extension methods for scala library classes.
-   *  We'd like to get away from all such classes,
-   *  but scala doesn't allow it.
-   */
+    *  We'd like to get away from all such classes,
+    *  but scala doesn't allow it.
+    */
   implicit class OptionOps[A](val x: Option[A]) extends AnyVal {
-    def or(alt: => A): A              = x getOrElse alt
-    def toVec: Vec[A]                 = this zfold (x => vec(x))
-    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
-    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
-    def | (alt: => A): A              = x getOrElse alt
+    def or(alt: => A): A               = x getOrElse alt
+    def toVec: Vec[A]                  = this zfold (x => vec(x))
+    def zfold[B : Empty](f: A => B): B = x.fold[B](emptyValue)(f)
+    def zget(implicit z: Empty[A]): A  = x getOrElse z.empty
+    def |(alt: => A): A                = x getOrElse alt
   }
   implicit class TryOps[A](val x: Try[A]) extends AnyVal {
-    def | (expr: => A): A = x.toOption | expr
+    def |(expr: => A): A = x.toOption | expr
     def fold[B](f: Throwable => B, g: A => B): B = x match {
       case Success(x) => g(x)
       case Failure(t) => f(t)
     }
   }
   implicit class BooleanAlgebraOps[A](val lhs: A)(implicit z: BooleanAlgebra[A]) {
-    def && (rhs: A): A = z.and(lhs, rhs)
-    def || (rhs: A): A = z.or(lhs, rhs)
-    def unary_! : A    = z complement lhs
+    def &&(rhs: A): A = z.and(lhs, rhs)
+    def ||(rhs: A): A = z.or(lhs, rhs)
+    def unary_! : A   = z complement lhs
   }
   implicit class EqOps[A](val lhs: A)(implicit z: Eq[A]) {
     def ===(rhs: A): Boolean = z.eqv(lhs, rhs)
@@ -89,9 +89,9 @@ object all extends AllExplicit with AllImplicit {
     def hashInt: Int = hash.toInt
   }
   implicit class OrderOps[A](val lhs: A)(implicit z: Order[A]) {
-    def < (rhs: A): Boolean = z.cmp(lhs, rhs) eq Cmp.LT
+    def <(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.LT
     def <=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.GT
-    def > (rhs: A): Boolean = z.cmp(lhs, rhs) eq Cmp.GT
+    def >(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.GT
     def >=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.LT
   }
 
@@ -100,7 +100,7 @@ object all extends AllExplicit with AllImplicit {
   }
   implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
     def mapLeft[C](f: A => C): C -> B          = f(fst(x)) -> snd(x)
-    def mapRight[C](f: B => C): A -> C         = fst(x) -> f(snd(x))
+    def mapRight[C](f: B => C): A -> C         = fst(x)    -> f(snd(x))
     def unify[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
   }
 
@@ -157,24 +157,24 @@ abstract class AllExplicit extends ApiValues with StdEq {
   def showBy[A]  = new ShowBy[A]
   def hashBy[A]  = new HashBy[A]
 
-  def byEquals[A] : Hash[A]              = Eq.Inherited
-  def byReference[A <: AnyRef] : Hash[A] = Eq.Reference
-  def byString[A] : Hash[A]              = Eq.ToString
-  def byShown[A: Show] : Hash[A]         = hashBy[A](x => render(x))(byString)
+  def byEquals[A]: Hash[A]              = Eq.Inherited
+  def byReference[A <: AnyRef]: Hash[A] = Eq.Reference
+  def byString[A]: Hash[A]              = Eq.ToString
+  def byShown[A : Show]: Hash[A]        = hashBy[A](x => render(x))(byString)
 
-  def classFilter[A: CTag] : Partial[Any, A]       = Partial(isInstance[A], cast[A])
+  def classFilter[A : CTag]: Partial[Any, A]       = Partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
-  def inheritShow[A] : Show[A]                     = Show.Inherited
+  def inheritShow[A]: Show[A]                      = Show.Inherited
   def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
-  def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
+  def println[A : Show](x: A): Unit                = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x
 
   def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
-  def make0[R] : MakeHelper0[R]        = new MakeHelper0[R]
-  def make1[CC[_]] : MakeHelper1[CC]   = new MakeHelper1[CC]
-  def make2[CC[_,_]] : MakeHelper2[CC] = new MakeHelper2[CC]
+  def make0[R]: MakeHelper0[R]         = new MakeHelper0[R]
+  def make1[CC[_]]: MakeHelper1[CC]    = new MakeHelper1[CC]
+  def make2[CC[_, _]]: MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def bufferMap[A, B: Empty](): scmMap[A, B]         = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def bufferMap[A, B : Empty](): scmMap[A, B]        = scmMap[A, B]() withDefaultValue emptyValue[B]
   def inView[A](mf: Suspended[A]): View[A]           = new LinearView(Each(mf))
   def indexRange(start: Long, end: Long): VdexRange  = longRange(start, end) map Index
   def indexStream: Indexed[Index]                    = LongInterval open 0 map Index
@@ -192,11 +192,11 @@ abstract class AllExplicit extends ApiValues with StdEq {
   def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)
   def zipWith[A, B](l: View[A], f: A => B): Zip[A, B]                             = new Zip.ZipWith(l, f)
 
-  def arr[A: CTag](xs: A*): Array[A]          = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]               = new Conversions(view(xs: _*)) toPlist
-  def rel[A: Eq, B](xs: (A->B)*): ExMap[A, B] = ExMap(set[A](xs map fst: _*), Pmap fromScala (xs map tuple toMap))
-  def set[A: Eq](xs: A*): ExSet[A]            = new Conversions(view(xs: _*)) toExSet // can't use toSet, doesn't honor Eq[A]
-  def vec[A](xs: A*): Vec[A]                  = new Vec[A](xs.toVector)
-  def view[A](xs: A*): DirectView[A, Vec[A]]  = new DirectView[A, Vec[A]](vec(xs: _*))
-  def zip[A, B](xs: (A->B)*): Zip[A, B]       = zipPairs(view(xs: _*))
+  def arr[A : CTag](xs: A*): Array[A]            = xs.toArray[A]
+  def list[A](xs: A*): Plist[A]                  = new Conversions(view(xs: _*)) toPlist
+  def rel[A : Eq, B](xs: (A -> B)*): ExMap[A, B] = ExMap(set[A](xs map fst: _*), Pmap fromScala (xs map tuple toMap))
+  def set[A : Eq](xs: A*): ExSet[A]              = new Conversions(view(xs: _*)) toExSet // can't use toSet, doesn't honor Eq[A]
+  def vec[A](xs: A*): Vec[A]                     = new Vec[A](xs.toVector)
+  def view[A](xs: A*): DirectView[A, Vec[A]]     = new DirectView[A, Vec[A]](vec(xs: _*))
+  def zip[A, B](xs: (A -> B)*): Zip[A, B]        = zipPairs(view(xs: _*))
 }

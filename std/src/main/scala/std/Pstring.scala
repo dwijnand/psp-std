@@ -26,10 +26,10 @@ final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String]
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
   import self.{ toCharArray => chars }
 
-  def r: Regex               = Regex(self)
-  def to_s: String           = self
-  def * (n: Precise): String = Each const self take n join_s
-  def isEmpty                = self == ""
+  def r: Regex              = Regex(self)
+  def to_s: String          = self
+  def *(n: Precise): String = Each const self take n join_s
+  def isEmpty               = self == ""
 
   def lines: SplitCharView               = splitView('\n')
   def splitView(ch: Char): SplitCharView = new SplitCharView(splitChar(ch), ch)
@@ -40,11 +40,11 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   // def replaceChar(pair: Char -> Char): String = self.replace(pair._1, pair._2)
 
   def ~(that: String): String                       = this append that
-  def append(that: String): String                  = self + that   /** Note to self: don't touch this `+`. */
+  def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def capitalize: String                            = if (isEmpty) "" else (self charAt 0).toUpper.to_s ~ self.tail.force
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
-  def format(args : Any*): String                   = stringFormat(self, args: _*)
+  def format(args: Any*): String                    = stringFormat(self, args: _*)
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
   def mapChars(pf: Char ?=> Char): String           = chars.m mapIf pf force
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f mk_s ch
@@ -55,7 +55,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def sanitize: String                              = mapChars { case x if x.isControl => '?' }
   def splitChar(ch: Char): Vec[String]              = splitRegex(Regex quote ch.any_s)
   def splitRegex(r: Regex): Vec[String]             = r.pattern split self toVec
-  def stripMargin(ch: Char): String                 = mapLines(_ removeFirst s"""^${bs}s*[$ch]""".r)
+  def stripMargin(ch: Char): String                 = mapLines(_ removeFirst s"""^${ bs }s*[$ch]""".r)
   def stripMargin: String                           = stripMargin('|')
   def stripPrefix(prefix: String): String           = foldPrefix(prefix)(self)(identity)
   def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
@@ -69,8 +69,8 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def toBigInt: BigInt = scala.math.BigInt(self)
   def toInt: Int       = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
 
-  private def bs = '\\'
-  private def foldRemove[A](r: Regex)(none: => A)(some: String => A): A       = removeFirst(r) match { case `self` => none ; case s => some(s) }
+  private def bs                                                              = '\\'
+  private def foldRemove[A](r: Regex)(none: => A)(some: String => A): A       = removeFirst(r) match { case `self` => none; case s => some(s) }
   private def foldPrefix[A](prefix: String)(none: => A)(some: String => A): A = foldRemove(prefix.r.literal.starts)(none)(some)
   private def foldSuffix[A](suffix: String)(none: => A)(some: String => A): A = foldRemove(suffix.r.literal.ends)(none)(some)
 }
@@ -83,7 +83,7 @@ final class Regex(val pattern: Pattern) extends AnyVal with ShowSelf {
   def ends: Regex                            = append("$")
   def flags: Int                             = pattern.flags
   def isMatch(input: jCharSequence): Boolean = matcher(input).matches
-  def isMatch[A: Show](x: A): Boolean        = isMatch(x.doc.render)
+  def isMatch[A : Show](x: A): Boolean       = isMatch(x.doc.render)
   def literal: Regex                         = surround("\\Q", "\\E") // Not setFlag(LITERAL) lest further regex additions be misinterpreted
   def mapRegex(f: ToSelf[String]): Regex     = Regex(f(to_s), flags)
   def starts: Regex                          = mapRegex("^" + _)

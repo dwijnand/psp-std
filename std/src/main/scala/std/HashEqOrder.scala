@@ -18,21 +18,20 @@ object Eq {
   sealed class EqImpl[A](val e: Relation[A]) extends api.Eq[A] {
     def eqv(x: A, y: A) = e(x, y)
   }
-  class EqComparator[A: Eq]() extends Comparator[A] {
+  class EqComparator[A : Eq]() extends Comparator[A] {
     def compare(x: A, y: A): Int = if (x === y) 0 else x.id_## - y.id_##
   }
 
-  def eqComparator[A: Eq](): Comparator[A] = new EqComparator[A]
+  def eqComparator[A : Eq](): Comparator[A] = new EqComparator[A]
 }
 
 object Order {
   def comparator[A](implicit z: Order[A]): Comparator[A] = new ToOrdering(z)
 
-  private def longCmp(diff: Long): Cmp = (
-    if (diff < 0) Cmp.LT
-    else if (diff > 0) Cmp.GT
-    else Cmp.EQ
-  )
+  private def longCmp(diff: Long): Cmp =
+    (if (diff < 0) Cmp.LT
+     else if (diff > 0) Cmp.GT
+     else Cmp.EQ)
 
   def lexical: Order[String]                   = Order.fromInt(_ compareTo _)
   def inherited[A <: Comparable[A]](): Impl[A] = fromInt[A](_ compareTo _)
@@ -47,10 +46,10 @@ object Order {
     def cmp(x: A, y: A): Cmp     = f(x, y)
     def compare(x: A, y: A): Int = cmp(x, y).intValue
 
-    def | [B](f: A => B)(implicit z: Order[B]): Order[A] = apply((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
+    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = apply((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
   }
-  final class FromApiOrder[A](z: api.Order[A])        extends Impl[A](z.cmp)
-  final class FromComparator[A](c: Comparator[A])     extends Impl[A]((x, y) => longCmp(c.compare(x, y)))
-  final class FromRelation[A](f: OrderRelation[A])    extends Impl[A](f)
-  final class ToOrdering[A](z: Order[A])              extends Ordering[A] { def compare(x: A, y: A): Int = z.compare(x, y) }
+  final class FromApiOrder[A](z: api.Order[A])     extends Impl[A](z.cmp)
+  final class FromComparator[A](c: Comparator[A])  extends Impl[A]((x, y) => longCmp(c.compare(x, y)))
+  final class FromRelation[A](f: OrderRelation[A]) extends Impl[A](f)
+  final class ToOrdering[A](z: Order[A])           extends Ordering[A] { def compare(x: A, y: A): Int = z.compare(x, y) }
 }

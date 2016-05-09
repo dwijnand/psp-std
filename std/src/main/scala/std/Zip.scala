@@ -4,8 +4,8 @@ package std
 import api._, all._
 
 /** When a View is split into two disjoint views.
- *  Notably, that's span, partition, and splitAt.
- */
+  *  Notably, that's span, partition, and splitAt.
+  */
 final case class Split[A](leftView: View[A], rightView: View[A]) extends TwoViews[A] {
   type V = View[A]
 
@@ -25,16 +25,16 @@ trait TwoHeteroViews[+L, +R] extends Any {
   def rightView: View[R]
 
   def zip: Zip[L, R]   = Zip.ZipViews(leftView, rightView)
-  def cross: Zip[L, R] = Zip.ZipPairs( for (x <- leftView ; y <- rightView) yield x -> y )
+  def cross: Zip[L, R] = Zip.ZipPairs(for (x <- leftView; y <- rightView) yield x -> y)
 }
 
 /** When a View presents as a sequence of pairs.
- *  There may be two underlying views being zipped, or one view holding pairs.
- */
+  *  There may be two underlying views being zipped, or one view holding pairs.
+  */
 trait Zip[+A1, +A2] extends Any {
-  def lefts: View[A1]        // the left element of each pair. Moral equivalent of pairs map fst.
-  def rights: View[A2]       // the right element of each pair. Moral equivalent of pairs map snd.
-  def pairs: View[A1 -> A2]  // the pairs. Moral equivalent of lefts zip rights.
+  def lefts: View[A1]       // the left element of each pair. Moral equivalent of pairs map fst.
+  def rights: View[A2]      // the right element of each pair. Moral equivalent of pairs map snd.
+  def pairs: View[A1 -> A2] // the pairs. Moral equivalent of lefts zip rights.
   def size: Size
 }
 trait ZipFromViews[+A1, +A2] extends Any with Zip[A1, A2] {
@@ -48,9 +48,10 @@ trait ZipFromPairs[+A1, +A2] extends Any with Zip[A1, A2] {
 }
 
 object Zip {
+
   /** A Zip has similar operations to a View, but with the benefit of
-   *  being aware each element has a left and a right.
-   */
+    *  being aware each element has a left and a right.
+    */
   implicit class ZipOps[A1, A2](val x: Zip[A1, A2]) extends AnyVal {
     import x.{ lefts, rights, pairs }
 
@@ -65,7 +66,7 @@ object Zip {
     def zfoldl[B](f: (B, A1, A2) => B)(implicit z: Empty[B]): B = foldl(z.empty)(f)
     def foldl[B](zero: B)(f: (B, A1, A2) => B): B = {
       var res = zero
-      foreach ((x, y) => res = f(res, x, y))
+      foreach((x, y) => res = f(res, x, y))
       res
     }
     def find(p: BothPred): OptPair = {
@@ -73,10 +74,10 @@ object Zip {
       None
     }
     def foreach(f: (A1, A2) => Unit): Unit = (lefts, rights) match {
-      case (xs: Direct[A1], ys: Direct[A2]) => (xs.size min ys.size).indices foreach (i => f(xs(i), ys(i)))
-      case (xs: Direct[A1], ys)             => (ys take xs.size).zipIndex map ((y, i) => f(xs(i), y))
-      case (xs, ys: Direct[A2])             => (xs take ys.size).zipIndex map ((x, i) => f(x, ys(i)))
-      case _                                => lefts.iterator |> (it => rights foreach (y => if (it.hasNext) f(it.next, y) else return))
+      case (xs: Direct [A1], ys: Direct [A2]) => (xs.size min ys.size).indices foreach (i => f(xs(i), ys(i)))
+      case (xs: Direct [A1], ys)              => (ys take xs.size).zipIndex map ((y, i) => f(xs(i), y))
+      case (xs, ys: Direct [A2])              => (xs take ys.size).zipIndex map ((x, i) => f(x, ys(i)))
+      case _                                  => lefts.iterator |> (it => rights foreach (y => if (it.hasNext) f(it.next, y) else return ))
     }
 
     def corresponds(p: BothPred): Bool            = forall(p) && (lefts.size === rights.size)
@@ -103,10 +104,10 @@ object Zip {
   }
 
   /** Zip0 means we're using a Splitter to interpret a collection holding the joined type.
-   *  Zip1 means there's a single view containing pairs, a View[A1->A2].
-   *  Zip2 means there are two separate views, a View[A1] and a View[A2].
-   *  This is plus or minus only a performance-related implementation detail.
-   */
+    *  Zip1 means there's a single view containing pairs, a View[A1->A2].
+    *  Zip2 means there are two separate views, a View[A1] and a View[A2].
+    *  This is plus or minus only a performance-related implementation detail.
+    */
   final case class ZipSplit[A, A1, A2](xs: View[A])(implicit z: Splitter[A, A1, A2]) extends ZipFromPairs[A1, A2] {
     def pairs = xs map z.split
   }
