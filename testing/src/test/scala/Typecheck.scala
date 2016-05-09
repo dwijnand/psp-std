@@ -12,7 +12,7 @@ class Typecheck extends ScalacheckBundle {
    */
   private val _ = {
     opsWrapString _
-    viewPspString _
+    viewJvmString _
   }
 
   // We don't want to protect scala library from itself so let's unmask augmentString etc.

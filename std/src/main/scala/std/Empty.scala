@@ -27,7 +27,7 @@ trait StdEmpty {
   implicit def emptyOptional[A]: Empty[jOptional[A]]                          = Empty(java.util.Optional.empty[A]())
   implicit def emptyPair[A : Empty, B : Empty]: Empty[(A, B)]                 = Empty(pair(emptyValue[A], emptyValue[B]))
   implicit def emptyTriple[A : Empty, B : Empty, C : Empty]: Empty[(A, B, C)] = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
-  implicit def emptyView[A, R]: Empty[AtomicView[A, R]]                       = Empty(new LinearView(Pnil))
+  implicit def emptyView[A, R]: Empty[AtomicView[A, R]]                       = Empty(new IdView(Pnil))
 
   implicit lazy val emptyFile: Empty.Const[jFile]          = Empty const NoFile
   implicit lazy val emptyIndex: Empty.Const[Index]         = Empty const Index.invalid
