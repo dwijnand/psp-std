@@ -9,11 +9,11 @@ object Eq {
   val Reference = hash[AnyRef](_ eq _)(_.id_##)
   val ToString  = hashBy[Any](_.any_s)(Inherited)
 
-  def apply[A](e: Relation[A]): Eq[A]               = new EqImpl[A](e)
-  def hash[A](e: Relation[A])(h: ToInt[A]): Hash[A] = new HashImpl[A](e, h)
+  def apply[A](e: Relation[A]): Eq[A]                = new EqImpl[A](e)
+  def hash[A](e: Relation[A])(h: ToLong[A]): Hash[A] = new HashImpl[A](e, h)
 
-  final class HashImpl[A](e: Relation[A], h: ToInt[A]) extends EqImpl[A](e) with api.Hash[A] {
-    def hash(x: A): Int = h(x)
+  final class HashImpl[A](e: Relation[A], h: ToLong[A]) extends EqImpl[A](e) with api.Hash[A] {
+    def hash(x: A): Long = h(x)
   }
   sealed class EqImpl[A](val e: Relation[A]) extends api.Eq[A] {
     def eqv(x: A, y: A) = e(x, y)

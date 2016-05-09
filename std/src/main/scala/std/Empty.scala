@@ -21,12 +21,13 @@ object Empty {
 }
 
 trait StdEmpty {
-  implicit def emptyCanBuild[R](implicit z: CanBuild[_, R]): Empty[R] = Empty(z().result)
-  implicit def emptyEach[R](implicit z: Builds[_, R]): Empty[R]       = Empty(z build vec())
-  implicit def emptyOption[A] : Empty.Const[Option[A]]                = Empty const None
-  implicit def emptyOptional[A] : Empty[jOptional[A]]                 = Empty(java.util.Optional.empty[A]())
-  implicit def emptyTuple[A: Empty, B: Empty]: Empty[(A, B)]          = Empty(pair(emptyValue[A], emptyValue[B]))
-  implicit def emptyView[A, R] : Empty[AtomicView[A, R]]              = Empty(new LinearView(Pnil))
+  implicit def emptyCanBuild[R](implicit z: CanBuild[_, R]): Empty[R]      = Empty(z().result)
+  implicit def emptyEach[R](implicit z: Builds[_, R]): Empty[R]            = Empty(z build vec())
+  implicit def emptyOption[A] : Empty.Const[Option[A]]                     = Empty const None
+  implicit def emptyOptional[A] : Empty[jOptional[A]]                      = Empty(java.util.Optional.empty[A]())
+  implicit def emptyPair[A: Empty, B: Empty]: Empty[(A, B)]                = Empty(pair(emptyValue[A], emptyValue[B]))
+  implicit def emptyTriple[A: Empty, B: Empty, C: Empty]: Empty[(A, B, C)] = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
+  implicit def emptyView[A, R] : Empty[AtomicView[A, R]]                   = Empty(new LinearView(Pnil))
 
   implicit lazy val emptyFile: Empty.Const[jFile]          = Empty const NoFile
   implicit lazy val emptyIndex: Empty.Const[Index]         = Empty const Index.invalid

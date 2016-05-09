@@ -178,3 +178,13 @@ object Nth extends (Long => Nth) {
   def apply(value: Long): Nth = if (value <= 0) invalid else new Nth(value - 1)
   def unapply(x: Vdex)        = new Extractor(x.nthValue)
 }
+
+object Pair {
+  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R          = z.join(pair(x, y))
+  def unapply[R, A, B](x: R)(implicit z: Splitter[R, A, B]): Some[A -> B] = scala.Some(z split x)
+}
+object :: {
+  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R = Pair(x, y)
+  def unapply[R, A, B](x: R)(implicit z1: Splitter[R, A, B], z2: Empty[R], z3: Eq[R]): Option[A -> B] =
+    if (z3.eqv(x, z2.empty)) none() else some(z1 split x)
+}

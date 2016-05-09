@@ -12,21 +12,6 @@ final class AnyOps[A](val x: A) extends AnyVal {
   def matchOr[B](alt: => B)(pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else alt
 
   @inline def |>[B](f: A => B): B = f(x)  // The famed forward pipe.
-
-  // BooleanAlgebra[A]
-  def && (rhs: A)(implicit z: BooleanAlgebra[A]): A = z.and(x, rhs)
-  def || (rhs: A)(implicit z: BooleanAlgebra[A]): A = z.or(x, rhs)
-  def unary_!(implicit z: BooleanAlgebra[A]): A     = z complement x
-
-  // Eq[A]
-  def ===(rhs: A)(implicit z: Eq[A]): Boolean = z.eqv(x, rhs)
-  def =!=(rhs: A)(implicit z: Eq[A]): Boolean = !z.eqv(x, rhs)
-
-  // Order[A]
-  def < (rhs: A)(implicit z: Order[A]): Boolean = z.cmp(x, rhs) eq Cmp.LT
-  def <=(rhs: A)(implicit z: Order[A]): Boolean = z.cmp(x, rhs) ne Cmp.GT
-  def > (rhs: A)(implicit z: Order[A]): Boolean = z.cmp(x, rhs) eq Cmp.GT
-  def >=(rhs: A)(implicit z: Order[A]): Boolean = z.cmp(x, rhs) ne Cmp.LT
 }
 final class CharOps(val ch: Char) extends AnyVal {
   // def isAlphabetic = jl.Character isAlphabetic ch
