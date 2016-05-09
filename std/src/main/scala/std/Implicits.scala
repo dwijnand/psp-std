@@ -3,42 +3,40 @@ package std
 
 import api._, exp._ // no implicit conversions in this file
 
-trait AllImplicit extends StdEmpty with StdImplicits {
-  self =>
+trait AllImplicit extends StdEmpty with StdImplicits { self =>
 
-  implicit def conforms[A] : (A <:< A)                                                               = new conformance[A]
+  implicit def conforms[A]: (A <:< A)                                                                = new conformance[A]
   implicit def constantPredicate[A](value: Boolean): ToBool[A]                                       = cond(value, ConstantTrue, ConstantFalse)
   implicit def defaultRenderer: FullRenderer                                                         = new FullRenderer(minElements = 3, maxElements = 10)
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B                                     = f.toPartial
   implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]                                             = new DirectOps(xs)
   implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]                                          = new ForeachOps(xs)
-  implicit def predicate1Algebra[A] : BooleanAlgebra[ToBool[A]]                                      = new Algebras.Predicate1Algebra[A]
-  implicit def predicate2Algebra[A, B] : BooleanAlgebra[ToBool2[A, B]]                               = new Algebras.Predicate2Algebra[A, B]
+  implicit def predicate1Algebra[A]: BooleanAlgebra[ToBool[A]]                                       = new Algebras.Predicate1Algebra[A]
+  implicit def predicate2Algebra[A, B]: BooleanAlgebra[ToBool2[A, B]]                                = new Algebras.Predicate2Algebra[A, B]
   implicit def promoteSize(x: Long): Precise                                                         = Size(x)
   implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc                                      = Doc(x)
-  implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]] : UnbuildsAs[A, CC[A]]                  = Unbuilds[A, CC[A]](Each java _)
+  implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]]: UnbuildsAs[A, CC[A]]                   = Unbuilds[A, CC[A]](Each java _)
   implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new LinearView(Each java xs)
   implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new LinearView(Each javaMap xs)
 }
 
 /** This file needs to not import `object all` because that's cycle city,
- *  as we start relying on importing the implicits that we ourselves are
- *  supplying. We carved off some of that object for use here and import
- *  that specially.
- */
-trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps {
-  self =>
+  *  as we start relying on importing the implicits that we ourselves are
+  *  supplying. We carved off some of that object for use here and import
+  *  that specially.
+  */
+trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps { self =>
 
-  implicit def convertViewEach[A](xs: View[A]): Each[A]           = Each(xs foreach _)
-  implicit def opsAny[A](x: A): AnyOps[A]                         = new AnyOps[A](x)
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]     = Order impl z
+  implicit def convertViewEach[A](xs: View[A]): Each[A]       = Each(xs foreach _)
+  implicit def opsAny[A](x: A): AnyOps[A]                     = new AnyOps[A](x)
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A] = Order impl z
 
-  implicit def cleaverProduct2[A, B] : Cleaver[A -> B, A, B]                 = cleaver[A -> B, A, B](((_, _)), fst, snd)
-  implicit def cleaverProduct3[A, B, C] : Cleaver[`3->`[A, B, C], A, B -> C] = cleaver((x, y) => ((x, fst(y), snd(y))), _._1, x => pair(x._2, x._3))
+  implicit def cleaverProduct2[A, B]: Cleaver[A -> B, A, B]                 = cleaver[A -> B, A, B](((_, _)), fst, snd)
+  implicit def cleaverProduct3[A, B, C]: Cleaver[`3->`[A, B, C], A, B -> C] = cleaver((x, y) => ((x, fst(y), snd(y))), _._1, x => pair(x._2, x._3))
 
   implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = xs match {
-    case xs: AtomicView[_, _] => cast(xs)
-    case _                    => new LinearView(Each each xs)
+    case xs: AtomicView [_, _] => cast(xs)
+    case _                     => new LinearView(Each each xs)
   }
 }
 
@@ -80,31 +78,30 @@ trait StdOps extends StdOps3 {
 }
 
 /*** The builder/unbuilder/view hierarchy.
- */
-
+  */
 trait ScalaBuilds {
-  implicit def unbuildScalaCollection[A, CC[X] <: GTOnce[X]] : UnbuildsAs[A, CC[A]]                            = Unbuilds[A, CC[A]](Each scala _)
+  implicit def unbuildScalaCollection[A, CC[X] <: GTOnce[X]]: UnbuildsAs[A, CC[A]]                             = Unbuilds[A, CC[A]](Each scala _)
   implicit def buildScalaCollection[A, That](implicit z: CanBuild[A, That]): Builds[A, That]                   = Builds.sCollection[A, That]
   implicit def viewScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): AtomicView[A, CC[A]]                = new LinearView(Each scala xs)
-  implicit def unbuildScalaMap[K, V, CC[X, Y] <: scMap[X, Y]] : UnbuildsAs[K -> V, CC[K, V]]                   = Unbuilds[K -> V, CC[K, V]](Each scalaMap _)
+  implicit def unbuildScalaMap[K, V, CC[X, Y] <: scMap[X, Y]]: UnbuildsAs[K -> V, CC[K, V]]                    = Unbuilds[K -> V, CC[K, V]](Each scalaMap _)
   implicit def buildScalaMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] = Builds.sMap[K, V, That]
 }
 trait PspBuilds {
-  implicit def unbuiltPspView0[A] : UnbuildsAs[A, View[A]]        = Unbuilds[A, View[A]](xs => xs)
-  implicit def buildPspSet[A: Eq]: Builds[A, ExSet[A]]            = Builds.exSet[A]
-  implicit def buildPspMap[K: Eq, V]: Builds[K -> V, ExMap[K, V]] = Builds.exMap[K, V]
+  implicit def unbuiltPspView0[A]: UnbuildsAs[A, View[A]]          = Unbuilds[A, View[A]](xs => xs)
+  implicit def buildPspSet[A : Eq]: Builds[A, ExSet[A]]            = Builds.exSet[A]
+  implicit def buildPspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = Builds.exMap[K, V]
 }
 
 trait StdBuilds0 extends PspBuilds with ScalaBuilds {
-  implicit def buildPspArray[A: CTag]: Builds[A, Array[A]]                       = Builds.array[A]
-  implicit def buildPspLinear[A] : Builds[A, Plist[A]]                           = Plist.newBuilder[A]
-  implicit def unbuildPspEach[A, CC[X] <: Each[X]] : UnbuildsAs[A, CC[A]]        = Unbuilds[A, CC[A]](xs => xs)
-  implicit def unbuiltPspArray[A] : UnbuildsAs[A, Array[A]]                      = Unbuilds[A, Array[A]](Direct array _)
+  implicit def buildPspArray[A : CTag]: Builds[A, Array[A]]                      = Builds.array[A]
+  implicit def buildPspLinear[A]: Builds[A, Plist[A]]                            = Plist.newBuilder[A]
+  implicit def unbuildPspEach[A, CC[X] <: Each[X]]: UnbuildsAs[A, CC[A]]         = Unbuilds[A, CC[A]](xs => xs)
+  implicit def unbuiltPspArray[A]: UnbuildsAs[A, Array[A]]                       = Unbuilds[A, Array[A]](Direct array _)
   implicit def viewPspArray[A](xs: Array[A]): DirectView[A, Array[A]]            = new DirectView(Direct array xs)
   implicit def viewPspEach[A, CC[X] <: Each[X]](xs: CC[A]): AtomicView[A, CC[A]] = new LinearView(xs)
 }
 trait StdBuilds1 extends StdBuilds0 {
-  implicit def buildPspDirect[A] : Builds[A, Vec[A]] = Vec.newBuilder[A]
+  implicit def buildPspDirect[A]: Builds[A, Vec[A]] = Vec.newBuilder[A]
 }
 trait StdBuilds extends StdBuilds1 {
   implicit def unbuildPspString: UnbuildsAs[Char, String]          = Unbuilds(Direct string _)

@@ -4,7 +4,7 @@ package std
 import api._, all._, StdShow._
 
 /** Reboot of view code.
- */
+  */
 object Xs {
   type RepOf[Rep, CC[X], A] = RepInfo[Rep] {
     type MapTo[X] = CC[X]
@@ -12,7 +12,7 @@ object Xs {
   }
   trait RepInfo[Rep] {
     type Repr = Rep
-    type MapTo[X]
+    type MapTo [X]
     type Elem
 
     def sizeOf(xs: Rep): Size
@@ -23,19 +23,19 @@ object Xs {
     type Elem     = A
   }
 
-  implicit def sciVectorRepOf[A] : RepOf[sciVector[A], sciVector, A] =
+  implicit def sciVectorRepOf[A]: RepOf[sciVector[A], sciVector, A] =
     new RepInfoTyped[sciVector[A], sciVector, A] {
       def sizeOf(xs: Repr): Precise                                  = xs.length
       def foreachView[B](xs: Repr, op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
     }
 
-  implicit def sciListRepOf[A] : RepOf[sciList[A], sciList, A] =
+  implicit def sciListRepOf[A]: RepOf[sciList[A], sciList, A] =
     new RepInfoTyped[sciList[A], sciList, A] {
       def sizeOf(xs: Repr): Size                                     = cond(xs.isEmpty, Size.Zero, Size.NonEmpty)
       def foreachView[B](xs: Repr, op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
     }
 
-  implicit def stringRepOf[R <: jCharSequence] : RepOf[R, Each, Char] =
+  implicit def stringRepOf[R <: jCharSequence]: RepOf[R, Each, Char] =
     new RepInfoTyped[R, Each, Char] {
       def sizeOf(xs: Repr): Precise                                     = xs.length
       def foreachView[B](xs: Repr, op: Op[Char, B], f: B => Unit): Unit = op(xs.toString.m) foreach f

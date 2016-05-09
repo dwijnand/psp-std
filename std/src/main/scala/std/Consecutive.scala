@@ -16,11 +16,10 @@ sealed abstract class LongInterval extends (Vdex => Long) with ShowSelf {
   def take(n: Precise): LongInterval.Closed
 
   def apply(vdex: Vdex): Long = startLong + vdex.indexValue
-  def slice(s: Long, e: Long): LongInterval.Closed = (
-    if (s < 0) slice(0, e)
-    else if (e <= 0 || e <= s) LongInterval.empty
-    else this drop s take e - s
-  )
+  def slice(s: Long, e: Long): LongInterval.Closed =
+    (if (s < 0) slice(0, e)
+     else if (e <= 0 || e <= s) LongInterval.empty
+     else this drop s take e - s)
 }
 object LongInterval {
   val Empty = new Closed(0L, Size.Zero)
@@ -31,7 +30,7 @@ object LongInterval {
   def to(start: Long, end: Long): Closed             = closed(start, Size(end - start + 1))
   def open(start: Long): Open                        = Open(start)
 
-  final case class Closed private[LongInterval] (startLong: Long, size: Precise) extends LongInterval {
+  final case class Closed private[LongInterval](startLong: Long, size: Precise) extends LongInterval {
     type This = Closed
 
     def exclusiveEnd: Long = startLong + size.getLong
@@ -50,7 +49,7 @@ object LongInterval {
     def to_s: String = if (isEmpty) "[0,0)" else if (isPoint) s"[$startLong]" else s"[$startLong..$lastLong]"
   }
 
-  final case class Open private[LongInterval] (startLong: Long) extends LongInterval {
+  final case class Open private[LongInterval](startLong: Long) extends LongInterval {
     type This = Open
 
     def contains(n: Long): Bool                   = startLong <= n
@@ -65,7 +64,7 @@ object LongInterval {
 }
 
 sealed abstract class Consecutive[+A] extends Indexed[A] {
-  type CC[X] <: Consecutive[X]
+  type CC [X] <: Consecutive[X]
   def in: LongInterval
   def map[B](g: A => B): CC[B]
   def applyLong(x: Long): A
@@ -80,7 +79,7 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
 object Consecutive {
   private val Empty = new Closed[Nothing](LongInterval.empty, indexOutOfBoundsException)
 
-  def empty[A] : Closed[A]                                       = Empty
+  def empty[A]: Closed[A]                                        = Empty
   def apply[A](in: LongInterval.Closed, f: Long => A): Closed[A] = new Closed(in, f)
   def apply[A](in: LongInterval.Open, f: Long => A): Open[A]     = new Open(in, f)
 

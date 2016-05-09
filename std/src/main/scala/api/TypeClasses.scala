@@ -2,15 +2,15 @@ package psp
 package api
 
 /** API level type classes and interfaces other than the collections.
- */
+  */
 import Api._
 
 /** Type classes for "inside" a context.
- *  The more familiar type classes extends these with M[X] = X.
- *
- *  TODO: Investigate utility of further generalization of the
- *  ground types which appear here: Bool, Long, Vdex, Cmp, String
- */
+  *  The more familiar type classes extends these with M[X] = X.
+  *
+  *  TODO: Investigate utility of further generalization of the
+  *  ground types which appear here: Bool, Long, Vdex, Cmp, String
+  */
 trait MEq[M[+X], -A] extends Any {
   def eqv(x: M[A], y: M[A]): M[Bool]
 }
@@ -36,16 +36,12 @@ trait MSplitter[M[+X], -R, +A, +B] extends Any {
 trait MJoiner[M[+X], +R, -A, -B] extends Any {
   def join(x: M[A] -> M[B]): M[R]
 }
-trait MCleaver[M[+X], R, A, B]
-      extends Any
-         with MJoiner[M, R, A, B]
-         with MSplitter[M, R, A, B]
-
+trait MCleaver[M[+X], R, A, B] extends Any with MJoiner[M, R, A, B] with MSplitter[M, R, A, B]
 
 /** The classic type classes for encoding equality, inequality,
- *  and display, and less classic ones for split/join, indexed access,
- *  emptiness.
- */
+  *  and display, and less classic ones for split/join, indexed access,
+  *  emptiness.
+  */
 trait Eq[-A] extends Any with MEq[Id, A] {
   def eqv(x: A, y: A): Bool
 }
@@ -70,9 +66,4 @@ trait Splitter[-R, +A, +B] extends Any with MSplitter[Id, R, A, B] {
 trait Joiner[+R, -A, -B] extends Any with MJoiner[Id, R, A, B] {
   def join(x: A -> B): R
 }
-trait Cleaver[R, A, B]
-      extends Any
-         with MCleaver[Id, R, A, B]
-         with Joiner[R, A, B]
-         with Splitter[R, A, B]
-
+trait Cleaver[R, A, B] extends Any with MCleaver[Id, R, A, B] with Joiner[R, A, B] with Splitter[R, A, B]

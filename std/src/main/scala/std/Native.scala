@@ -4,8 +4,7 @@ package std
 import api._, all._
 
 /** "Native" psp collections.
- */
-
+  */
 sealed abstract class Plist[A] extends Each[A] {
   def head: A
   def tail: Plist[A]
@@ -15,7 +14,7 @@ sealed abstract class Plist[A] extends Each[A] {
   def ::(head: A): Plist[A] = Pcons(head, this)
   @inline final def foreach(f: A => Unit): Unit = {
     def loop(xs: Plist[A]): Unit = xs match {
-      case Pcons(hd, tl) => f(hd) ; loop(tl)
+      case Pcons(hd, tl) => f(hd); loop(tl)
       case _             =>
     }
     loop(this)
@@ -40,13 +39,12 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
   def elemAt(i: Vdex): A = underlying(i.getInt)
 
   def updated(i: Vdex, elem: A): Vec[A] = new Vec[A](underlying.updated(i.getInt, elem))
-  def :+(elem: A): Vec[A] = new Vec[A](underlying :+ elem)
-  def +:(elem: A): Vec[A] = new Vec[A](elem +: underlying)
-  def ++(that: Vec[A]): Vec[A] = (
-    if (that.isEmpty) this
-    else if (this.isEmpty) that
-    else new Vec[A](underlying ++ that.trav)
-  )
+  def :+(elem: A): Vec[A]               = new Vec[A](underlying :+ elem)
+  def +:(elem: A): Vec[A]               = new Vec[A](elem +: underlying)
+  def ++(that: Vec[A]): Vec[A] =
+    (if (that.isEmpty) this
+     else if (this.isEmpty) that
+     else new Vec[A](underlying ++ that.trav))
 
   def drop(n: Vdex): Vec[A]      = new Vec[A](underlying drop n.getInt)
   def dropRight(n: Vdex): Vec[A] = new Vec[A](underlying dropRight n.getInt)
@@ -95,9 +93,9 @@ object Pmap {
 }
 
 object Plist {
-  def empty[A] : Plist[A]                 = cast(Pnil)
-  def newBuilder[A] : Builds[A, Plist[A]] = new Builds(xs => ll.foldRight[A, Plist[A]](xs, empty[A], _ :: _))
-  def apply[A](xs: A*): Plist[A]          = xs.zfoldr[Plist[A]](_ :: _)
+  def empty[A]: Plist[A]                 = cast(Pnil)
+  def newBuilder[A]: Builds[A, Plist[A]] = new Builds(xs => ll.foldRight[A, Plist[A]](xs, empty[A], _ :: _))
+  def apply[A](xs: A*): Plist[A]         = xs.zfoldr[Plist[A]](_ :: _)
 }
 object Indexed {
   def apply[A](f: Vdex => A): Pure[A] = Pure(f)
@@ -108,14 +106,14 @@ object Indexed {
     def elemAt(i: Vdex): A = f(i)
     @inline def foreach(f: A => Unit): Unit = {
       var current: Long = 0L
-      while (true) { f(elemAt(Index(current))) ; current += 1 }
+      while (true) { f(elemAt(Index(current))); current += 1 }
     }
   }
 }
 object Vec {
   private val NIL = new Vec[Any](sciVector())
 
-  def empty[A] : Vec[A]                        = cast(NIL)
+  def empty[A]: Vec[A]                         = cast(NIL)
   def apply[A](xs: A*): Vec[A]                 = new Vec[A](xs.toScalaVector)
   def unapplySeq[A](x: Vec[A]): Some[scSeq[A]] = Some(x.seq)
   def newBuilder[A](): Builds[A, Vec[A]]       = Builds(xs => new Vec[A](xs.seq.toScalaVector))
@@ -152,11 +150,11 @@ object Each extends Constructions[Each] {
     @inline def foreach(f: A => Unit): Unit = mf(f)
   }
   final class Joined[A](xs: Each[A], ys: Each[A]) extends Each[A] {
-    def size = xs.size + ys.size
+    def size                                = xs.size + ys.size
     @inline def foreach(f: A => Unit): Unit = sideEffect(xs foreach f, ys foreach f)
   }
   final class Continually[A](expr: => A) extends Each[A] {
-    def size = Infinite
+    def size                                = Infinite
     @inline def foreach(f: A => Unit): Unit = while (true) f(expr)
   }
 

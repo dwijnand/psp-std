@@ -8,23 +8,23 @@ import java.{ io => jio }
 import java.nio.{ file => jnf }
 
 /** Building a default namespace consciously rather than accretively.
- *  Primarily these are various "magic" types which cannot be avoided
- *  due to language privilege. An incomplete list:
- *
- *   - all top and bottom types are treated specially
- *   - as are all primitive types and unit
- *   - Seq, Option, and TupleN are hardcoded into extractors
- *   - Seq is hardcoded into varargs
- *   - Arrays are everywhere special
- *   - Lists are specially optimized by the compiler
- *   - StringContext is required for string interpolation
- *   - ClassTags are synthesized by the compiler
- *   - BigDecimal/BigInt are treated specially for equality
- *   - Dynamic has special semantics
- *   - Function1 has special syntax and much special handling
- *   - PartialFunction has all of Function1's and then some
- *   - DelayedInit is very special but it's garbage so omitted
- */
+  *  Primarily these are various "magic" types which cannot be avoided
+  *  due to language privilege. An incomplete list:
+  *
+  *   - all top and bottom types are treated specially
+  *   - as are all primitive types and unit
+  *   - Seq, Option, and TupleN are hardcoded into extractors
+  *   - Seq is hardcoded into varargs
+  *   - Arrays are everywhere special
+  *   - Lists are specially optimized by the compiler
+  *   - StringContext is required for string interpolation
+  *   - ClassTags are synthesized by the compiler
+  *   - BigDecimal/BigInt are treated specially for equality
+  *   - Dynamic has special semantics
+  *   - Function1 has special syntax and much special handling
+  *   - PartialFunction has all of Function1's and then some
+  *   - DelayedInit is very special but it's garbage so omitted
+  */
 trait ExternalTypes {
   // The top and bottom types.
   type Any     = scala.Any
@@ -68,20 +68,20 @@ trait ExternalTypes {
   type volatile  = scala.volatile
 
   // scala collection types, named consistently and distinctly based on package of origin.
-  type scIterable[+A]         = sc.Iterable[A]
-  type scIterator[+A]         = sc.Iterator[A]
-  type scMap[K, +V]           = sc.Map[K, V]
-  type scSeq[+A]              = sc.Seq[A]
-  type scSet[A]               = sc.Set[A]
-  type scTraversable[+A]      = sc.Traversable[A]
+  type scIterable[+A]    = sc.Iterable[A]
+  type scIterator[+A]    = sc.Iterator[A]
+  type scMap[K, +V]      = sc.Map[K, V]
+  type scSeq[+A]         = sc.Seq[A]
+  type scSet[A]          = sc.Set[A]
+  type scTraversable[+A] = sc.Traversable[A]
 
-  type sciIndexedSeq[+A]      = sci.IndexedSeq[A]
-  type sciList[+A]            = sci.List[A]
-  type sciMap[K, +V]          = sci.Map[K, V]
-  type sciSeq[+A]             = sci.Seq[A]
-  type sciSet[A]              = sci.Set[A]
-  type sciStream[+A]          = sci.Stream[A]
-  type sciVector[+A]          = sci.Vector[A]
+  type sciIndexedSeq[+A] = sci.IndexedSeq[A]
+  type sciList[+A]       = sci.List[A]
+  type sciMap[K, +V]     = sci.Map[K, V]
+  type sciSeq[+A]        = sci.Seq[A]
+  type sciSet[A]         = sci.Set[A]
+  type sciStream[+A]     = sci.Stream[A]
+  type sciVector[+A]     = sci.Vector[A]
 
   type scmBuilder[-Elem, +To] = scm.Builder[Elem, To]
   type scmMap[K, V]           = scm.Map[K, V]
