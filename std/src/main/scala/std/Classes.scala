@@ -37,23 +37,23 @@ object JvmName {
 // }
 
 trait StdEq0 {
-  implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] = Order.fromInt[A](_ compareTo _)
+  implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] =
+    Order(((x: A, y: A) => x compareTo y) map (x => longCmp(x)))
 }
-trait StdEq extends StdEq0 {
-  implicit def eqViews[R, A](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =
+trait StdEq1 extends StdEq0 {
+  implicit def eqViewsAs[R, A](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =
     Eq((xs, ys) => intoView(xs) zip intoView(ys) corresponds z.eqv)
 
   implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] =
     orderBy[A](_.ordinal)
 
-  implicit def boolOrder: Order[Bool]                           = orderBy[Bool](x => if (x) 1 else 0)
-  implicit def charOrder: Order[Char]                           = Order.fromInt[Char](_ - _)
-  implicit def intOrder: Order[Int]                             = Order.fromInt[Int](_ - _)
-  implicit def longOrder: Order[Long]                           = Order.fromLong[Long](_ - _)
-  implicit def vindexOrder: Order[Vdex]                         = orderBy[Vdex](_.indexValue)
-  implicit def preciseOrder: Order[Precise]                     = orderBy[Precise](_.get)
-  implicit def stringOrder: Order[String]                       = Order.fromLong[String](_ compareTo _)
-  implicit def tuple2Order[A : Order, B : Order]: Order[(A, B)] = orderBy[(A, B)](fst) | snd
+  implicit def longHashEqOrd: HashEqOrd[Long]       = HashEqOrd.Longs
+  implicit def boolHashEqOrd: HashEqOrd[Bool]       = HashEqOrd by (x => if (x) 1 else 0)
+  implicit def charHashEqOrd: HashEqOrd[Char]       = HashEqOrd by (x => x: Long)
+  implicit def intHashEqOrd: HashEqOrd[Int]         = HashEqOrd by (x => x: Long)
+  implicit def vindexHashEqOrd: HashEqOrd[Vdex]     = HashEqOrd by (_.indexValue)
+  implicit def preciseHashEqOrd: HashEqOrd[Precise] = HashEqOrd by (_.getLong)
+  implicit def stringHashEqOrd: HashEqOrd[String]   = HashEqOrd.inherited[String]
 
   implicit def classEq: Hash[Class[_]] = byEquals
   implicit def sizeEq: Hash[Size]      = byEquals
@@ -64,12 +64,19 @@ trait StdEq extends StdEq0 {
     case _                        => false
   }
 }
+trait StdEq extends StdEq1 {
+  implicit def product2HashEqOrder[A: HashEqOrd, B: HashEqOrd]: HashEqOrd[A -> B] =
+    HashEqOrd[A -> B](
+      (x, y) => fst(x) === fst(y) && snd(x) === snd(y),
+      orderBy[A -> B](fst) | snd cmp,
+      xy => fst(xy).hash + snd(xy).hash
+    )
+}
+
 object StdShow extends ShowInstances
 object Unsafe {
-  // implicit def inheritedEq[A] : Hash[A]       = inheritEq
   implicit def promoteIndex(x: Long): Index = Index(x)
   implicit def inheritedShow[A]: Show[A]    = inheritShow
-  // implicit def shownOrder[A: Show] : Order[A] = orderBy[A](render[A])
 }
 
 object +: {

@@ -15,13 +15,6 @@ trait Foreach[+A] extends Any {
   def size: Size
   def foreach(f: A => Unit): Unit
 }
-object Foreach {
-  def apply[A](mf: Suspended[A], n: Size): Foreach[A] = new Foreach[A] {
-    def size                        = n
-    def foreach(f: A => Unit): Unit = mf(f)
-  }
-}
-
 trait View[+A]    extends Any with Foreach[A]
 trait Each[+A]    extends Any with Foreach[A]
 trait Indexed[+A] extends Any with Each[A] { def elemAt(i: Vdex): A }

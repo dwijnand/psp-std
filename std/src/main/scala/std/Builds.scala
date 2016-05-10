@@ -52,7 +52,7 @@ final class Builds[-Elem, +To](val f: Foreach[Elem] => To) {
   def contraMap[A](g: A => Elem): Builds[A, To]    = builds(xs => f(Each(mf => xs foreach (g andThen mf))))
   def map[Next](g: To => Next): Builds[Elem, Next] = builds(f andThen g)
   def build(xs: Foreach[Elem]): To                 = f(xs)
-  def apply(mf: Suspended[Elem]): To               = build(Foreach(mf, Size.Unknown))
+  def apply(mf: Suspended[Elem]): To               = f(Each(mf))
   def scalaBuilder: scmBuilder[Elem, To]           = sciVector.newBuilder[Elem] mapResult (xs => build(xs.m))
 }
 

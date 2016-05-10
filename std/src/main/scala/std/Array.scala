@@ -41,7 +41,7 @@ final class InPlace[A](val xs: Array[A]) extends AnyVal {
 
   // def insertionSort(implicit z: Order[A]): Array[A] = sideEffect(xs, Sorting.insertionSort[A](xs)(z, null))
   // def quickSort(implicit z: Order[A]): Array[A]     = sideEffect(xs, Sorting.quickSort[A](xs)(z, null))
-  def sort(implicit z: Order[A]): Array[A] = sideEffect(xs, if (isReference) sortRef(Order.comparator) else sortInPlace(xs))
+  def sort(implicit z: Order[A]): Array[A] = sideEffect(xs, if (isReference) sortRef(z.comparator) else sortInPlace(xs))
   // def sortBy[B: Order](f: A => B): Array[A]         = sort(orderBy[A](f))
 
   def map(f: ToSelf[A]): Array[A] = sideEffect(xs, intRange(0, xs.length) foreach (i => xs(i) = f(xs(i))))

@@ -21,6 +21,7 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def zfoldl[B : Empty](f: (B, A) => B): B           = ll.foldLeft(xs, emptyValue[B], f)
   def zfoldr[B : Empty](f: (A, B) => B): B           = ll.foldRight(xs, emptyValue[B], f)
   def zhead(implicit z: Empty[A]): A                 = zcond(nonEmpty, head)
+  def zlast(implicit z: Empty[A]): A                 = zcond(nonEmpty, last)
   def zreducel(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducel(f))
   def zreducer(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducer(f))
 
