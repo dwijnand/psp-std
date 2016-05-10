@@ -10,7 +10,7 @@ sealed abstract class AtomicView[A, Repr] extends IBaseView[A, Repr] {
 
 object FlattenSlice {
   def unapply[A, Repr](xs: BaseView[A, Repr]): Option[(BaseView[A, Repr], VdexRange)] = xs match {
-    case xs: DirectView [_, _]   => Some(xs -> xs.size.indices)
+    case xs: DirectView[_, _]    => Some(xs -> xs.size.indices)
     case Mapped(xs, f)           => unapply(xs) map { case (xs, range) => (xs map f, range) }
     case Dropped(xs, Size.Zero)  => unapply(xs)
     case DroppedR(xs, Size.Zero) => unapply(xs)
@@ -102,7 +102,7 @@ sealed abstract class CompositeView[A, B, Repr](val sizeEffect: ToSelf[Size]) ex
         case TakenR(xs, n)           => ll.foreachTakeRight(xs, f, n)
         case Dropped(xs, Finite(n))  => foreachSlice(xs, n until MaxLong map Index, f)
         case Taken(xs, n: Precise)   => foreachSlice(xs, n.indices, f)
-        case xs: View [_]            => xs foreach f
+        case xs: View[_]             => xs foreach f
         case _                       => abort(pp"Unexpected view class ${ classNameOf(xs) }")
       }
     }

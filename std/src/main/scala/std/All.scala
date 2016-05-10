@@ -43,6 +43,7 @@ object all extends AllExplicit with AllImplicit {
     def mapWith[B](f: Fun[A, B]): ExMap[A, B] = ExMap(xs, f)
     def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
   }
+
   /** Extension methods for scala library classes.
     *  We'd like to get away from all such classes,
     *  but scala doesn't allow it.
@@ -86,11 +87,12 @@ object all extends AllExplicit with AllImplicit {
   implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
     def doc: Doc = Doc(lhs)
   }
+
   /** Conversions which require the elements to be pairs. Obtaining evidence of that
     *  up front simplifies everything else, because we don't have to mix and match
     *  between arity-1 and arity-2 type constructors.
     */
-  implicit class SplittableForeachOps[R, A, B](val xs: Foreach[R])(implicit sp: Splitter[R, A, B]) {
+  implicit class SplittableViewOps[R, A, B](val xs: View[R])(implicit sp: Splitter[R, A, B]) {
     def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
     def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
   }

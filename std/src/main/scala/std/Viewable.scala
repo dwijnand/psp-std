@@ -73,9 +73,9 @@ object Operable {
   implicit object OperableString extends Operable[ConstString] {
     def str(in: String, name: String, arg: Any): String = {
       val arg_s = arg match {
-        case x: ShowDirect             => x.to_s
-        case x: scala.Function1 [_, _] => "<f>"
-        case _                         => "" + arg
+        case x: ShowDirect            => x.to_s
+        case x: scala.Function1[_, _] => "<f>"
+        case _                        => "" + arg
       }
       "%s %7s %-8s".format(in, name, arg_s)
     }

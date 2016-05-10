@@ -28,9 +28,9 @@ object Doc {
 class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
 
   def showEach[A : Show](xs: Each[A]): String = xs match {
-    case x: Consecutive.Open [A]   => pp"[${ x.head }..)"
-    case x: Consecutive.Closed [A] => if (x.isEmpty) "[]" else pp"[${ x.head }..${ x.last }]"
-    case _                         => showView(xs.m map (_.doc))
+    case x: Consecutive.Open[A]   => pp"[${ x.head }..)"
+    case x: Consecutive.Closed[A] => if (x.isEmpty) "[]" else pp"[${ x.head }..${ x.last }]"
+    case _                        => showView(xs.m map (_.doc))
   }
 
   def showView(xs: View[Doc]): String =
