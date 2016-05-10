@@ -17,8 +17,8 @@ final class InPlace[A](val xs: Array[A]) extends AnyVal {
   private def lastIndex                   = xs.length - 1
   private def sortRef(cmp: Comparator[A]) = java.util.Arrays.sort[A](cast[Array[Ref[A]]](xs), cmp)
   private def isReference = (xs: Any) match {
-    case _: Array [AnyRef] => true
-    case _                 => false
+    case _: Array[AnyRef] => true
+    case _                => false
   }
   private def midpoint: Int = xs.length / 2
   private def swap(i1: Int, i2: Int): Unit = {
@@ -27,13 +27,13 @@ final class InPlace[A](val xs: Array[A]) extends AnyVal {
     xs(i2) = tmp
   }
   private def sortInPlace[A](xs: Array[A]): Unit = xs match {
-    case xs: Array [Byte]   => java.util.Arrays.sort(xs)
-    case xs: Array [Char]   => java.util.Arrays.sort(xs)
-    case xs: Array [Short]  => java.util.Arrays.sort(xs)
-    case xs: Array [Int]    => java.util.Arrays.sort(xs)
-    case xs: Array [Long]   => java.util.Arrays.sort(xs)
-    case xs: Array [Double] => java.util.Arrays.sort(xs)
-    case xs: Array [Float]  => java.util.Arrays.sort(xs)
+    case xs: Array[Byte]   => java.util.Arrays.sort(xs)
+    case xs: Array[Char]   => java.util.Arrays.sort(xs)
+    case xs: Array[Short]  => java.util.Arrays.sort(xs)
+    case xs: Array[Int]    => java.util.Arrays.sort(xs)
+    case xs: Array[Long]   => java.util.Arrays.sort(xs)
+    case xs: Array[Double] => java.util.Arrays.sort(xs)
+    case xs: Array[Float]  => java.util.Arrays.sort(xs)
     // case xs: Array[AnyRef] => java.util.Arrays.sort[AnyRef](xs, Eq.refComparator)
     case _ => ???
   }

@@ -91,8 +91,8 @@ final class conformance[A]            extends <:<[A, A] { def apply(x: A): A = x
 
 final class LabeledFunction[-T, +R](f: T => R, val to_s: String) extends (T ?=> R) {
   def isDefinedAt(x: T) = f match {
-    case f: scala.PartialFunction [_, _] => f isDefinedAt x
-    case _                               => true
+    case f: scala.PartialFunction[_, _] => f isDefinedAt x
+    case _                              => true
   }
   def apply(x: T): R    = f(x)
   override def toString = to_s
