@@ -8,9 +8,6 @@ import api._, all._
 sealed abstract class Plist[A] extends Each[A] {
   def head: A
   def tail: Plist[A]
-  def isEmpty = this eq Pnil
-  def size    = if (isEmpty) Size.Zero else Size.NonEmpty
-
   def ::(head: A): Plist[A] = Pcons(head, this)
   @inline final def foreach(f: A => Unit): Unit = {
     def loop(xs: Plist[A]): Unit = xs match {
@@ -20,8 +17,11 @@ sealed abstract class Plist[A] extends Each[A] {
     loop(this)
   }
 }
-final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A]
+final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A] {
+  def size = Size.NonEmpty
+}
 final case object Pnil extends Plist[Nothing] {
+  def size = Size(0)
   def head = abort("Pnil.head")
   def tail = abort("Pnil.tail")
 }
@@ -53,19 +53,6 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
   @inline def foreach(f: A => Unit): Unit =
     ll.foreachInt(0, length - 1, i => f(underlying(i)))
 }
-final case class PairAsEach[A](x: A -> A) extends AnyVal with Direct[A] {
-  def size = 2
-  def elemAt(idx: Vdex): A = idx.indexValue match {
-    case 0 => fst(x)
-    case 1 => snd(x)
-    case _ => noSuchElementException(idx)
-  }
-  def foreach(f: A => Unit): Unit = {
-    f(fst(x))
-    f(snd(x))
-  }
-}
-
 object FunctionGrid {
   def apply[A](xs: View[A])(columns: ToString[A]*): FunctionGrid[A, String] = new FunctionGrid(xs, columns.toVec)
 }
@@ -79,31 +66,5 @@ class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
     val formatFns = widths map lformat
 
     rows map (formatFns zip _ map (_ apply _) mk_s ' ')
-  }
-}
-
-object Pset {
-  def fromJava[A](xs: jSet[A]): ExSet[A]   = new Pset[A](xs.toScalaSet)
-  def fromScala[A](xs: scSet[A]): ExSet[A] = new Pset[A](xs.toSet)
-}
-object Pmap {
-  def fromJava[K, V](xs: jMap[K, V]): ExMap[K, V]   = xs.keySet.byEquals.toExSet mapWith Fun(xs get _)
-  def fromScala[K, V](xs: scMap[K, V]): ExMap[K, V] = xs.keys.byEquals.toExSet mapWith Fun(xs)
-}
-object Plist {
-  def empty[A]: Plist[A]         = cast(Pnil)
-  def apply[A](xs: A*): Plist[A] = xs.zfoldr[Plist[A]](_ :: _)
-}
-object Indexed {
-  def apply[A](f: Vdex => A): Pure[A] = Pure(f)
-
-  final case class Pure[A](f: Vdex => A) extends Indexed[A] {
-    def size               = Infinite // ...sometimes infinite via overflow, but hey
-    def isEmpty            = false
-    def elemAt(i: Vdex): A = f(i)
-    @inline def foreach(f: A => Unit): Unit = {
-      var current: Long = 0L
-      while (true) { f(elemAt(Index(current))); current += 1 }
-    }
   }
 }

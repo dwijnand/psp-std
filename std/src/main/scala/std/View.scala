@@ -99,7 +99,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def cross[B](ys: View[B]): Zip[A, B]     = crossViews(xs, ys)
   def mapAndCross[B](f: A => B): Zip[A, B] = crossViews(xs, xs map f)
   def mapAndZip[B](f: A => B): Zip[A, B]   = zipViews(xs, xs map f)
-  def zipIndex: Zip[A, Index]              = zipViews(xs, indexStream)
+  def zipIndex: Zip[A, Index]              = zipViews(xs, openIndices)
   def zip[B](ys: View[B]): Zip[A, B]       = zipViews[A, B](xs, ys)
 
   def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
@@ -121,7 +121,7 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
 
 final class View2DOps[A](val xss: View2D[A]) extends AnyVal {
   def column(vdex: Vdex): View[A]   = xss flatMap (_ drop vdex.sizeExcluding take 1)
-  def transpose: View2D[A]          = indexStream map column
+  def transpose: View2D[A]          = openIndices map column
   def flatten: View[A]              = xss flatMap identity
   def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
 }

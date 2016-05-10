@@ -69,15 +69,14 @@ object all extends AllExplicit with AllImplicit {
     def slurp(): Array[Byte]             = ll.Streams slurp buffered
     def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
-  implicit class Product2HomoOps[A](val x: A -> A) extends AnyVal {
-    def each = new PairAsEach[A](x)
+  implicit class Product2HomoOps[R, A](val x: R)(implicit z: Splitter[R, A, A]) {
+    def each: Each[A] = Each pair x
   }
   implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
     def mapLeft[C](f: A => C): C -> B          = f(fst(x)) -> snd(x)
     def mapRight[C](f: B => C): A -> C         = fst(x)    -> f(snd(x))
     def unify[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
   }
-
   implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
     def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
@@ -148,10 +147,12 @@ abstract class AllExplicit extends ApiValues with StdEq {
   // Type aliases I don't like enough to have in the API.
   type Bag[A]               = ExMap[A, Precise]
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
-  type VdexRange            = Consecutive.Closed[Vdex]
-  type IntRange             = Consecutive.Closed[Int]
-  type LongRange            = Consecutive.Closed[Long]
-  type CharRange            = Consecutive.Closed[Char]
+  type VdexRange            = ClosedRange[Vdex]
+  type IntRange             = ClosedRange[Int]
+  type LongRange            = ClosedRange[Long]
+  type CharRange            = ClosedRange[Char]
+  type OpenRange[+A]        = Consecutive.Open[A]
+  type ClosedRange[+A]      = Consecutive.Closed[A]
   type Renderer             = Show[Doc]
   type UnbuildsAs[+A, R]    = Unbuilds[R] { type Elem <: A }
   type View2D[+A]           = View[View[A]]
@@ -179,14 +180,18 @@ abstract class AllExplicit extends ApiValues with StdEq {
   def make1[CC[_]]: MakeHelper1[CC]    = new MakeHelper1[CC]
   def make2[CC[_, _]]: MakeHelper2[CC] = new MakeHelper2[CC]
 
-  def bufferMap[A, B : Empty](): scmMap[A, B]        = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def inView[A](mf: Suspended[A]): View[A]           = new LinearView(Each(mf))
-  def indexRange(start: Long, end: Long): VdexRange  = longRange(start, end) map Index
-  def indexStream: Indexed[Index]                    = LongInterval open 0 map Index
-  def intRange(start: Int, end: Int): IntRange       = longRange(start, end) map (_.toInt)
-  def intsFrom(start: Int): Consecutive.Open[Int]    = longsFrom(start) map (_.toInt)
-  def longRange(start: Long, end: Long): LongRange   = LongInterval.until(start, end) map identity
-  def longsFrom(start: Long): Consecutive.Open[Long] = LongInterval open start map identity
+  def bufferMap[A, B : Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def inView[A](mf: Suspended[A]): View[A]    = new IdView(Each(mf))
+
+  def closedRange[A](start: Long, size: Precise)(f: Long => A): ClosedRange[A] = LongInterval.closed(start, size) map f
+  def indexRange(start: Long, end: Long): VdexRange                            = LongInterval.until(start, end) map Index
+  def indexed[A](f: Long => A): OpenRange[A]                                   = openRange(0)(f)
+  def intRange(start: Int, end: Int): IntRange                                 = LongInterval.until(start, end) map (_.toInt)
+  def intsFrom(start: Int): OpenRange[Int]                                     = openRange(start)(_.toInt)
+  def longRange(start: Long, end: Long): LongRange                             = LongInterval.until(start, end) map identity
+  def longsFrom(start: Long): OpenRange[Long]                                  = openRange(start)(identity)
+  def openIndices: OpenRange[Index]                                            = openRange(0)(Index)
+  def openRange[A](start: Long)(f: Long => A): OpenRange[A]                    = LongInterval open start map f
 
   def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]          = heteroViews(l, r).cross
   def homoViews[A](l: View[A], r: View[A]): Split[A]               = Split(l, r)

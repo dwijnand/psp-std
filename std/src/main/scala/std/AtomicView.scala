@@ -24,8 +24,8 @@ object FlattenSlice {
   }
 }
 
-final class LinearView[A, Repr](underlying: Each[A]) extends AtomicView[A, Repr] {
-  type This = LinearView[A, Repr]
+class IdView[A, Repr](underlying: Foreach[A]) extends AtomicView[A, Repr] {
+  type This = IdView[A, Repr]
 
   def size: Size                          = underlying.size
   @inline def foreach(f: A => Unit): Unit = underlying foreach f
@@ -72,8 +72,8 @@ sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
   final def takeWhile(p: ToBool[A]): MapTo[A]        = TakenWhile(this, p)
   final def withFilter(p: ToBool[A]): MapTo[A]       = Filtered(this, p)
 
-  final def force[That](implicit z: Builds[A, That]): That = z build this
-  final def build(implicit z: Builds[A, Repr]): Repr       = force[Repr]
+  def force[That](implicit z: Builds[A, That]): That = z build this
+  def build(implicit z: Builds[A, Repr]): Repr       = force[Repr]
 }
 
 sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with View[A] with ConversionsMethods[A] {

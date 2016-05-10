@@ -17,6 +17,7 @@ final class Conversions[A](val xs: View[A]) extends AnyVal with ConversionsMetho
 
 trait ConversionsMethods[A] extends Any {
   def xs: View[A]
+
   def to[CC[X]](implicit z: Builds[A, CC[A]]): CC[A] = z build xs
 
   def iterator: scIterator[A]                  = toScalaStream.iterator
@@ -37,7 +38,7 @@ trait Unbuilds[Repr] extends Any {
 }
 
 final class Unbuilder[A, Repr](repr: Repr)(implicit z: UnbuildsAs[A, Repr]) {
-  def m: AtomicView[A, Repr] = new LinearView(Each each (z unbuild repr))
+  def m: AtomicView[A, Repr] = new IdView(z unbuild repr)
 }
 object Unbuilds {
   def apply[A, R](f: R => Foreach[A]): UnbuildsAs[A, R] = new Impl[A, R](f)
@@ -63,11 +64,11 @@ trait JavaBuilders0 {
   protected def forJavaMap[K, V, M[X, Y] <: jAbstractMap[X, Y]](empty: M[K, V]): Builds[K -> V, M[K, V]] =
     new Builds(xs => doto(empty)(r => xs foreach (x => r.put(fst(x), snd(x)))))
 
-  implicit def buildsJavaSet[A] : Builds[A, jSet[A]] = forJava(new jHashSet[A])
+  implicit def buildJavaSet[A] : Builds[A, jSet[A]] = forJava(new jHashSet[A])
 }
 trait JavaBuilders extends JavaBuilders0 {
-  implicit def buildsJavaList[A] : Builds[A, jList[A]]          = forJava(new jArrayList[A])
-  implicit def buildsJavaMap[K, V] : Builds[K -> V, jMap[K, V]] = forJavaMap(new jHashMap[K, V])
+  implicit def buildJavaList[A] : Builds[A, jList[A]]          = forJava(new jArrayList[A])
+  implicit def buildJavaMap[K, V] : Builds[K -> V, jMap[K, V]] = forJavaMap(new jHashMap[K, V])
 }
 trait ScalaBuilders0 extends JavaBuilders {
   implicit def forScala[A, That](implicit z: CanBuild[A, That]): Builds[A, That] =
@@ -78,20 +79,22 @@ trait ScalaBuilders extends ScalaBuilders0 {
     forScala contraMap (x => pair(fst(x), snd(x)))
 }
 trait PspBuilders0 extends ScalaBuilders {
-  implicit def buildPspSet[A : Eq]: Builds[A, ExSet[A]]            = Builds.pspSet[A]
-  implicit def buildPspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = Builds.pspMap[K, V]
+  implicit def buildPspSet[A : Eq]: Builds[A, ExSet[A]]            = Builds.scalaSet[A] map (xs => new Pset(xs))
+  implicit def buildPspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = Builds.javaMap[K, V] map (xs => xs.keySet.byEquals.toExSet mapWith Fun(xs get _))
 }
 trait PspBuilders1 extends PspBuilders0 {
   implicit def buildPspArray[A : CTag]: Builds[A, Array[A]] = Builds.jvmArray[A]
-  implicit def buildPspList[A]: Builds[A, Plist[A]]         = Builds.pspList[A]
+  implicit def buildPspList[A]: Builds[A, Plist[A]]         = Builds(xs => ll.foldRight[A, Plist[A]](xs, cast(Pnil), _ :: _))
 }
 trait PspBuilders extends PspBuilders1 {
-  implicit def buildPspVec[A] : Builds[A, Vec[A]] = Builds.pspVec[A]
+  implicit def buildPspVec[A] : Builds[A, Vec[A]] = Builds.scalaVector[A] map (xs => new Vec(xs))
 }
 trait Builders extends PspBuilders
 object Builders extends Builders
 
 object Builds {
+  def apply[A, R](f: Foreach[A] => R): Builds[A, R] = new Builds(f)
+
   def javaSet[A] : Builds[A, jSet[A]]               = ?
   def javaList[A] : Builds[A, jList[A]]             = ?
   def javaMap[K, V] : Builds[K -> V, jMap[K, V]]    = ?
@@ -101,30 +104,31 @@ object Builds {
   def scalaMap[K, V] : Builds[K -> V, sciMap[K, V]] = ?
   def scalaVector[A] : Builds[A, sciVector[A]]      = ?
 
-  def pspSet[A : Eq]: Builds[A, ExSet[A]]            = scalaSet[A] map (xs => new Pset(xs))
-  def pspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = javaMap[K, V] map (xs => xs.keySet.byEquals.toExSet mapWith Fun(xs get _))
-  def pspList[A] : Builds[A, Plist[A]]               = new Builds(xs => ll.foldRight[A, Plist[A]](xs, cast(Pnil), _ :: _))
-  def pspVec[A] : Builds[A, Vec[A]]                  = scalaVector[A] map (xs => new Vec(xs))
+  def pspSet[A : Eq]: Builds[A, ExSet[A]]            = ?
+  def pspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = ?
+  def pspList[A] : Builds[A, Plist[A]]               = ?
+  def pspVec[A] : Builds[A, Vec[A]]                  = ?
 
   def jvmArray[A : CTag]: Builds[A, Array[A]] = new Builds(xs => doto(Array.newBuilder[A])(_ ++= xs.trav).result)
   def jvmString: Builds[Char, String]         = new Builds(xs => doto(new StringBuilder)(b => xs foreach (c => b append c)) toString)
 }
 
 object Each {
-  def apply[A](mf: Suspended[A]): Each[A]                 = new Impl[A](Size.Unknown, mf)
-  def array[A](xs: Array[A]): WrapArray[A]                = new WrapArray[A](xs)
-  def const[A](elem: A): Each[A]                          = construct(Size.Unknown, mf => while (true) mf(elem))
-  def construct[A](size: Size, mf: Suspended[A]): Each[A] = new Impl[A](size, mf)
-  def continually[A](elem: => A): Continually[A]          = new Continually(elem)
-  def each[A](xs: Foreach[A]): Each[A]                    = construct(xs.size, xs foreach _)
-  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]         = construct(xs.size, mf => xs.keySet foreach (k => mf((k, xs get k))))
-  def scalaMap[A, B](xs: scMap[A, B]): Each[A -> B]       = construct(xs.size, xs foreach _)
-  def java[A](xs: jIterable[A]): Each[A]                  = construct(Size.Unknown, xs.iterator foreach _)
-  def join[A](xs: Each[A], ys: Each[A]): Each[A]          = new Joined(xs, ys)
-  def jvmString(s: String): Direct[Char]                  = new WrapString(s)
-  def pure[A](f: Suspended[A]): Each[A]                   = construct(Size.Unknown, f)
-  def reversed[A](xs: Direct[A]): Reversed[A]             = new Reversed(xs)
-  def scala[A](xs: sCollection[A]): Each[A]               = construct(xs.size, xs foreach _)
+  def apply[A](mf: Suspended[A]): Each[A]                      = new Impl[A](Size.Unknown, mf)
+  def array[A](xs: Array[A]): WrapArray[A]                     = new WrapArray[A](xs)
+  def const[A](elem: A): Each[A]                               = construct(Size.Unknown, mf => while (true) mf(elem))
+  def construct[A](size: Size, mf: Suspended[A]): Each[A]      = new Impl[A](size, mf)
+  def continually[A](elem: => A): Continually[A]               = new Continually(elem)
+  def each[A](xs: Foreach[A]): Each[A]                         = construct(xs.size, xs foreach _)
+  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]              = construct(xs.size, mf => xs.keySet foreach (k => mf((k, xs get k))))
+  def scalaMap[A, B](xs: scMap[A, B]): Each[A -> B]            = construct(xs.size, xs foreach _)
+  def java[A](xs: jIterable[A]): Each[A]                       = construct(Size.Unknown, xs.iterator foreach _)
+  def join[A](xs: Each[A], ys: Each[A]): Each[A]               = new Joined(xs, ys)
+  def jvmString(s: String): Direct[Char]                       = new WrapString(s)
+  def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): Each[A] = new PairOf(z split x)
+  def pure[A](f: Suspended[A]): Each[A]                        = construct(Size.Unknown, f)
+  def reversed[A](xs: Direct[A]): Reversed[A]                  = new Reversed(xs)
+  def scala[A](xs: sCollection[A]): Each[A]                    = construct(xs.size, xs foreach _)
 
   final class Impl[A](val size: Size, mf: Suspended[A]) extends Each[A] {
     @inline def foreach(f: A => Unit): Unit = mf(f)
@@ -151,6 +155,15 @@ object Each {
     def size: Precise               = xs.size
     def elemAt(i: Vdex): A          = xs elemAt xs.lastIndex - i.indexValue
     def foreach(f: A => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
+  }
+  final case class PairOf[A](x: A -> A) extends AnyVal with Direct[A] {
+    def size = 2
+    def elemAt(idx: Vdex): A = idx.indexValue match {
+      case 0 => fst(x)
+      case 1 => snd(x)
+      case _ => noSuchElementException(idx)
+    }
+    def foreach(f: A => Unit): Unit = sideEffect(f(fst(x)), f(snd(x)))
   }
 
   def unapplySeq[A](xs: Foreach[A]): Some[scSeq[A]] = Some(xs.seq)
