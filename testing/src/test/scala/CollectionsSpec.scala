@@ -14,20 +14,33 @@ class EmptySpec extends ScalacheckBundle {
   def bundle = "Empty"
   class Bippy(val to_s: String) extends ShowSelf
   val eint = -123
+
   implicit def emptyBippy: Empty[Bippy] = Empty(new Bippy("-"))
-  implicit def emptyInt: Empty[Int] = Empty(eint)
+  implicit def emptyInt: Empty[Int]     = Empty(eint)
 
   def props = vec(
-    seqShows("-, -, -, mom", vec[Bippy](
-      sciList[Bippy]().m.zhead, vec[Bippy]().m.zhead,
-      Option.empty[Bippy].zget, Some(new Bippy("mom")).zget)
+    seqShows(
+      "-, -, hi, hi, -, hi, -, hi",
+      vec[Bippy](
+        sciList[Bippy]().zhead,
+        sciList[Bippy]().zlast,
+        sciList(new Bippy("hi")).zhead,
+        sciList(new Bippy("hi")).zlast,
+        vec[Bippy]().zhead,
+        vec(new Bippy("hi")).zhead,
+        none[Bippy].zget,
+        some(new Bippy("hi")).zget
+      )
     ),
-    seqShows("0, 0, -1, -1, 0", vec[Long](
-      emptyValue[jPath].any_s.length,
-      emptyValue[jFile].any_s.length,
-      emptyValue[Index].get,
-      emptyValue[Nth].get,
-      emptyValue[String].length)
+    seqShows(
+      "0, 0, -1, -1, 0",
+      vec[Long](
+        emptyValue[jPath].any_s.length,
+        emptyValue[jFile].any_s.length,
+        emptyValue[Index].indexValue,
+        emptyValue[Nth].indexValue,
+        emptyValue[String].length
+      )
     ),
     expectValue(eint)(view[Int]() zreducel (_ + _)),
     expectValue(eint)(view[Int]().zfoldl[Int](_ + _)),
@@ -40,11 +53,10 @@ class EmptySpec extends ScalacheckBundle {
 
 class ArraySpec extends ScalacheckBundle {
   def bundle = "Array operations"
+  val ys: Array[Long] = 0 to 100 toArray
 
-  val y = 123
   def props = vec(
-    expectValue(y * 3)(Array(y, y, y).inPlace.shuffle.reducel(_ + _)),
-    expectValue(y * y * y)(Array(y, y, y).inPlace.shuffle.m.reducel(_ * _))
+    expectValue(5050L)(ys.toArray.inPlace.shuffle.reducel(_ + _))
   )
 }
 
@@ -100,13 +112,13 @@ class StringExtensions extends ScalacheckBundle {
 
   def scalaOps(s: String) = new StringOps(s)
 
-  def newProp[A: Eq](f: StringOps => A, g: String => A): Prop = forAll((s: String) => sameBehavior(f(scalaOps(s)), g(s)))
+  def newProp[A: Eq](f: StringOps => A, g: String => A): Prop =
+    forAll((s: String) => sameBehavior(f(scalaOps(s)), g(s)))
 
   def newProp2[B] = new {
     def apply[R](f: (StringOps, B) => R)(g: (String, B) => R)(implicit z1: Arb[B], z2: Eq[R]): Prop =
     forAll((s: String, x: B) => sameBehavior(f(scalaOps(s), x), g(s, x)))
   }
-
 
   // dropRight and takeRight have the domain limited because of a scala bug with
   // take/dropRight with values around MinInt.
@@ -129,7 +141,7 @@ class StringExtensions extends ScalacheckBundle {
     expectValue("Bob")("bob".capitalize),
     expectValue("Bob johnson")("bob johnson".capitalize),
     expectValue("zbc")("abc" mapIf pf force),
-    // expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines mk_s ' '),
+    expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines mk_s ' '),
     expectValue("\u0001\u0002b\u0020b\u0003".sanitize)("??b b?")
   )
 }
@@ -315,20 +327,26 @@ class ViewSplitZip extends ScalacheckBundle {
 
 class CollectionsSpec extends ScalacheckBundle {
   def bundle = "Type Inference, General"
+  def props  = pspProps ++ javaProps ++ scalaProps ++ jvmProps
 
-  val arr  = Array[Int](1, 2, 3)
-  val smap = sciMap("a" -> 1, "b" -> 2, "c" -> 3)
-  val mmap = scmMap("a" -> 1, "b" -> 2, "c" -> 3)
-  val sseq = sciSeq("a" -> 1, "b" -> 2, "c" -> 3)
-  val svec = sciVector("a" -> 1, "b" -> 2, "c" -> 3)
-  val sset = sciSet("a" -> 1, "b" -> 2, "c" -> 3)
-  val jseq = javaList("a" -> 1, "b" -> 2, "c" -> 3)
-  val jset = javaSet("a" -> 1, "b" -> 2, "c" -> 3)
-  val jmap = javaMap("a" -> 1, "b" -> 2, "c" -> 3)
+  type A  = String
+  type B  = Int
+  type AB = String -> Int
+
+  def in  = Array[AB]("a" -> 1, "b" -> 2, "c" -> 3)
+  def arr = Array[B](1, 2, 3)
+
+  val smap: sciMap[A, B]  = elems(in: _*)
+  val sseq: sciSeq[AB]    = elems(in: _*)
+  val svec: sciVector[AB] = elems(in: _*)
+  val sset: sciSet[AB]    = elems(in: _*)
+  val jseq: jList[AB]     = elems(in: _*)
+  val jset: jSet[AB]      = elems(in: _*)
+  val jmap: jMap[A, B]    = elems(in: _*)
+  val pset: ExSet[AB]     = elems(in: _*)
+  val pvec: Vec[AB]       = elems(in: _*)
 
   def paired[A](x: A): (A, Int) = x -> ("" + x).length
-
-  def props = pspProps ++ javaProps ++ scalaProps ++ jvmProps
 
   def jvmProps = vec[NamedProp](
     expectTypes[String](
@@ -344,10 +362,10 @@ class CollectionsSpec extends ScalacheckBundle {
       "abc" map identity flatMap ("" + _) build
     ),
     expectTypes[Array[Int]](
-      make(Array(1, 2, 3))(_ map identity),
-      make(Array(1, 2, 3))(_ flatMap (x => vec(x))),
-      make(Array(1, 2, 3))(_ map (_.toString) map (_.toInt)),
-      make(Array(1, 2, 3))(_ map (_.toString) flatMap (_.toString) map (_.toInt)),
+      make(arr)(_ map identity),
+      make(arr)(_ flatMap (x => vec(x))),
+      make(arr)(_ map (_.toString) map (_.toInt)),
+      make(arr)(_ map (_.toString) flatMap (_.toString) map (_.toInt)),
       arr.inPlace map identity,
       arr.inPlace.reverse,
       arr ++ arr,
@@ -358,9 +376,7 @@ class CollectionsSpec extends ScalacheckBundle {
       arr flatMap (x => view(x)) build,
       arr.m flatMap (x => vec(x)) build,
       arr.m flatMap (x => list(x)) build,
-      arr.m flatMap (x => view(x)) build,
-      arr.flatMap(x => view(x)).force[Array[Int]],
-      arr.m.flatMap(x => vec(x)).force[Array[Int]]
+      arr.m flatMap (x => view(x)) build
     ),
     expectTypes[Array[Long]](
       make0[Array[Long]](1 to 10),
@@ -380,85 +396,94 @@ class CollectionsSpec extends ScalacheckBundle {
   )
 
   def scalaProps = vec[NamedProp](
-    expectTypes[sciSet[_]](
+    expectTypes[sciSet[AB]](
       sset map identity,
+      sset build,
+      sset map identity build,
+      sset map fst map paired,
+      sset map fst map paired force,
       sset.m build,
       sset.m map identity build,
-      sset.m.map(fst) map paired build
-      ),
-    expectTypes[sciMap[_, _]](
-      (smap map identity).force[sciMap[_, _]],
+      sset.m map fst map paired build
+    ),
+    expectTypes[sciMap[A, B]](
+      smap map identity,
+      smap force,
+      smap map identity force,
+      smap map fst map paired force,
       smap.m build,
       smap.m map identity build,
-      smap.m map fst map identity map paired build
-      ),
-    expectTypes[scmMap[_, _]](
-      (mmap map identity).force[scmMap[_,_]],
-      mmap.m build,
-      mmap.m map identity build,
-      mmap.m map fst map identity map paired build
-      ),
-    expectTypes[scSeq[_]](
+      smap.m map fst map paired build
+    ),
+    expectTypes[sciSeq[AB]](
       sseq map identity,
+      sseq build,
+      sseq map identity build,
+      sseq map fst map paired,
+      sseq map fst map paired build,
       sseq.m build,
       sseq.m map identity build,
-      sseq.m.map(fst).map(paired).force[scSeq[_]]
-      ),
-    expectTypes[sciVector[_]](
+      sseq.m map fst map paired build
+    ),
+    expectTypes[sciVector[AB]](
       svec map identity,
-      svec.m.build,
+      svec build,
+      svec map identity build,
+      svec map fst map paired,
+      svec map fst map paired build,
+      svec.m build,
       svec.m map identity build,
-      svec.m.map(fst).map(paired).force[sciVector[_]]
+      svec.m map fst map paired build
     )
   )
 
   def javaProps = {
     vec[NamedProp](
-      expectTypes[jList[_]](
+      expectTypes[jList[AB]](
+        jseq build,
         jseq map identity build,
-        jseq map identity force,
-        jseq.m.build,
+        jseq map fst map paired build,
+        jseq.m build,
         jseq.m map identity build,
-        jseq.m.map(fst).map(paired).force
+        jseq.m map fst map paired build
       ),
-      expectTypes[jSet[_]](
+      expectTypes[jSet[AB]](
+        jset build,
         jset map identity build,
-        jset map identity force,
+        jset map fst map paired build,
         jset.m build,
         jset.m map identity build,
-        jset.m.map(fst) map paired build
+        jset.m map fst map paired build
       ),
-      expectTypes[jMap[_, _]](
-        jmap map identity build,
+      expectTypes[jMap[A, B]](
+        jmap build,
         jmap map identity force,
-        jmap.m.build,
-        jmap.m.force,
+        jmap map identity build,
+        jmap map fst map paired build,
+        jmap.m build,
         jmap.m map identity build,
-        jmap.m map fst map identity map paired build,
-        jmap.m.toMap[jMap]
+        jmap.m map fst map paired build
       )
     )
   }
 
   def pspProps: Vec[NamedProp] = {
-    val pset = set("a" -> 1, "b" -> 2, "c" -> 3)
-    val pvec = vec("a" -> 1, "b" -> 2, "c" -> 3)
-
     vec(
-      expectTypes[ExSet[_]](
-        pset.build,
+      expectTypes[ExSet[AB]](
+        pset build,
         pset map identity build,
         pset map fst map paired build,
-        pset union pset
+        pset.m build,
+        pset.m map identity build,
+        pset.m map fst map paired build
       ),
-      expectTypes[Vec[_]](
+      expectTypes[Vec[AB]](
+        pvec build,
         pvec map identity build,
-        pvec ++ pvec,
-        pvec.m ++ pvec.m build,
-        pvec.tail.force,
-        pvec.m.build,
+        pvec map fst map paired build,
+        pvec.m build,
         pvec.m map identity build,
-        pvec.m map fst map paired force
+        pvec.m map fst map paired build
       )
     )
   }

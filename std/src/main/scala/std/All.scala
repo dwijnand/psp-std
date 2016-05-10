@@ -12,6 +12,20 @@ import java.io.BufferedInputStream
   */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+  implicit class HashEqOrdOps[A](z: HashEqOrd[A]) {
+    def on[B](f: B => A): HashEqOrd[B] = HashEqOrd(z.eqv _ on f, z.cmp _ on f, f andThen z.hash)
+  }
+
+  implicit class ApiOrderOps[A](ord: Order[A]) {
+    import ord._
+
+    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
+
+    def comparator[A](implicit z: Order[A]): Comparator[A] = new scala.math.Ordering[A] {
+      def compare(x: A, y: A): Int = z.cmp(x, y).intValue
+    }
+  }
+
   implicit class ArrowAssocRef[A](val self: A) extends AnyVal {
     @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
   }
@@ -30,7 +44,7 @@ object all extends AllExplicit with AllImplicit {
     type Entry = K -> V
 
     def apply(key: K): V                  = lookup(key)
-    def entries: Zip[K, V]                = keyVector mapAndZip lookup
+    def entries: Zip[K, V]                = intoView(keyVector) mapAndZip lookup
     def keySet: ExSet[K]                  = lookup.keys
     def keyVector: Vec[K]                 = keys.toVec
     def keys: View[K]                     = keySet.m
@@ -121,6 +135,12 @@ object all extends AllExplicit with AllImplicit {
   implicit class SuspendedOps[A](s1: Suspended[A]) {
     def &&& (s2: Suspended[A]): Suspended[A] = f => sideEffect(s1(f), s2(f))
   }
+  implicit class Function2Ops[A1, A2, R](f: (A1, A2) => R) {
+    def map[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
+  }
+  implicit class Function2SameOps[A, R](f: (A, A) => R) {
+    def on[B](g: B => A): (B, B) => R = (x, y) => f(g(x), g(y))
+  }
 }
 
 abstract class AllExplicit extends ApiValues with StdEq {
@@ -170,7 +190,6 @@ abstract class AllExplicit extends ApiValues with StdEq {
   def byEquals[A]: Hash[A]              = Eq.Inherited
   def byReference[A <: AnyRef]: Hash[A] = Eq.Reference
   def byString[A]: Hash[A]              = Eq.ToString
-  def byShown[A : Show]: Hash[A]        = hashBy[A](x => render(x))(byString)
 
   def classFilter[A : CTag]: Partial[Any, A]       = Partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short

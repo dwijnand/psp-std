@@ -21,6 +21,7 @@ final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String]
   def size: Precise                    = xs.size
   def toVec: Vec[String]               = xs
   def to_s: String                     = build
+  def mk_s(sep: Char): String          = xs mk_s sep
 }
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {

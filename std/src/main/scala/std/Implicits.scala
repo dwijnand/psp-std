@@ -36,7 +36,6 @@ trait StdImplicits extends ViewersAs with StdOps { self =>
   implicit def cleaversciList[A]: Cleaver[sciList[A], A, sciList[A]]        = cleaver(_ :: _, _.head, _.tail)
   implicit def cleaverJMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B]       = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
 
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]     = Order impl z
   implicit def promoteApiView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
 }
 

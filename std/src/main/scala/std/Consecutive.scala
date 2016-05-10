@@ -74,7 +74,7 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def startLong: Long        = in.startLong
 
   import StdShow._
-  override def toString = showEach[Any](inheritShow, ?) show this
+  override def toString = showView[Any](inheritShow, ?) show this
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](LongInterval.empty, indexOutOfBoundsException)

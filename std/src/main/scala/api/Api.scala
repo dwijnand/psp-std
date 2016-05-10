@@ -70,17 +70,18 @@ abstract class ApiValues extends ApiTypes {
   def jFile(path: String): jFile                         = new jFile(path)
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
-  def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, l, r)
+  def longCmp(diff: Long): Cmp                           = if (diff < 0) Cmp.LT else if (diff > 0) Cmp.GT else Cmp.EQ
   def max[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, r, l)
+  def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, l, r)
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = new Tuple2(x, y)
-  def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
   def show[A](implicit z: Show[A]): Show[A]              = z
   def sideEffect[A](result: A, exprs: Any*): A           = result
   def snd[A, B](x: A -> B): B                            = x._2
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
+  def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
   def tuple[A, B](x: A -> B): ((A, B))                   = scala.Tuple2(fst(x), snd(x))
   def zcond[A : Empty](p: Bool, thenp: => A): A          = cond(p, thenp, emptyValue[A])
 
