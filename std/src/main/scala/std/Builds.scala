@@ -45,9 +45,8 @@ final class ViewsAs[A, R](val f: R => Foreach[A]) extends AnyVal {
   def viewAs(xs: R): IdView[A, R] = new IdView(f(xs))
 }
 final class HasViewsAs[A, R](repr: R)(implicit z: ViewsAs[A, R]) {
-  def m: IdView[A, R] = z viewAs repr
+  def m: IdView[A, R]                      = z viewAs repr
 }
-
 final class Builds[-Elem, +To](val f: Foreach[Elem] => To) {
   def contraMap[A](g: A => Elem): Builds[A, To]    = builds(xs => f(Each(mf => xs foreach (g andThen mf))))
   def map[Next](g: To => Next): Builds[Elem, Next] = builds(f andThen g)
@@ -61,7 +60,7 @@ trait JavaBuilders0 {
     builds(xs => doto(empty)(r => xs foreach (r add _)))
 
   protected def forJavaMap[K, V, M[X, Y] <: jAbstractMap[X, Y]](empty: M[K, V]): Builds[K -> V, M[K, V]] =
-    builds(xs => doto(empty)(r => xs foreach (x => r.put(fst(x), snd(x)))))
+    builds(xs => doto(empty)(r => xs foreach (_ app r.put)))
 
   implicit def buildJavaSet[A]: Builds[A, jSet[A]] = forJava(new jHashSet[A])
 }
@@ -75,7 +74,7 @@ trait ScalaBuilders0 extends JavaBuilders {
 }
 trait ScalaBuilders extends ScalaBuilders0 {
   implicit def forScalaMap[K, V, That](implicit z: CanBuild[scala.Tuple2[K, V], That]): Builds[K -> V, That] =
-    forScala contraMap (x => pair(fst(x), snd(x)))
+    forScala contraMap (_ app pair)
 }
 trait JvmBuilders0 extends ScalaBuilders {
   implicit def buildJvmArray[A : CTag]: Builds[A, Array[A]] = builds(xs => doto(Array.newBuilder[A])(_ ++= xs.trav).result)
@@ -93,8 +92,27 @@ trait PspBuilders1 extends PspBuilders0 {
 trait PspBuilders extends PspBuilders1 {
   implicit def buildPspVec[A]: Builds[A, Vec[A]] = Builds.scalaVector[A] map (xs => new Vec(xs))
 }
-trait Builders extends PspBuilders
+trait Builders extends PspBuilders {
+  // implicit def bounceView[A, R](xs: R)(implicit z1: ViewsAs[A, R], z2: Builds[A, R]): R = z2 build (z1 viewAs xs)
+}
 object Builders extends Builders
+
+trait Converters0 {
+  implicit def convertJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): IdView[A, CC[A]]           = intoView(xs)
+  implicit def convertJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): IdView[K -> V, CC[K, V]] = intoView(xs)
+  implicit def convertMonoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): IdView[A, R]                = intoView(xs)
+}
+trait Converters1 extends Converters0 {
+  implicit def convertScala[A, CC[X] <: sCollection[X]](xs: CC[A]): IdView[A, CC[A]] = intoView(xs)
+}
+trait Converters2 extends Converters1 {
+  implicit def convertJvmArray[A](xs: Array[A]): IdView[A, Array[A]]            = intoView(xs)
+  implicit def convertPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]] = intoView(xs)
+}
+trait Converters3 extends Converters2 {
+  implicit def convertJvmString(s: String): IdView[Char, String] = intoView(s)
+}
+trait ConvertersOf extends Converters3
 
 object Builds {
   def javaList[A]: Builds[A, jList[A]]               = ?

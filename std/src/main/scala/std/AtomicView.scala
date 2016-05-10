@@ -3,14 +3,85 @@ package std
 
 import api._, all._, StdShow._
 
-sealed abstract class AtomicView[A, Repr] extends IBaseView[A, Repr] {
-  type This <: AtomicView[A, Repr]
-  def foreachSlice(range: VdexRange)(f: A => Unit): Unit
-}
+// sealed abstract class AtomicView[A, Repr] extends IBaseView[A, Repr]
 
 object FlattenSlice {
+  def loop[C](xs: View[C])(f: C => Unit): Unit = {
+    type Pred = (ToBool[C] @unchecked) // silencing patmat warnings
+    xs match {
+      case FlattenSlice(Mapped(prev, g), range) => impl(prev, range, g andThen f)
+      case FlattenSlice(xs, range)              => impl(xs, range, f)
+      case Mapped(xs, g)                        => loop(xs)(g andThen f)
+      case FlatMapped(xs, g)                    => loop(xs)(x => g(x) foreach f)
+      case Filtered(xs, p: Pred)                => loop(xs)(x => if (p(x)) f(x))
+      case TakenWhile(xs, p: Pred)              => ll.foreachTakeWhile(xs, f, p)
+      case DropWhile(xs, p: Pred)               => ll.foreachDropWhile(xs, f, p)
+      case Collected(xs, pf)                    => loop(xs)(x => if (pf isDefinedAt x) f(pf(x)))
+      case Joined(xs, ys)                       => loop(xs)(f); loop(ys)(f)
+      case DroppedR(xs, Finite(0))              => loop(xs)(f)
+      case TakenR(xs, Finite(0))                => ()
+      case DroppedR(xs, n)                      => ll.foreachDropRight(xs, f, n)
+      case TakenR(xs, n)                        => ll.foreachTakeRight(xs, f, n)
+      case Dropped(xs, n: Precise)              => ll.foreachSlice(xs, indexRange(n.getLong, MaxLong), f)
+      case Taken(xs, n: Precise)                => ll.foreachSlice(xs, n.indices, f)
+      case xs: View[_]                          => xs foreach f
+      case _                                    => abort(pp"Unexpected view class ${ classNameOf(xs) }")
+    }
+  }
+
+  def impl[A, R](xs: BaseView[A, R], range: VdexRange, f: A => Unit): Unit = {
+    xs match {
+      case xs: CompositeView[_, _, _] => loop(xs)(f)
+      // case xs: DirectView[_, _]       => xs.size.indices slice range foreach (i => f(xs elemAt i))
+      case xs: IdView[_, _]           => linearImpl(xs, range, f)
+      case _                          => ll.foreachSlice(xs, range, f)
+    }
+  }
+
+  def linearImpl[A, R](xs: IdView[A, R], range: VdexRange, f: A => Unit): Unit = {
+    if (range.isEmpty) return
+    val start = range.head.indexValue
+    val last  = range.last.indexValue
+    var current = 0L
+
+    xs.underlying foreach { x =>
+      if (start <= current && current <= last) f(x)
+      current += 1
+      if (current > last) return
+    }
+  }
+
+  // *-  private def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = xs match {
+  // *-    case Mapped(prev, g) => foreachSlice(prev, range, g andThen f)
+  // *-    case _               => ll.foreachSlice(xs, range, f)
+  //  -  }
+  // def linear[A, R](xs: BaseView[A, R], range: VdexRange, f: A => Unit): Unit = {
+  //   if (range.isEmpty) return
+  //   val start = range.head.indexValue
+  //   val last  = range.last.indexValue
+  //   var current = 0L
+
+  //   underlying foreach { x =>
+  //     if (start <= current && current <= last) f(x)
+  //     current += 1
+  //     if (current > last) return
+  //   }
+  // }
+
+  // def direct[A, R](xs: BaseView[A, R], range: VdexRange, f: A => Unit): Unit =
+  //   size.indices slice range foreach (i => f(xs elemAt i))
+
+
+  // def foreachSlice[A, R](xs: BaseView[A, R], range: VdexRange, f: A => Unit): Unit = {
+  //   def impl1(): Unit = {
+  //   }
+  //   def impl2(size: Precise): Unit = size.indices slice range foreach (i => f(xs elemAt i))
+
+  //   if (xs.size.isNonZero) loop(xs)(f)
+  // }
+
   def unapply[A, Repr](xs: BaseView[A, Repr]): Option[(BaseView[A, Repr], VdexRange)] = xs match {
-    case xs: DirectView[_, _]    => Some(xs -> xs.size.indices)
+    // case xs: DirectView[_, _]    => Some(xs -> xs.size.indices)
     case Mapped(xs, f)           => unapply(xs) map { case (xs, range) => (xs map f, range) }
     case Dropped(xs, Size.Zero)  => unapply(xs)
     case DroppedR(xs, Size.Zero) => unapply(xs)
@@ -24,39 +95,16 @@ object FlattenSlice {
   }
 }
 
-class IdView[A, Repr](underlying: Foreach[A]) extends AtomicView[A, Repr] {
-  type This = IdView[A, Repr]
-
-  def size: Size                          = underlying.size
-  @inline def foreach(f: A => Unit): Unit = underlying foreach f
-  def foreachSlice(range: VdexRange)(f: A => Unit): Unit = {
-    if (range.isEmpty) return
-    val start = range.head.indexValue
-    val last  = range.last.indexValue
-    var current = 0L
-
-    underlying foreach { x =>
-      if (start <= current && current <= last) f(x)
-      current += 1
-      if (current > last) return
-    }
-  }
-}
-
-final class DirectView[A, Repr](underlying: Direct[A]) extends AtomicView[A, Repr] {
-  type This = DirectView[A, Repr]
-
-  def size: Precise                                      = underlying.size
-  def elemAt(i: Vdex): A                                 = underlying elemAt i
-  def foreach(f: A => Unit): Unit                        = size.indices foreach (i => f(elemAt(i)))
-  def foreachSlice(range: VdexRange)(f: A => Unit): Unit = size.indices slice range foreach (i => f(elemAt(i)))
-}
+// final class DirectView[A, Repr](underlying: Direct[A]) extends AtomicView[A, Repr] {
+//   def size: Precise               = underlying.size
+//   def elemAt(i: Vdex): A          = underlying elemAt i
+//   def foreach(f: A => Unit): Unit = underlying foreach f
+// }
 
 sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
   def foreach(f: A => Unit): Unit
   def toEach: Each[A] = Each(foreach)
 
-  type This <: BaseView[A, Repr]
   type MapTo[+X] = BaseView[X, Repr]
 
   def xs: this.type = this
@@ -73,55 +121,41 @@ sealed trait BaseView[+A, Repr] extends AnyRef with View[A] {
   final def withFilter(p: ToBool[A]): MapTo[A]       = Filtered(this, p)
 
   def force[That](implicit z: Builds[A, That]): That = z build this
-  def build(implicit z: Builds[A, Repr]): Repr       = force[Repr]
+  def build(implicit z: Builds[A, Repr]): Repr       = z build this // force[Repr]
 }
 
-sealed trait IBaseView[A, Repr] extends BaseView[A, Repr] with View[A] with ConversionsMethods[A] {
+
+class IdView[A, Repr](val underlying: Foreach[A]) extends CommonView[A, Repr] {
+  def size: Size                          = underlying.size
+  @inline def foreach(f: A => Unit): Unit = underlying foreach f
+}
+
+sealed trait CommonView[A, Repr] extends BaseView[A, Repr] with View[A] with ConversionsMethods[A] {
   final def join(that: View[A]): View[A] = Joined(this, that)
 }
 
-sealed abstract class CompositeView[A, B, Repr](val sizeEffect: ToSelf[Size]) extends IBaseView[B, Repr] {
+sealed abstract class CompositeView[A, B, Repr](val sizeEffect: ToSelf[Size]) extends CommonView[B, Repr] {
   def prev: View[A]
   def size = sizeEffect(prev.size)
 
-  final def foreach(f: B => Unit): Unit = {
-    def loop[C](xs: View[C])(f: C => Unit): Unit = {
-      type Pred = (ToBool[C] @unchecked) // silencing patmat warnings
-      xs match {
-        case FlattenSlice(xs, range) => foreachSlice(xs, range, f)
-        case Mapped(xs, g)           => loop(xs)(g andThen f)
-        case FlatMapped(xs, g)       => loop(xs)(x => g(x) foreach f)
-        case Filtered(xs, p: Pred)   => loop(xs)(x => if (p(x)) f(x))
-        case TakenWhile(xs, p: Pred) => ll.foreachTakeWhile(xs, f, p)
-        case DropWhile(xs, p: Pred)  => ll.foreachDropWhile(xs, f, p)
-        case Collected(xs, pf)       => loop(xs)(x => if (pf isDefinedAt x) f(pf(x)))
-        case Joined(xs, ys)          => loop(xs)(f); loop(ys)(f)
-        case DroppedR(xs, Finite(0)) => loop(xs)(f)
-        case TakenR(xs, Finite(0))   => ()
-        case DroppedR(xs, n)         => ll.foreachDropRight(xs, f, n)
-        case TakenR(xs, n)           => ll.foreachTakeRight(xs, f, n)
-        case Dropped(xs, Finite(n))  => foreachSlice(xs, n until MaxLong map Index, f)
-        case Taken(xs, n: Precise)   => foreachSlice(xs, n.indices, f)
-        case xs: View[_]             => xs foreach f
-        case _                       => abort(pp"Unexpected view class ${ classNameOf(xs) }")
-      }
-    }
-    if (!size.isZero) loop(this)(f)
-  }
-  private def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = xs match {
-    case Mapped(prev, g) => foreachSlice(prev, range, g andThen f)
-    case _               => ll.foreachSlice(xs, range, f)
-  }
+  final def foreach(f: B => Unit): Unit = if (!size.isZero) FlattenSlice.loop(this)(f)
+
+  // if (xs.size.isNonZero) FlattenSlice.loop(this)(f)
+
+  // private def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = xs match {
+  //   case Mapped(prev, g) => foreachSlice(prev, range, g andThen f)
+  //   case _               => ll.foreachSlice(xs, range, f)
+  // }
 }
 
-final case class Joined[A, Repr](prev: IBaseView[A, Repr], ys: View[A]) extends CompositeView[A, A, Repr](_ + ys.size)
-final case class Filtered[A, Repr](prev: BaseView[A, Repr], p: ToBool[A]) extends CompositeView[A, A, Repr](_.atMost)
-final case class Dropped[A, Repr](prev: BaseView[A, Repr], n: Precise) extends CompositeView[A, A, Repr](_ - n)
-final case class DroppedR[A, Repr](prev: BaseView[A, Repr], n: Precise) extends CompositeView[A, A, Repr](_ - n)
-final case class Taken[A, Repr](prev: BaseView[A, Repr], n: Precise) extends CompositeView[A, A, Repr](_ min n)
-final case class TakenR[A, Repr](prev: BaseView[A, Repr], n: Precise) extends CompositeView[A, A, Repr](_ min n)
-final case class TakenWhile[A, Repr](prev: BaseView[A, Repr], p: ToBool[A]) extends CompositeView[A, A, Repr](_.atMost)
-final case class DropWhile[A, Repr](prev: BaseView[A, Repr], p: ToBool[A]) extends CompositeView[A, A, Repr](_.atMost)
-final case class Mapped[A, B, Repr](prev: BaseView[A, Repr], f: A => B) extends CompositeView[A, B, Repr](x => x)
+final case class Joined[A, Repr](prev: BaseView[A, Repr], ys: View[A])               extends CompositeView[A, A, Repr](_ + ys.size)
+final case class Filtered[A, Repr](prev: BaseView[A, Repr], p: ToBool[A])            extends CompositeView[A, A, Repr](_.atMost)
+final case class Dropped[A, Repr](prev: BaseView[A, Repr], n: Precise)               extends CompositeView[A, A, Repr](_ - n)
+final case class DroppedR[A, Repr](prev: BaseView[A, Repr], n: Precise)              extends CompositeView[A, A, Repr](_ - n)
+final case class Taken[A, Repr](prev: BaseView[A, Repr], n: Precise)                 extends CompositeView[A, A, Repr](_ min n)
+final case class TakenR[A, Repr](prev: BaseView[A, Repr], n: Precise)                extends CompositeView[A, A, Repr](_ min n)
+final case class TakenWhile[A, Repr](prev: BaseView[A, Repr], p: ToBool[A])          extends CompositeView[A, A, Repr](_.atMost)
+final case class DropWhile[A, Repr](prev: BaseView[A, Repr], p: ToBool[A])           extends CompositeView[A, A, Repr](_.atMost)
+final case class Mapped[A, B, Repr](prev: BaseView[A, Repr], f: A => B)              extends CompositeView[A, B, Repr](x => x)
 final case class FlatMapped[A, B, Repr](prev: BaseView[A, Repr], f: A => Foreach[B]) extends CompositeView[A, B, Repr](x => cond(x.isZero, x, Size.Unknown))
-final case class Collected[A, B, Repr](prev: BaseView[A, Repr], pf: A ?=> B) extends CompositeView[A, B, Repr](_.atMost)
+final case class Collected[A, B, Repr](prev: BaseView[A, Repr], pf: A ?=> B)         extends CompositeView[A, B, Repr](_.atMost)

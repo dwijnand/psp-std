@@ -12,6 +12,16 @@ import java.io.BufferedInputStream
   */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+  implicit class ArrayOps[A](xs: Array[A]) {
+    def inPlace: InPlace[A] = new InPlace(xs)
+    def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
+      val arr = newArray[A](xs.length + that.length)
+      arraycopy(xs, 0, arr, 0, xs.length)
+      arraycopy(that, 0, arr, xs.length, that.length)
+      arr
+    }
+  }
+
   implicit class HashEqOrdOps[A](z: HashEqOrd[A]) {
     def on[B](f: B => A): HashEqOrd[B] = HashEqOrd(z.eqv _ on f, z.cmp _ on f, f andThen z.hash)
   }
@@ -88,9 +98,13 @@ object all extends AllExplicit with AllImplicit {
     def each: Each[A] = Each pair x
   }
   implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
-    def mapLeft[C](f: A => C): C -> B          = f(fst(x)) -> snd(x)
-    def mapRight[C](f: B => C): A -> C         = fst(x)    -> f(snd(x))
-    def unify[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
+    def mapLeft[C](f: A => C): C -> B            = f(fst(x)) -> snd(x)
+    def mapRight[C](f: B => C): A -> C           = fst(x)    -> f(snd(x))
+    def xmap[C, D](f: A => C, g: B => D): C -> D = f(fst(x)) -> g(snd(x))
+    def app[C](f: (A, B) => C): C                = f(fst(x), snd(x))
+    def appLeft[C](f: A => C): C                 = f(fst(x))
+    def appRight[C](f: B => C): C                = f(snd(x))
+    def unify[C](f: A => C, g: B => C): C -> C   = f(fst(x)) -> g(snd(x))
   }
   implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
@@ -138,7 +152,7 @@ object all extends AllExplicit with AllImplicit {
   implicit class Function2Ops[A1, A2, R](f: (A1, A2) => R) {
     def map[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
   }
-  implicit class Function2SameOps[A, R](f: (A, A) => R) {
+  implicit class Function2SameOps[A, R](f: BinTo[A, R]) {
     def on[B](g: B => A): (B, B) => R = (x, y) => f(g(x), g(y))
   }
 }

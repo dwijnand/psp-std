@@ -10,7 +10,7 @@ object Each {
   def construct[A](size: Size, mf: Suspended[A]): Each[A]          = new WrapSuspended(size, mf)
   def continually[A](elem: => A): Each[A]                          = new WrapContinually(elem)
   def each[A](xs: Foreach[A]): Each[A]                             = construct(xs.size, xs foreach _)
-  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]                  = construct(xs.size, mf => xs.entrySet foreach (k => mf(k.toPair)))
+  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]                  = construct(xs.size, mf => xs.entrySet.m foreach (k => mf(k.toPair)))
   def java[A](xs: jIterable[A]): Each[A]                           = apply(xs.iterator foreach _)
   def join[A](xs: Each[A], ys: Each[A]): Each[A]                   = new Joined(xs, ys)
   def jvmString(s: String): WrapString                             = new WrapString(s)
@@ -24,14 +24,14 @@ object Each {
     def foreach(f: A => Unit): Unit = mf(f)
   }
   abstract class WrapDirect[A, R](val size: Precise, f: Long => A) extends Direct[A] {
-    def view: DirectView[A, R]      = new DirectView[A, R](this)
+    // def view: DirectView[A, R]      = new DirectView[A, R](this)
     def elemAt(i: Vdex): A          = f(i.indexValue)
     def foreach(f: A => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
   }
   final class WrapString(xs: String)        extends WrapDirect[Char, String](xs.length, xs charAt _.toInt)
   final class WrapArray[A](xs: Array[_])    extends WrapDirect[A, Array[A]](xs.length, i => cast[A](xs(i.toInt)))
   final class WrapReverse[A](xs: Direct[A]) extends WrapDirect[A, Direct[A]](xs.size, i => xs(xs.lastIndex - i))
-  final class WrapPair[A](xs: A -> A)       extends WrapDirect[A, A -> A](2, i => cond(i == 0, fst(xs), snd(xs)))
+  final class WrapPair[A](xs: PairOf[A])    extends WrapDirect[A, PairOf[A]](2, i => cond(i == 0, fst(xs), snd(xs)))
 
   final class WrapSuspended[A](size: Size, mf: Suspended[A]) extends WrapEach(size, mf)
   final class WrapJoin[A](xs: Each[A], ys: Each[A])          extends WrapEach[A](xs.size + ys.size, (xs foreach _) &&& (ys foreach _))

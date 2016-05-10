@@ -14,15 +14,17 @@ trait ApiTypes extends ExternalTypes {
   type ->[+A, +B]        = scala.Product2[A, B] // A less overconstrained product type.
   type `3->`[+A, +B, +C] = scala.Product3[A, B, C] //
   type ?=>[-A, +B]       = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
-  type BinOp[A]          = (A, A) => A // binary operation
+  type BinOp[A]          = BinTo[A, A] // binary operation
+  type BinTo[-A, +R]     = (A, A) => R
   type Bool              = Boolean //
   type GTOnce[+A]        = sc.GenTraversableOnce[A] // This is the beautifully named type at the top of scala collections
   type Index             = Vindex[Vindex.Zero.type] //
   type Nth               = Vindex[Vindex.One.type] //
   type Opt[+A]           = scala.Option[A] // Placeholder
-  type OrderRelation[-A] = (A, A) => Cmp
+  type OrderRelation[-A] = BinTo[A, Cmp]
+  type PairOf[+A]        = A -> A
   type Ref[+A]           = AnyRef with A // Promotes an A <: Any into an A <: AnyRef.
-  type Relation[-A]      = (A, A) => Bool
+  type Relation[-A]      = BinTo[A, Bool]
   type Suspended[+A]     = ToUnit[ToUnit[A]]
   type ToBool[-A]        = A => Bool
   type ToBool2[-A, -B]   = (A, B) => Bool
@@ -82,7 +84,6 @@ abstract class ApiValues extends ApiTypes {
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
-  def tuple[A, B](x: A -> B): ((A, B))                   = scala.Tuple2(fst(x), snd(x))
   def zcond[A : Empty](p: Bool, thenp: => A): A          = cond(p, thenp, emptyValue[A])
 
   /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
