@@ -22,8 +22,8 @@ object Foreach {
   }
 }
 
-trait Each[+A]    extends Any with Foreach[A]
 trait View[+A]    extends Any with Foreach[A]
+trait Each[+A]    extends Any with Foreach[A]
 trait Indexed[+A] extends Any with Each[A] { def elemAt(i: Vdex): A }
 trait Direct[+A]  extends Any with Indexed[A] { def size: Precise }
 

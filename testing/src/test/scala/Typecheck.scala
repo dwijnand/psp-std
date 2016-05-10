@@ -12,7 +12,7 @@ class Typecheck extends ScalacheckBundle {
    */
   private val _ = {
     opsWrapString _
-    viewJvmString _
+    convertJvmString _
   }
 
   // We don't want to protect scala library from itself so let's unmask augmentString etc.
@@ -20,8 +20,8 @@ class Typecheck extends ScalacheckBundle {
 
     // These two definitions are here to shadow implicits
     val opsWrapString = null
-    val viewPspString = null
-    identity(opsWrapString) ; identity(viewPspString) // suppress "never used" warnings
+    val convertJvmString = null
+    identity(opsWrapString) ; identity(convertJvmString) // suppress "never used" warnings
     // This import is actually used in the test below
     import scala.Predef._
     divide("scala-library", typecheckedLines(scalaLibraryCode), expectedTypecheck = 24)

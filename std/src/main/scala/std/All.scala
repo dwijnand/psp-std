@@ -118,6 +118,9 @@ object all extends AllExplicit with AllImplicit {
   implicit class SplitterOps[R, A, B](val lhs: R)(implicit z: Splitter[R, A, B]) {
     def toPair: A -> B = z split lhs
   }
+  implicit class SuspendedOps[A](s1: Suspended[A]) {
+    def &&& (s2: Suspended[A]): Suspended[A] = f => sideEffect(s1(f), s2(f))
+  }
 }
 
 abstract class AllExplicit extends ApiValues with StdEq {
@@ -156,7 +159,6 @@ abstract class AllExplicit extends ApiValues with StdEq {
   type OpenRange[+A]        = Consecutive.Open[A]
   type ClosedRange[+A]      = Consecutive.Closed[A]
   type Renderer             = Show[Doc]
-  type UnbuildsAs[+A, R]    = Unbuilds[R] { type Elem <: A }
   type View2D[+A]           = View[View[A]]
 
   // Helpers for inference when calling 'on' on contravariant type classes.
@@ -206,7 +208,11 @@ abstract class AllExplicit extends ApiValues with StdEq {
 
   import Builders._
 
-  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R = z(xs foreach _)
+  def viewsAs[R, A](f: R => Foreach[A]): ViewsAs[A, R] = new ViewsAs(f)
+  def builds[A, R](f: Foreach[A] => R): Builds[A, R]   = new Builds(f)
+
+  def intoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): IdView[A, R] = z viewAs xs
+  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R               = z(xs foreach _)
 
   def arr[A : CTag](xs: A*): Array[A]            = xs.toArray[A]
   def list[A](xs: A*): Plist[A]                  = elems(xs: _*)

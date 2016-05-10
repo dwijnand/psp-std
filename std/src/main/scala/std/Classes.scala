@@ -40,8 +40,8 @@ trait StdEq0 {
   implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] = Order.fromInt[A](_ compareTo _)
 }
 trait StdEq extends StdEq0 {
-  implicit def eqUnbuilds[R, A](implicit b: UnbuildsAs[A, R], z: Eq[A]): Eq[R] =
-    Eq[R]((xs, ys) => (b unbuild xs).view zip (b unbuild ys).view corresponds z.eqv)
+  implicit def eqViews[R, A](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =
+    Eq((xs, ys) => intoView(xs) zip intoView(ys) corresponds z.eqv)
 
   implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] =
     orderBy[A](_.ordinal)
@@ -71,11 +71,6 @@ object Unsafe {
   implicit def inheritedShow[A]: Show[A]    = inheritShow
   // implicit def shownOrder[A: Show] : Order[A] = orderBy[A](render[A])
 }
-
-final class OrderBy[A] { def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = Order[A]((x, y) => z.cmp(f(x), f(y))) }
-final class ShowBy[A] { def apply[B](f: A => B)(implicit z: Show[B]): Show[A]    = Show[A](f andThen z.show) }
-final class HashBy[A] { def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A]    = Eq.hash[A]((x, y) => z.eqv(f(x), f(y)))(x => z hash f(x)) }
-final class EqBy[A] { def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A]          = Eq[A]((x, y) => z.eqv(f(x), f(y))) }
 
 object +: {
   def unapply[A](xs: View[A]): Option[A -> View[A]] =

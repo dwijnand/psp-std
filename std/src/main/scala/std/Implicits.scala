@@ -15,11 +15,12 @@ trait AllImplicit extends StdEmpty with StdImplicits { self =>
   implicit def promoteSize(x: Long): Precise                          = Size(x)
   implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc       = Doc(x)
 
-  implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]                                             = new DirectOps(xs)
-  implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]                                          = new ForeachOps(xs)
-  implicit def unbuildJavaIterable[A, CC[X] <: jIterable[X]]: UnbuildsAs[A, CC[A]]                   = Unbuilds[A, CC[A]](Each java _)
-  implicit def viewJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): AtomicView[A, CC[A]]           = new IdView(Each java xs)
-  implicit def viewJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): AtomicView[K -> V, CC[K, V]] = new IdView(Each javaMap xs)
+  implicit def opsDirect[A](xs: Direct[A]): DirectOps[A]    = new DirectOps(xs)
+  implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A] = new ForeachOps(xs)
+
+  implicit def viewsAsJavaIterable[A, CC[X] <: jIterable[X]]: ViewsAs[A, CC[A]]                     = viewsAs(Each java _)
+  implicit def convertJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): IdView[A, CC[A]]           = intoView(xs)
+  implicit def convertJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): IdView[K -> V, CC[K, V]] = intoView(xs)
 }
 
 /** This file needs to not import `object all` because that's cycle city,
@@ -27,7 +28,7 @@ trait AllImplicit extends StdEmpty with StdImplicits { self =>
   *  supplying. We carved off some of that object for use here and import
   *  that specially.
   */
-trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps { self =>
+trait StdImplicits extends ViewersAs with StdOps { self =>
   implicit def opsAny[A](x: A): AnyOps[A] = new AnyOps[A](x)
 
   implicit def cleaverProduct2[A, B]: Cleaver[A -> B, A, B]                 = cleaver[A -> B, A, B](((_, _)), fst, snd)
@@ -35,22 +36,22 @@ trait StdImplicits extends scala.AnyRef with StdBuilds with StdOps { self =>
   implicit def cleaversciList[A]: Cleaver[sciList[A], A, sciList[A]]        = cleaver(_ :: _, _.head, _.tail)
   implicit def cleaverJMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B]       = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
 
-  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]         = Order impl z
-  implicit def promoteApiView[A](xs: View[A]): AtomicView[A, View[A]] = new IdView(xs)
+  implicit def promoteApiOrder[A](z: Order[A]): Order.Impl[A]     = Order impl z
+  implicit def promoteApiView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
 }
 
 trait StdOps1 {
-  implicit def opsPspUnbuilt[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Unbuilder[A, R]     = new Unbuilder[A, R](xs)
+  implicit def opsHasViewsAs[A, R](xs: R)(implicit z: ViewsAs[A, R]): HasViewsAs[A, R]       = new HasViewsAs(xs)
   implicit def convertViewBuilds[A, CC[A]](xs: View[A])(implicit z: Builds[A, CC[A]]): CC[A] = z build xs
 }
 trait StdOps2 extends StdOps1 {
-  implicit def opsAlreadyView[A](x: View[A]): ViewOps[A]                                       = new ViewOps(x)
-  implicit def opsSize(x: Size): SizeOps                                                       = new SizeOps(x)
-  implicit def opsTerminalView2[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): TerminalViewOps[A] = new TerminalViewOps[A](xs.m)
-  implicit def opsTerminalView[A](x: View[A]): TerminalViewOps[A]                              = new TerminalViewOps(x)
-  implicit def opsUnbuildsView[R, A](xs: R)(implicit z: UnbuildsAs[A, R]): ViewOps[A]          = new ViewOps(xs.m)
-  implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                                        = new View2DOps(x)
-  implicit def opsWrapString(x: String): Pstring                                               = new Pstring(x)
+  implicit def opsAlreadyView[A](x: View[A]): ViewOps[A]                                    = new ViewOps(x)
+  implicit def opsSize(x: Size): SizeOps                                                    = new SizeOps(x)
+  implicit def opsTerminalView2[R, A](xs: R)(implicit z: ViewsAs[A, R]): TerminalViewOps[A] = new TerminalViewOps[A](xs.m)
+  implicit def opsTerminalView[A](x: View[A]): TerminalViewOps[A]                           = new TerminalViewOps(x)
+  implicit def opsView[R, A](xs: R)(implicit z: ViewsAs[A, R]): ViewOps[A]                  = new ViewOps(z viewAs xs)
+  implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                                     = new View2DOps(x)
+  implicit def opsWrapString(x: String): Pstring                                            = new Pstring(x)
 }
 trait StdOps3 extends StdOps2 {
   implicit def opsDirectView[R, A](xs: R)(implicit ev: R <:< Direct[A]): ViewOps[A] = new ViewOps(new DirectView(ev(xs)))
@@ -64,25 +65,23 @@ trait StdOps3 extends StdOps2 {
 trait StdOps extends StdOps3 {
   implicit def opsArrayNoTag[A](xs: Array[A]): ArrayOps[A]                                                     = new ArrayOps[A](xs)
   implicit def opsStringContext(sc: StringContext): ShowInterpolator                                           = new ShowInterpolator(sc)
-  implicit def convertMonoView[A, R](xs: R)(implicit z: UnbuildsAs[A, R]): Conversions[A]                      = new Conversions(xs.m)
+  implicit def convertMonoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): Conversions[A]                         = new Conversions(xs.m)
   implicit def convertPairView[R, A, B](xs: View[R])(implicit sp: Splitter[R, A, B]): PairConversions[R, A, B] = new PairConversions(xs)
 }
-trait Unbuilders {
-  implicit def unbuildScalaCollection[A, CC[X] <: sCollection[X]]: UnbuildsAs[A, CC[A]]         = Unbuilds[A, CC[A]](Each scala _)
-  implicit def viewScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): AtomicView[A, CC[A]] = new IdView(Each scala xs)
-  implicit def unbuildScalaMap[K, V, CC[X, Y] <: scMap[X, Y]]: UnbuildsAs[K -> V, CC[K, V]]     = Unbuilds[K -> V, CC[K, V]](Each scalaMap _)
-  implicit def unbuildJavaMap[K, V, CC[X, Y] <: jMap[X, Y]]: UnbuildsAs[K -> V, CC[K, V]]       = Unbuilds[K -> V, CC[K, V]](Each javaMap _)
-}
 
-trait StdBuilds0 extends Unbuilders with Builders {
-  implicit def unbuildPspEach[A, CC[X] <: Foreach[X]]: UnbuildsAs[A, CC[A]] = Unbuilds[A, CC[A]](identity)
-  implicit def unbuildJvmArray[A]: UnbuildsAs[A, Array[A]]                  = Unbuilds[A, Array[A]](Each array _)
-
-  implicit def viewJvmArray[A](xs: Array[A]): DirectView[A, Array[A]]        = new DirectView(Each array xs)
-  implicit def viewPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]] = new IdView(xs)
+trait ViewersAs0 {
+  implicit def viewsAsScala[A, CC[X] <: sCollection[X]]: ViewsAs[A, CC[A]]               = viewsAs(Each scala _)
+  implicit def convertScala[A, CC[X] <: sCollection[X]](xs: CC[A]): IdView[A, CC[A]]     = intoView(xs)
+  implicit def viewsAsScalaMap[K, V, CC[X, Y] <: scMap[X, Y]]: ViewsAs[K -> V, CC[K, V]] = viewsAs(Each scalaMap _)
+  implicit def viewsAsJavaMap[K, V, CC[X, Y] <: jMap[X, Y]]: ViewsAs[K -> V, CC[K, V]]   = viewsAs(Each javaMap _)
 }
-trait StdBuilds extends StdBuilds0 {
-  implicit def unbuildJvmString: UnbuildsAs[Char, String]          = Unbuilds(Each jvmString _)
-  implicit def buildJvmString: Builds[Char, String]                = Builds.jvmString
-  implicit def viewJvmString(xs: String): DirectView[Char, String] = new DirectView(Each jvmString xs)
+trait ViewersAs1 extends ViewersAs0 with Builders {
+  implicit def viewsAsPspEach[A, CC[X] <: Foreach[X]]: ViewsAs[A, CC[A]]        = viewsAs(identity)
+  implicit def viewsAsJvmArray[A]: ViewsAs[A, Array[A]]                         = viewsAs(Each array _)
+  implicit def convertJvmArray[A](xs: Array[A]): IdView[A, Array[A]]            = intoView(xs)
+  implicit def convertPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]] = intoView(xs)
+}
+trait ViewersAs extends ViewersAs1 {
+  implicit def viewsAsJvmString: ViewsAs[Char, String]           = viewsAs(Each jvmString _)
+  implicit def convertJvmString(s: String): IdView[Char, String] = intoView(s)
 }
