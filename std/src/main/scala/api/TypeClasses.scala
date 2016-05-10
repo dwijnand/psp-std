@@ -38,6 +38,25 @@ trait MJoiner[M[+X], +R, -A, -B] extends Any {
 }
 trait MCleaver[M[+X], R, A, B] extends Any with MJoiner[M, R, A, B] with MSplitter[M, R, A, B]
 
+/** Scala makes certain things impossible with type parameters and a
+ *  nearly disjoint set of ambitions impossible with type members.
+ *  We are left with building them in redundantly so we always have
+ *  what we need.
+ */
+trait ASplitter[-R] extends Any {
+  type Left
+  type Right
+  type Pair >: R
+}
+trait AJoiner[+R] extends Any {
+  type Left
+  type Right
+  type Pair <: R
+}
+trait ACleaver[R] extends Any with AJoiner[R] with ASplitter[R] {
+  type Pair = R
+}
+
 /** The classic type classes for encoding equality, inequality,
   *  and display, and less classic ones for split/join, indexed access,
   *  emptiness.
@@ -60,10 +79,17 @@ trait Indexer[-R, +A] extends Any with MIndexer[Id, R, A] {
 trait Empty[+A] extends Any with MEmpty[Id, A] {
   def empty: A
 }
-trait Splitter[-R, +A, +B] extends Any with MSplitter[Id, R, A, B] {
+trait Splitter[-R, +A, +B] extends Any with MSplitter[Id, R, A, B] with ASplitter[R] {
+  type Left  <: A
+  type Right <: B
   def split(x: R): A -> B
 }
-trait Joiner[+R, -A, -B] extends Any with MJoiner[Id, R, A, B] {
+trait Joiner[+R, -A, -B] extends Any with MJoiner[Id, R, A, B] with AJoiner[R] {
+  type Left  >: A
+  type Right >: B
   def join(x: A -> B): R
 }
-trait Cleaver[R, A, B] extends Any with MCleaver[Id, R, A, B] with Joiner[R, A, B] with Splitter[R, A, B]
+trait Cleaver[R, A, B] extends Any with MCleaver[Id, R, A, B] with Joiner[R, A, B] with Splitter[R, A, B] with ACleaver[R] {
+  type Left  = A
+  type Right = B
+}

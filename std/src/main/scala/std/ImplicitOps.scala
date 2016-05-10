@@ -59,7 +59,7 @@ final class ForeachOps[A](val xs: Foreach[A]) {
   def toRefs: Each[Ref[A]]        = each map castRef
   def toRefArray(): Array[Ref[A]] = toRefs.force
   def each: Each[A]               = Each(xs foreach _)
-  def view: View[A]               = each
+  def view: View[A]               = each.m
 }
 
 final class PreciseOps(val size: Precise) {
