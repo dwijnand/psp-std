@@ -4,15 +4,20 @@ package std
 import api._, all._
 
 final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
+  def foldl[B](zero: B)(f: (B, A) => B): B = ll.foldLeft(xs, zero, f)
+
+  def head: A = xs match {
+    case IdView(xs: Direct[A]) => xs(Index(0))
+    case _                     => (xs take 1).force.head
+  }
+
   def count(p: ToBool[A]): Int                       = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
   def exists(p: ToBool[A]): Boolean                  = foldl(false)((res, x) => cond(p(x), return true, res))
   def find(p: ToBool[A]): Option[A]                  = foldl(none[A])((res, x) => cond(p(x), return Some(x), res))
   def findOr(p: ToBool[A], alt: => A): A             = find(p) | alt
   def first[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
-  def foldl[B](zero: B)(f: (B, A) => B): B           = ll.foldLeft(xs, zero, f)
   def foldr[B](zero: B)(f: (A, B) => B): B           = ll.foldRight(xs, zero, f)
   def forall(p: ToBool[A]): Boolean                  = foldl(true)((_, x) => p(x) || { return false })
-  def head: A                                        = (xs take 1).force.head
   def indexWhere(p: ToBool[A]): Index                = xs.zipIndex findLeft p map snd or NoIndex
   def isEmpty: Boolean                               = xs.size.isZero || !exists(true)
   def last: A                                        = xs takeRight 1 head
@@ -43,15 +48,20 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]) = new EqViewOps[A](xs)(eqv)
 }
 
-final case class AView[A, B](xs: View[A], op: Op[A, B]) extends View[B] {
+final case class AView[R, A, B](xs: View[A], op: Op[A, B]) extends View[B] {
   def size: Size                  = op[ConstSize](xs.size)
   def foreach(f: B => Unit): Unit = op(xs) foreach f
 }
+object AView {
+  def apply[R, A, B](xs: R)(implicit z: ViewsAs[A, R]): AView[R, A, A] =
+    new AView[R, A, A](z viewAs xs, Op(classNameOf(xs)))
+}
 
-final class ViewOps[A](val xs: View[A]) extends AnyVal {
-  private implicit def applyNext[B](op: Op[A, B]): View[B] = xs match {
-    case AView(xs, prev) => AView(xs, prev ~ op)
-    case _               => new AView(xs, op)
+final class ViewOps[R, A](val xs: View[A]) extends AnyVal {
+  private type Next[B] = AView[R, A, B]
+  private implicit def applyNext[B](op: Op[A, B]): Next[B] = xs match {
+    case AView(xs, prev) => AView[R, A, B](cast(xs), prev ~ op)
+    case _               => AView[R, A, B](xs, op)
   }
 
   // def dropIndex(index: Index): View[A]                               = xs splitAt index mapRight (_ drop 1) rejoin
@@ -77,16 +87,15 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   def sorted(implicit z: Order[A]): View[A]            = xs.toRefArray.inPlace.sort
   def tail: View[A]                                    = xs drop 1
 
-  // def collect[B](pf: A ?=> B): View[B]        = Op.Collect(pf)
-  // def drop(n: Precise): View[A]               = Op.Drop[A](n)
-  // def dropRight(n: Precise): View[A]          = Op.DropRight[A](n)
-  // def dropWhile(p: ToBool[A]): View[A]        = Op.DropWhile(p)
-  // def flatMap[B](f: A => Foreach[B]): View[B] = Op.FlatMap(f)
-  // def map[B](f: A => B): View[B]              = Op.Maps(f)
-  // def take(n: Precise): View[A]               = Op.Take[A](n)
-  // def takeRight(n: Precise): View[A]          = Op.TakeRight[A](n)
-  // def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
-
+  def collect[B](pf: A ?=> B): View[B]        = Op.Collect(pf)
+  def drop(n: Precise): View[A]               = Op.Drop[A](n)
+  def dropRight(n: Precise): View[A]          = Op.DropRight[A](n)
+  def dropWhile(p: ToBool[A]): View[A]        = Op.DropWhile(p)
+  def flatMap[B](f: A => Foreach[B]): View[B] = Op.FlatMap(f)
+  def map[B](f: A => B): View[B]              = Op.Maps(f)
+  def take(n: Precise): View[A]               = Op.Take[A](n)
+  def takeRight(n: Precise): View[A]          = Op.TakeRight[A](n)
+  def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
 
   def cross[B](ys: View[B]): Zip[A, B]     = crossViews(xs, ys)

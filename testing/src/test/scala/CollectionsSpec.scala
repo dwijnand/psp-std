@@ -407,7 +407,9 @@ class CollectionsSpec extends ScalacheckBundle {
     ),
     expectTypes[sciMap[A, B]](
       smap force,
+      smap map identity,
       smap map identity force,
+      // smap map fst map paired build,
       smap map fst map paired force,
       smap.m build,
       smap.m map identity build,
@@ -455,12 +457,17 @@ class CollectionsSpec extends ScalacheckBundle {
       ),
       expectTypes[jMap[A, B]](
         jmap build,
-        jmap map identity force,
+        // jmap map identity,
         jmap map identity build,
+        jmap map identity force,
+        // jmap map fst map paired,
         jmap map fst map paired build,
         jmap.m build,
+        // jmap.m map identity,
         jmap.m map identity build,
-        jmap.m map fst map paired build
+        jmap.m map identity force,
+        jmap.m map fst map paired build,
+        jmap.m map fst map paired force
       )
     )
   }

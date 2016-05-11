@@ -10,9 +10,9 @@ object Each {
   def construct[A](size: Size, mf: Suspended[A]): Each[A]          = new WrapSuspended(size, mf)
   def continually[A](elem: => A): Each[A]                          = new WrapContinually(elem)
   def each[A](xs: Foreach[A]): Each[A]                             = construct(xs.size, xs foreach _)
-  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]                  = construct(xs.size, mf => xs.entrySet.m foreach (k => mf(k.toPair)))
+  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]                  = construct(xs.size, mf => xs.entrySet foreach (k => mf(k.toPair)))
   def java[A](xs: jIterable[A]): Each[A]                           = apply(xs.iterator foreach _)
-  def join[A](xs: Each[A], ys: Each[A]): Each[A]                   = new Joined(xs, ys)
+  def join[A](xs: Each[A], ys: Each[A]): Each[A]                   = new WrapJoin(xs, ys)
   def jvmString(s: String): WrapString                             = new WrapString(s)
   def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): WrapPair[A] = new WrapPair(z split x)
   def reversed[A](xs: Direct[A]): WrapReverse[A]                   = new WrapReverse(xs)
@@ -24,7 +24,6 @@ object Each {
     def foreach(f: A => Unit): Unit = mf(f)
   }
   abstract class WrapDirect[A, R](val size: Precise, f: Long => A) extends Direct[A] {
-    // def view: DirectView[A, R]      = new DirectView[A, R](this)
     def elemAt(i: Vdex): A          = f(i.indexValue)
     def foreach(f: A => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
   }

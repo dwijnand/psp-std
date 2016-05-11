@@ -36,24 +36,23 @@ trait StdImplicits extends ViewersAs with ConvertersOf with StdOps { self =>
 }
 
 trait StdOps0 {
-  implicit def downConvertToCC[A, CC[X]](xs: View[A])(implicit z: Builds[A, CC[A]]): CC[A] = z build xs
+  implicit def downConvertToR[A, R](xs: View[A])(implicit z: Builds[A, R]): R          = z build xs
 }
 trait StdOps1 extends StdOps0 {
   implicit def opsHasViewsAs[A, R](xs: R)(implicit z: ViewsAs[A, R]): HasViewsAs[A, R] = new HasViewsAs(xs)
-  implicit def downConvertToR[A, R](xs: View[A])(implicit z: Builds[A, R]): R          = z build xs
 }
 trait StdOps2 extends StdOps1 {
-  implicit def opsAlreadyView[A](x: View[A]): ViewOps[A]                                                      = new ViewOps(x)
-  implicit def opsSize(x: Size): SizeOps                                                                      = new SizeOps(x)
-  implicit def opsTerminalView2[R, A](xs: R)(implicit z: ViewsAs[A, R]): TerminalViewOps[A]                   = new TerminalViewOps[A](xs.m)
-  implicit def opsTerminalView[A](x: View[A]): TerminalViewOps[A]                                             = new TerminalViewOps(x)
-  implicit def opsView[R, A](xs: R)(implicit z: ViewsAs[A, R]): ViewOps[A]                                    = new ViewOps(z viewAs xs)
-  implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                                                       = new View2DOps(x)
-  implicit def opsWrapString(x: String): Pstring                                                              = new Pstring(x)
-  implicit def opsViewOfPairs[R, A, B](xs: View[R])(implicit sp: Splitter[R, A, B]): PairConversions[R, A, B] = new PairConversions(xs)
+  implicit def opsAlreadyView[A](x: View[A]): ViewOps[View[A], A]             = new ViewOps(x)
+  implicit def opsView[R, A](xs: R)(implicit z: ViewsAs[A, R]): ViewOps[R, A] = new ViewOps(z viewAs xs)
+
+  implicit def opsSize(x: Size): SizeOps                                                    = new SizeOps(x)
+  implicit def opsTerminalView2[R, A](xs: R)(implicit z: ViewsAs[A, R]): TerminalViewOps[A] = new TerminalViewOps[A](xs.m)
+  implicit def opsTerminalView[A](x: View[A]): TerminalViewOps[A]                           = new TerminalViewOps(x)
+  implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                                     = new View2DOps(x)
+  implicit def opsWrapString(x: String): Pstring                                            = new Pstring(x)
 }
 trait StdOps extends StdOps2 {
-  implicit def opsIdView[R, A](xs: R)(implicit ev: R <:< Each[A]): ViewOps[A] = new ViewOps(new IdView(ev(xs)))
+  implicit def opsIdView[R, A](xs: R)(implicit ev: R <:< Each[A]): ViewOps[R, A] = new ViewOps(new IdView(ev(xs)))
 
   implicit def opsChar(x: Char): CharOps                = new CharOps(x)
   implicit def opsFun[A, B](f: Fun[A, B]): FunOps[A, B] = new FunOps(f)
@@ -62,8 +61,8 @@ trait StdOps extends StdOps2 {
 }
 
 trait ViewersAs0 {
-  implicit def viewsAsJavaIterable[A, CC[X] <: jIterable[X]]: ViewsAs[A, CC[A]]          = viewsAs(Each java _)
-  implicit def viewsAsScala[A, CC[X] <: sCollection[X]]: ViewsAs[A, CC[A]]               = viewsAs(Each scala _)
+  implicit def viewsAsJavaIterable[A, CC[X] <: jIterable[X]]: ViewsAs[A, CC[A]] = viewsAs(Each java _)
+  implicit def viewsAsScala[A, CC[X] <: sCollection[X]]: ViewsAs[A, CC[A]]      = viewsAs(Each scala _)
 }
 trait ViewersAs extends ViewersAs0 with Builders {
   implicit def viewsAsJavaMap[K, V, CC[X, Y] <: jMap[X, Y]]: ViewsAs[K -> V, CC[K, V]]   = viewsAs(Each javaMap _)

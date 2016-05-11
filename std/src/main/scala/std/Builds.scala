@@ -15,15 +15,6 @@ import api._, all._
 
 final class Conversions[A](val xs: View[A]) extends AnyVal with ConversionsMethods[A]
 
-/** Conversions which require the elements to be pairs. Obtaining evidence of that
-  *  up front simplifies everything else, because we don't have to mix and match
-  *  between arity-1 and arity-2 type constructors.
-  */
-class PairConversions[R, A, B](val xs: View[R])(implicit sp: Splitter[R, A, B]) {
-  def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
-  def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
-}
-
 trait ConversionsMethods[A] extends Any {
   def xs: View[A]
 
@@ -84,7 +75,7 @@ trait JvmBuilders extends JvmBuilders0 {
 }
 trait PspBuilders0 extends JvmBuilders {
   implicit def buildPspSet[A : Eq]: Builds[A, ExSet[A]]            = Builds.scalaSet[A] map (xs => new Pset(xs))
-  implicit def buildPspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = builds(_.view.zipped.force) // XXX
+  implicit def buildPspMap[K : Eq, V]: Builds[K -> V, ExMap[K, V]] = ???
 }
 trait PspBuilders1 extends PspBuilders0 {
   implicit def buildPspList[A]: Builds[A, Plist[A]] = builds(xs => ll.foldRight[A, Plist[A]](xs, cast(Pnil), _ :: _))
@@ -92,9 +83,7 @@ trait PspBuilders1 extends PspBuilders0 {
 trait PspBuilders extends PspBuilders1 {
   implicit def buildPspVec[A]: Builds[A, Vec[A]] = Builds.scalaVector[A] map (xs => new Vec(xs))
 }
-trait Builders extends PspBuilders {
-  // implicit def bounceView[A, R](xs: R)(implicit z1: ViewsAs[A, R], z2: Builds[A, R]): R = z2 build (z1 viewAs xs)
-}
+trait Builders extends PspBuilders
 object Builders extends Builders
 
 trait Converters0 {
