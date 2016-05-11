@@ -16,9 +16,8 @@ class Partial[A, B](p: ToBool[A], f: A => B) extends (A ?=> B) {
   def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
 }
 object Partial {
-  implicit def liftPartial[A, B](pf: A ?=> B): Partial[A, B] = apply(pf)
-  def apply[A, B](pf: A ?=> B): Partial[A, B]                = apply(pf isDefinedAt _, pf apply _)
-  def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B]    = new Partial(p, f)
+  def apply[A, B](pf: A ?=> B): Partial[A, B]             = apply(pf isDefinedAt _, pf apply _)
+  def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B] = new Partial(p, f)
 }
 final class JvmName(val raw: String) extends ShowSelf {
   def segments: Vec[String] = raw splitChar '.'
@@ -37,6 +36,7 @@ object JvmName {
 // }
 
 trait StdEq0 {
+  implicit def sizeEq: Hash[Size] = byEquals
   implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] =
     Order(((x: A, y: A) => x compareTo y) map (x => longCmp(x)))
 }
@@ -47,6 +47,12 @@ trait StdEq1 extends StdEq0 {
   implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] =
     orderBy[A](_.ordinal)
 
+  implicit def optionEq[A: Eq] : Eq[Opt[A]] = Eq {
+    case (None, None)       => true
+    case (Some(x), Some(y)) => x === y
+    case _                  => false
+  }
+
   implicit def longHashEqOrd: HashEqOrd[Long]       = HashEqOrd.Longs
   implicit def boolHashEqOrd: HashEqOrd[Bool]       = HashEqOrd by (x => if (x) 1 else 0)
   implicit def charHashEqOrd: HashEqOrd[Char]       = HashEqOrd by (x => x: Long)
@@ -56,7 +62,6 @@ trait StdEq1 extends StdEq0 {
   implicit def stringHashEqOrd: HashEqOrd[String]   = HashEqOrd.inherited[String]
 
   implicit def classEq: Hash[Class[_]] = byEquals
-  implicit def sizeEq: Hash[Size]      = byEquals
 
   implicit def tryEq[A](implicit z1: Eq[A], z2: Eq[Throwable]): Eq[Try[A]] = Eq {
     case (Success(x), Success(y)) => x === y

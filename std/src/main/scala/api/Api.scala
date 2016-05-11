@@ -16,7 +16,7 @@ trait ApiTypes extends ExternalTypes {
   type ?=>[-A, +B]       = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
   type BinOp[A]          = BinTo[A, A] // binary operation
   type BinTo[-A, +R]     = (A, A) => R
-  type Bool              = Boolean //
+  type Bool              = scala.Boolean //
   type GTOnce[+A]        = sc.GenTraversableOnce[A] // This is the beautifully named type at the top of scala collections
   type Index             = Vindex[Vindex.Zero.type] //
   type Nth               = Vindex[Vindex.One.type] //
@@ -63,7 +63,6 @@ abstract class ApiValues extends ApiTypes {
   def classOf[A : CTag](): Class[_ <: A]                 = cast(classTag[A].runtimeClass)
   def classTag[A : CTag]: CTag[A]                        = ?[CTag[A]]
   def cond[A](p: Bool, thenp: => A, elsep: => A): A      = if (p) thenp else elsep
-  def conds[A](ps: (Bool -> A)*): Opt[A]                 = ps collectFirst { case (true, x) => x }
   def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
   def emptyValue[A](implicit z: Empty[A]): A             = z.empty
   def fst[A, B](x: A -> B): A                            = x._1
@@ -85,20 +84,7 @@ abstract class ApiValues extends ApiTypes {
   def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
   def zcond[A : Empty](p: Bool, thenp: => A): A          = cond(p, thenp, emptyValue[A])
-
-  /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
-    *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
-    *  "to adhere firmly and closely as though evenly and securely glued" as well
-    *  as "to divide into two parts by a cutting blow".
-    */
-  def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
-  def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R    = f(x._1, x._2) }
-
-  def cleaver[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] =
-    new Cleaver[R, A, B] {
-      def split(x: R): A -> B = (l(x), r(x))
-      def join(x: A -> B): R  = f(x._1, x._2)
-    }
+  def newArray[A : CTag](len: Int): Array[A]             = new Array[A](len)
 
   /** Safe in the senses that it won't silently truncate values,
     *  and will translate MaxLong to MaxInt instead of -1.
@@ -118,13 +104,6 @@ abstract class ApiValues extends ApiTypes {
     java.lang.String.format(s, args map unwrapArg: _*)
   }
 
-  def newArray[A : CTag](length: Int): Array[A] = new Array[A](length)
-
-  def copyArray[A : CTag](src: Array[A]): Array[A] =
-    doto(newArray[A](src.length))(arraycopy(src, 0, _, 0, src.length))
-
-  def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
-    java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
 
   // You can't use string interpolation without a StringContext term in scope.
   def StringContext = scala.StringContext

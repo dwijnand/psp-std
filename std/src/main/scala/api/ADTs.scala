@@ -71,7 +71,6 @@ object Size {
   def apply(size: Long): Precise = new Precise(if (size < 0L) 0L else size)
 
   object Range {
-
     /** Preserving associativity/commutativity of Size prevents us from
       *  modifying values to enforce any invariants on Bounded.
       */
@@ -89,49 +88,6 @@ object Size {
   }
 }
 
-/** A richer function abstraction.
-  *
-  *  No way to avoid at least having apply as a member method if there's
-  *  to be any hope of seeing these converted into scala.Functions.
-  */
-sealed abstract class Fun[-A, +B] { self =>
-
-  final def apply(x: A): B = this match {
-    case Opaque(g)       => g(x)
-    case OrElse(u1, u2)  => if (u1 isDefinedAt x) u1(x) else u2(x)
-    case Defaulted(g, u) => if (u isDefinedAt x) u(x) else g(x)
-    case FilterIn(_, u)  => u(x) // filter is checked at isDefinedAt
-    case AndThen(u1, u2) => u2(u1(x))
-    case ExMap(_, g)     => g(x)
-  }
-  final def isDefinedAt(x: A): Boolean = this match {
-    case Opaque(_)       => true
-    case OrElse(u1, u2)  => (u1 isDefinedAt x) || (u2 isDefinedAt x)
-    case FilterIn(p, u)  => p(x) && (u isDefinedAt x)
-    case Defaulted(_, u) => u isDefinedAt x
-    case AndThen(u1, u2) => (u1 isDefinedAt x) && (u2 isDefinedAt u1(x))
-    case ExMap(ks, _)    => ks(x)
-  }
-  def toPartial: A ?=> B = new (A ?=> B) {
-    def isDefinedAt(x: A) = self isDefinedAt x
-    def apply(x: A)       = self(x)
-  }
-}
-final case class Opaque[-A, +B](f: A => B)                       extends Fun[A, B]
-final case class Defaulted[-A, +B](g: A => B, u: Fun[A, B])      extends Fun[A, B]
-final case class FilterIn[-A, +B](p: A => Boolean, u: Fun[A, B]) extends Fun[A, B]
-final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])      extends Fun[A, B]
-final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C])  extends Fun[A, C]
-final case class ExMap[A, +B](keys: ExSet[A], f: Fun[A, B])      extends Fun[A, B]
-
-object Fun {
-  def apply[A, B](f: A => B): Opaque[A, B] = Opaque(f)
-}
-object Vindex {
-  val Zero = new AnyRef
-  val One  = new AnyRef
-}
-
 /** Virtual Index.
   */
 final class Vindex[Base] private[api](val indexValue: Long) extends AnyVal {
@@ -139,22 +95,24 @@ final class Vindex[Base] private[api](val indexValue: Long) extends AnyVal {
 
   def create(indexValue: Long): This = new Vindex[Base](indexValue)
 
-  private def mapLong(f: Long => Long): This = if (isInvalid) this else create(f(indexValue))
+  private def mapLong(f: Long => Long): This = cond(isInvalid, this, create(f(indexValue)))
 
-  def nthValue: Long         = indexValue + 1
-  def get: Long              = indexValue
-  def getInt: Int            = safeLongToInt(indexValue)
-  def isEmpty                = indexValue < 0
-  def isInvalid              = indexValue < 0
-  def toIndex: Index         = Index(indexValue)
-  def toNth: Nth             = Nth(nthValue)
-  def sizeExcluding: Precise = Size(indexValue)
-  def sizeIncluding: Precise = Size(nthValue)
+  def nthValue: Long     = indexValue + 1
+  def isEmpty            = indexValue < 0
+  def isInvalid          = indexValue < 0
+  def toIndex: Index     = Index(indexValue)
+  def toNth: Nth         = Nth(nthValue)
+  def excluding: Precise = Size(indexValue)
+  def including: Precise = Size(nthValue)
 
   def +(n: Long): This = mapLong(_ + n)
   def -(n: Long): This = mapLong(_ - n)
   def next: This       = this + 1
   def prev: This       = this - 1
+}
+object Vindex {
+  val Zero = new AnyRef
+  val One  = new AnyRef
 }
 
 /** A valid index is always non-negative. All negative indices are

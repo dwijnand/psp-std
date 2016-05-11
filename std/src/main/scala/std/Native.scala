@@ -31,6 +31,9 @@ final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
   def apply(x: A): Bool     = xs(x)
   def foreach(f: A => Unit) = xs foreach f
   def size: Precise         = xs.size
+
+  def map[B](f: A => B): ExMap[A, B]               = Fun.finite(this, f)
+  def flatMap[B](f: A => ExMap[A, B]): ExMap[A, B] = Fun.finite(this, x => f(x)(x))
 }
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
@@ -43,7 +46,7 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
   def updated(i: Vdex, elem: A): Vec[A] = make(_.updated(i.getInt, elem))
   def :+(elem: A): Vec[A]               = make(_ :+ elem)
   def +:(elem: A): Vec[A]               = make(elem +: _)
-  def ++(that: Vec[A]): Vec[A]          = conds(that.isEmpty -> this, this.isEmpty -> that) | make(_ ++ that.trav)
+  def ++(that: Vec[A]): Vec[A]          = cond(that.isEmpty, this, cond(this.isEmpty, that, make(_ ++ that.trav)))
 
   def drop(n: Vdex): Vec[A]      = make(_ drop n.getInt)
   def dropRight(n: Vdex): Vec[A] = make(_ dropRight n.getInt)
@@ -52,19 +55,4 @@ final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Dir
 
   @inline def foreach(f: A => Unit): Unit =
     ll.foreachInt(0, length - 1, i => f(underlying(i)))
-}
-object FunctionGrid {
-  def apply[A](xs: View[A])(columns: ToString[A]*): FunctionGrid[A, String] = new FunctionGrid(xs, columns.toVec)
-}
-class FunctionGrid[A, B](values: View[A], functions: View[A => B]) {
-  def rows: View2D[B]    = values map (v => functions map (f => f(v)))
-  def columns: View2D[B] = rows.transpose
-
-  def renderLines(implicit s1: Show[B], s2: Show[String]): Vec[String] = {
-    if (values.isEmpty || functions.isEmpty) return vec()
-    val widths    = columns map (_ map s1.show map (_.length) max)
-    val formatFns = widths map lformat
-
-    rows map (formatFns zip _ map (_ apply _) mk_s ' ')
-  }
 }

@@ -3,6 +3,8 @@ package std
 
 import api._, all._
 
+/** TODO: deal with Vdex potentially having -1 for a value.
+ */
 sealed abstract class LongInterval extends (Vdex => Long) with ShowSelf {
   type This <: LongInterval
 
@@ -15,9 +17,12 @@ sealed abstract class LongInterval extends (Vdex => Long) with ShowSelf {
   def startLong: Long
   def take(n: Precise): LongInterval.Closed
 
-  def apply(vdex: Vdex): Long = startLong + vdex.indexValue
-  def slice(s: Long, e: Long): LongInterval.Closed =
-    (if (s < 0) slice(0, e)
+  def apply(vdex: Vdex): Long                               = startLong + vdex.indexValue
+  def slice(start: Vdex, len: Precise): LongInterval.Closed = longSlice(start.indexValue, start.indexValue + len.getLong)
+  def slice(r: VdexRange): LongInterval.Closed              = if (r.isEmpty) LongInterval.empty else slice(r.head, r.size)
+
+  private def longSlice(s: Long, e: Long): LongInterval.Closed =
+    (if (s < 0) longSlice(0, e)
      else if (e <= 0 || e <= s) LongInterval.empty
      else this drop s take e - s)
 }
@@ -103,12 +108,14 @@ object Consecutive {
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size
 
-    def head: A                            = elemAt(Index(0))
-    def last: A                            = elemAt(size.lastIndex)
-    def drop(n: Precise): Closed[A]        = Consecutive(in drop n, f)
-    def dropRight(n: Precise): Closed[A]   = Consecutive(in dropRight n, f)
-    def take(n: Precise): Closed[A]        = Consecutive(in take n, f)
-    def takeRight(n: Precise): Closed[A]   = Consecutive(in takeRight n, f)
-    def slice(s: Long, e: Long): Closed[A] = Consecutive(in.slice(s, e), f)
+    def head: A                          = elemAt(Index(0))
+    def last: A                          = elemAt(size.lastIndex)
+    def drop(n: Precise): Closed[A]      = Consecutive(in drop n, f)
+    def dropRight(n: Precise): Closed[A] = Consecutive(in dropRight n, f)
+    def take(n: Precise): Closed[A]      = Consecutive(in take n, f)
+    def takeRight(n: Precise): Closed[A] = Consecutive(in takeRight n, f)
+
+    def slice(start: Vdex, len: Precise): Closed[A] = Consecutive(in.slice(start, len), f)
+    def slice(r: VdexRange): Closed[A]              = Consecutive(in.slice(r), f)
   }
 }

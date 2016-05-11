@@ -3,7 +3,9 @@ package std
 
 import api._, all._
 
-final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
+trait TerminalViewOps[A] extends Any {
+  def xs: View[A]
+
   def foldl[B](zero: B)(f: (B, A) => B): B = ll.foldLeft(xs, zero, f)
 
   def head: A = xs match {
@@ -11,35 +13,38 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
     case _                     => (xs take 1).force.head
   }
 
-  def count(p: ToBool[A]): Int                       = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
-  def exists(p: ToBool[A]): Boolean                  = foldl(false)((res, x) => cond(p(x), return true, res))
-  def find(p: ToBool[A]): Option[A]                  = foldl(none[A])((res, x) => cond(p(x), return Some(x), res))
-  def findOr(p: ToBool[A], alt: => A): A             = find(p) | alt
-  def first[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
-  def foldr[B](zero: B)(f: (A, B) => B): B           = ll.foldRight(xs, zero, f)
-  def forall(p: ToBool[A]): Boolean                  = foldl(true)((_, x) => p(x) || { return false })
-  def indexWhere(p: ToBool[A]): Index                = xs.zipIndex findLeft p map snd or NoIndex
-  def isEmpty: Boolean                               = xs.size.isZero || !exists(true)
-  def last: A                                        = xs takeRight 1 head
-  def nonEmpty: Boolean                              = xs.size.isNonZero || exists(true)
-  def reducel(f: BinOp[A]): A                        = xs.tail.foldl(head)(f)
-  def reducer(f: BinOp[A]): A                        = xs.init.foldr(last)(f)
-  def zfoldl[B : Empty](f: (B, A) => B): B           = ll.foldLeft(xs, emptyValue[B], f)
-  def zfoldr[B : Empty](f: (A, B) => B): B           = ll.foldRight(xs, emptyValue[B], f)
-  def zhead(implicit z: Empty[A]): A                 = zcond(nonEmpty, head)
-  def zlast(implicit z: Empty[A]): A                 = zcond(nonEmpty, last)
-  def zreducel(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducel(f))
-  def zreducer(f: BinOp[A])(implicit z: Empty[A]): A = zcond(nonEmpty, reducer(f))
+  def count(p: ToBool[A]): Int             = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
+  def exists(p: ToBool[A]): Boolean        = foldl(false)((res, x) => cond(p(x), return true, res))
+  def find(p: ToBool[A]): Option[A]        = foldl(none[A])((res, x) => cond(p(x), return Some(x), res))
+  def findOr(p: ToBool[A], alt: => A): A   = find(p) | alt
+  def foldr[B](zero: B)(f: (A, B) => B): B = ll.foldRight(xs, zero, f)
+  def forall(p: ToBool[A]): Boolean        = foldl(true)((_, x) => p(x) || { return false })
+  def indexWhere(p: ToBool[A]): Index      = xs.zipIndex findLeft p map snd or NoIndex
+  def isEmpty: Boolean                     = xs.size.isZero || !exists(true)
+  def last: A                              = xs takeRight 1 head
+  def nonEmpty: Boolean                    = xs.size.isNonZero || exists(true)
+  def reducel(f: BinOp[A]): A              = xs.tail.foldl(head)(f)
+  def reducer(f: BinOp[A]): A              = xs.init.foldr(last)(f)
+
+  def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
+  def zfoldl[B : Empty](f: (B, A) => B): B            = ll.foldLeft(xs, emptyValue[B], f)
+  def zfoldr[B : Empty](f: (A, B) => B): B            = ll.foldRight(xs, emptyValue[B], f)
+  def zhead(implicit z: Empty[A]): A                  = zcond(nonEmpty, head)
+  def zlast(implicit z: Empty[A]): A                  = zcond(nonEmpty, last)
+  def zreducel(f: BinOp[A])(implicit z: Empty[A]): A  = zcond(nonEmpty, reducel(f))
+  def zreducer(f: BinOp[A])(implicit z: Empty[A]): A  = zcond(nonEmpty, reducer(f))
 
   // Show[A]
-  def joinLines(implicit z: Show[A]): String         = this mk_s EOL
-  def join_s(implicit z: Show[A]): String            = this mk_s ""
+  def joinLines(implicit z: Show[A]): String         = mk_s(EOL)(z)
+  def joinWords(implicit z: Show[A]): String         = mk_s(" ")(z)
+  def join_s(implicit z: Show[A]): String            = mk_s("")(z)
   def mk_s(sep: Char)(implicit z: Show[A]): String   = this mk_s sep.to_s
   def mk_s(sep: String)(implicit z: Show[A]): String = xs map z.show zreducel ((l, r) => cond(l == "", "", l ~ sep) ~ r)
   def to_s(implicit z: Show[A]): String              = "[ " + (xs mk_s ", ") + " ]"
 
   // Order[A]
   def max(implicit z: Order[A]): A   = reducel(all.max)
+  def min(implicit z: Order[A]): A   = reducel(all.min)
   def maxOf[B : Order](f: A => B): B = xs map f max
 
   def byEquals         = new EqViewOps[A](xs)(Eq.Inherited)
@@ -57,7 +62,7 @@ object AView {
     new AView[R, A, A](z viewAs xs, Op(classNameOf(xs)))
 }
 
-final class ViewOps[R, A](val xs: View[A]) extends AnyVal {
+final class ViewOps[R, A](val xs: View[A]) extends AnyVal with TerminalViewOps[A] {
   private type Next[B] = AView[R, A, B]
   private implicit def applyNext[B](op: Op[A, B]): Next[B] = xs match {
     case AView(xs, prev) => AView[R, A, B](cast(xs), prev ~ op)
@@ -70,22 +75,26 @@ final class ViewOps[R, A](val xs: View[A]) extends AnyVal {
   // def mapApply[B, C](x: B)(implicit ev: A <:< (B => C)): View[C]     = xs map (f => ev(f)(x))
   // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C]       = groupBy[B](f) map g // Probably this should be groupBy
   // def quotientSet(implicit z: Eq[A]): View[ExSet[A]]                 = groupBy[A](identity).values map (_.toExSet)
-  // def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]                = xs dropWhile p takeWhile q
   // def sortBy[B](f: A => B)(implicit z: Order[B]): View[A]            = orderOps(orderBy[A](f)).sorted
   // def sortWith(cmp: OrderRelation[A]): View[A]                       = orderOps(Order(cmp)).sorted
   // def splitAround(index: Index): A -> Split[A]                       = splitAt(index) |> (lr => (lr onRight (_.head)) -> (lr mapRight (_ tail)))
   // def takeToFirst(p: ToBool[A]): View[A]                             = xs span !p mapRight (_ take 1) rejoin
   // def tee(f: A => String): View[A]                                   = xs map (x => sideEffect(x, println(f(x))))
-  // def unzip[L, R](implicit z: Splitter[A, L, R]): View[L] -> View[R] = zipped[L, R] |> (x => x.lefts -> x.rights)
 
   def filter(p: ToBool[A]): View[A]                    = xs withFilter p
   def filterNot(p: ToBool[A]): View[A]                 = xs withFilter !p
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs withFilter (regex isMatch _)
   def init: View[A]                                    = xs dropRight 1
-  def mapIf(pf: Partial[A, A]): View[A]                = xs map (x => pf.applyOr(x, x))
-  def slice(range: VdexRange): View[A]                 = xs drop range.startLong take range.size
+  def mapIf(pf: A ?=> A): View[A]                      = xs map (x => pf.applyOr(x, x))
+  def slice(start: Vdex, len: Precise): View[A]        = xs drop Size(start.indexValue) take len
+  def slice(r: VdexRange): View[A]                     = if (r.isEmpty) view() else slice(r.head, r.size)
   def sorted(implicit z: Order[A]): View[A]            = xs.toRefArray.inPlace.sort
   def tail: View[A]                                    = xs drop 1
+  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
+  def sliceIndex(idx: Vdex): View[A]                   = xs drop idx.excluding take 1
+  def applyIndex(idx: Vdex): A                         = sliceIndex(idx).head
+
+  def tails: View2D[A] = cond(isEmpty, view(), view(xs) ++ tail.tails)
 
   def collect[B](pf: A ?=> B): View[B]        = Op.Collect(pf)
   def drop(n: Precise): View[A]               = Op.Drop[A](n)
@@ -98,32 +107,54 @@ final class ViewOps[R, A](val xs: View[A]) extends AnyVal {
   def takeWhile(p: ToBool[A]): View[A]        = Op.TakeWhile(p)
   def withFilter(p: ToBool[A]): View[A]       = Op.Filter(p)
 
+  def ++(ys: View[A]): View[A] = inView { mf => xs foreach mf ; ys foreach mf }
+  def +:(head: A): View[A]     = view(head) ++ xs
+  def :+(last: A): View[A]     = xs ++ view(last)
+
   def cross[B](ys: View[B]): Zip[A, B]     = crossViews(xs, ys)
   def mapAndCross[B](f: A => B): Zip[A, B] = crossViews(xs, xs map f)
   def mapAndZip[B](f: A => B): Zip[A, B]   = zipViews(xs, xs map f)
   def zipIndex: Zip[A, Index]              = zipViews(xs, openIndices)
   def zip[B](ys: View[B]): Zip[A, B]       = zipViews[A, B](xs, ys)
 
-  def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
+  def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit(xs)
 
   def partition(p: ToBool[A]): Split[A] = Split(xs withFilter p, xs withFilter !p)
   def span(p: ToBool[A]): Split[A]      = Split(xs takeWhile p, xs dropWhile p)
-  def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
-
-  def mpartition(p: View[A] => ToBool[A]): View2D[A] = (
-    inView[View[A]](
-      mf =>
-        xs partition p(xs) match {
-      case Split(xs, ys) =>
-        mf(xs)
-        ys mpartition p foreach mf
-  })
-  )
+  def splitAt(idx: Vdex): Split[A]      = Split(xs take idx.excluding, xs drop idx.excluding)
+  def splitAround(idx: Vdex): Split[A]  = splitAt(idx) mapRight (_ drop 1)
 }
 
-final class View2DOps[A](val xss: View2D[A]) extends AnyVal {
-  def column(vdex: Vdex): View[A]   = xss flatMap (_ drop vdex.sizeExcluding take 1)
-  def transpose: View2D[A]          = openIndices map column
-  def flatten: View[A]              = xss flatMap identity
-  def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
+object View2D {
+  type Coords = PairOf[Vdex]
+
+  def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
+    xs partition p(xs) app ((ls, rs) => lazyView(ls +: mpartition(rs)(p)))
+
+  class Ops[A](val xss: View2D[A]) extends AnyVal {
+    import StdShow.showString
+
+    def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
+    def transpose: View2D[A]          = openIndices map column
+    def flatten: View[A]              = xss flatMap identity
+    def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
+
+    def grid_s(implicit z: Show[A]): String = {
+      val width = (xss mmap (_.show)).flatten maxOf (_.length)
+      val fmt   = lformat(width)
+      val yss   = xss mmap (x => fmt(z show x))
+
+      (yss map (_.joinWords)).joinLines.trimLines
+    }
+  }
+
+  class FunGrid[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
+    def isEmpty: Bool        = basis.isEmpty || functions.isEmpty
+    def apply(xy: Coords): B = xy app (rows applyIndex _ applyIndex _)
+    def rows: View2D[B]      = basis map (r => functions map (_ apply r))
+    def columns: View2D[B]   = rows.transpose
+
+    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.show.length) max)
+    def lines(implicit z: Show[B]): View[String] = cond(isEmpty, view(), widths zip rows map (lformat(_)(_)))
+  }
 }

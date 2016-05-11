@@ -66,12 +66,12 @@ final class ShowInterpolator(val stringContext: StringContext) extends AnyVal {
 
   final def sm(args: Doc*): String = {
     def isLineBreak(c: Char) = c == '\n' || c == '\f' // compatible with StringLike#isLineBreak
-    def stripTrailingPart(s: String): String = {
-      val index        = s indexWhere isLineBreak
-      val pre: String  = s take index.sizeExcluding force
-      val post: String = s drop index.sizeExcluding force;
-      pre append post.stripMargin
-    }
+    def stripTrailingPart(s: String): String = (
+      s splitAround (s indexWhere isLineBreak)
+            mapBoth (_.force[String])
+                app (_ append _.stripMargin)
+    )
+
     val stripped = escapedParts.m matchIf { case hd +: tl => hd.stripMargin +: (tl map stripTrailingPart force) }
     (new StringContext(stripped.seq: _*).raw(args: _*)).trim
   }
@@ -108,7 +108,7 @@ trait ShowInstances extends ShowEach {
   implicit def showPair[A : Show, B : Show]: Show[A -> B] = Show { case a -> b => a.doc ~ " -> " ~ b render }
   implicit def showOp[A, B]: Show[Op[A, B]]               = Show(op => op[ConstString](""))
 
-  implicit def showFunctionGrid[A, B](implicit z: Show[B]): Show[FunctionGrid[A, B]] = Show(_.renderLines.mk_s(EOL))
+  implicit def showFunGrid[A, B](implicit z: Show[B]): Show[View2D.FunGrid[A, B]] = showBy(_.lines.joinLines)
 
   implicit def showSize: Show[Size] = Show[Size] {
     case Finite(size)          => pp"$size"
@@ -121,8 +121,9 @@ trait ShowEach0 {
   implicit def showView[A : Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
 }
 trait ShowEach extends ShowEach0 {
+  implicit def showExMap[K : Show, V : Show] = showBy[ExMap[K, V]](xs => funGrid(xs.entries.pairs)(_.show))
+
   implicit def showEach[A : Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
-  implicit def showExMap[K : Show, V : Show]: Show[ExMap[K, V]]            = Show(xs => FunctionGrid(xs.entries.pairs)(_.doc.render).doc.render)
   implicit def showZipped[A1 : Show, A2 : Show]: Show[Zip[A1, A2]]         = showBy[Zip[A1, A2]](_.pairs)
   implicit def showArray[A : Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
 }
