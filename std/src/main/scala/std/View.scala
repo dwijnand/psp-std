@@ -4,14 +4,20 @@ package std
 import api._, all._
 
 final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
+  def foldl[B](zero: B)(f: (B, A) => B): B = ll.foldLeft(xs, zero, f)
+
+  def head: A = xs match {
+    case IdView(xs: Direct[A]) => xs(Index(0))
+    case _                     => (xs take 1).force.head
+  }
+
   def count(p: ToBool[A]): Int                       = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
   def exists(p: ToBool[A]): Boolean                  = foldl(false)((res, x) => cond(p(x), return true, res))
   def find(p: ToBool[A]): Option[A]                  = foldl(none[A])((res, x) => cond(p(x), return Some(x), res))
   def findOr(p: ToBool[A], alt: => A): A             = find(p) | alt
-  def foldl[B](zero: B)(f: (B, A) => B): B           = ll.foldLeft(xs, zero, f)
+  def first[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
   def foldr[B](zero: B)(f: (A, B) => B): B           = ll.foldRight(xs, zero, f)
   def forall(p: ToBool[A]): Boolean                  = foldl(true)((_, x) => p(x) || { return false })
-  def head: A                                        = (xs take 1).force.head
   def indexWhere(p: ToBool[A]): Index                = xs.zipIndex findLeft p map snd or NoIndex
   def isEmpty: Boolean                               = xs.size.isZero || !exists(true)
   def last: A                                        = xs takeRight 1 head
@@ -42,30 +48,27 @@ final class TerminalViewOps[A](val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]) = new EqViewOps[A](xs)(eqv)
 }
 
-final case class AView[A, B](xs: View[A], op: Op[A, B]) extends View[B] {
+final case class AView[R, A, B](xs: View[A], op: Op[A, B]) extends View[B] {
   def size: Size                  = op[ConstSize](xs.size)
   def foreach(f: B => Unit): Unit = op(xs) foreach f
 }
+object AView {
+  def apply[R, A, B](xs: R)(implicit z: ViewsAs[A, R]): AView[R, A, A] =
+    new AView[R, A, A](z viewAs xs, Op(classNameOf(xs)))
+}
 
-final class ViewOps[A](val xs: View[A]) extends AnyVal {
-  private implicit def applyNext[B](op: Op[A, B]): View[B] = xs match {
-    case AView(xs, prev) => AView(xs, prev ~ op)
-    case _               => new AView(xs, op)
+final class ViewOps[R, A](val xs: View[A]) extends AnyVal {
+  private type Next[B] = AView[R, A, B]
+  private implicit def applyNext[B](op: Op[A, B]): Next[B] = xs match {
+    case AView(xs, prev) => AView[R, A, B](cast(xs), prev ~ op)
+    case _               => AView[R, A, B](xs, op)
   }
 
-  // def apply(index: Index): A                                         = xs drop index.sizeExcluding head
   // def dropIndex(index: Index): View[A]                               = xs splitAt index mapRight (_ drop 1) rejoin
-  // def first[B](pf: A ?=> B): Option[B]                               = find(pf.isDefinedAt) map pf
-  // def fold[B](implicit z: Empty[B]): HasInitialValue[A, B]           = foldFrom(z.empty)
-  // def forallTrue(implicit ev: A <:< Boolean): Boolean                = forall(ev)
   // def gatherClass[B: CTag] : View[B]                                 = xs collect classFilter[B]
   // def gather[B](p: Partial[A, View[B]]): View[B]                     = xs flatMap p.zapply
-  // def indicesWhere(p: ToBool[A]): View[Index]                        = zipIndex filterLeft p rights
-  // def intersperse(ys: View[A]): View[A]                              = Split(xs, ys).intersperse
   // def mapApply[B, C](x: B)(implicit ev: A <:< (B => C)): View[C]     = xs map (f => ev(f)(x))
   // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C]       = groupBy[B](f) map g // Probably this should be groupBy
-  // def memo: Indexed.Memo[A]                                          = new Indexed.Memo(xs)
-  // def minOf[B: Order](f: A => B): B                                  = xs map f min
   // def quotientSet(implicit z: Eq[A]): View[ExSet[A]]                 = groupBy[A](identity).values map (_.toExSet)
   // def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]                = xs dropWhile p takeWhile q
   // def sortBy[B](f: A => B)(implicit z: Order[B]): View[A]            = orderOps(orderBy[A](f)).sorted
@@ -74,12 +77,10 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
   // def takeToFirst(p: ToBool[A]): View[A]                             = xs span !p mapRight (_ take 1) rejoin
   // def tee(f: A => String): View[A]                                   = xs map (x => sideEffect(x, println(f(x))))
   // def unzip[L, R](implicit z: Splitter[A, L, R]): View[L] -> View[R] = zipped[L, R] |> (x => x.lefts -> x.rights)
-  // def withSize(size: Size): View[A]                                  = new Each.Impl[A](size, xs foreach _)
-  // def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B                = find(pf.isDefinedAt).fold(z.empty)(pf)
 
   def filter(p: ToBool[A]): View[A]                    = xs withFilter p
   def filterNot(p: ToBool[A]): View[A]                 = xs withFilter !p
-  def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs filter (regex isMatch _)
+  def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs withFilter (regex isMatch _)
   def init: View[A]                                    = xs dropRight 1
   def mapIf(pf: Partial[A, A]): View[A]                = xs map (x => pf.applyOr(x, x))
   def slice(range: VdexRange): View[A]                 = xs drop range.startLong take range.size
@@ -105,8 +106,8 @@ final class ViewOps[A](val xs: View[A]) extends AnyVal {
 
   def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit[A, L, R](xs)(z)
 
-  def partition(p: ToBool[A]): Split[A] = Split(withFilter(p), withFilter(!p))
-  def span(p: ToBool[A]): Split[A]      = Split(takeWhile(p), dropWhile(p))
+  def partition(p: ToBool[A]): Split[A] = Split(xs withFilter p, xs withFilter !p)
+  def span(p: ToBool[A]): Split[A]      = Split(xs takeWhile p, xs dropWhile p)
   def splitAt(index: Index): Split[A]   = Split(xs take index.sizeExcluding, xs drop index.sizeExcluding)
 
   def mpartition(p: View[A] => ToBool[A]): View2D[A] = (

@@ -3,16 +3,6 @@ package std
 
 import api._, all._
 
-final class ArrayOps[A](xs: Array[A]) {
-  def inPlace: InPlace[A] = new InPlace(xs)
-  def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
-    val arr = newArray[A](xs.length + that.length)
-    arraycopy(xs, 0, arr, 0, xs.length)
-    arraycopy(that, 0, arr, xs.length, that.length)
-    arr
-  }
-}
-
 final class InPlace[A](val xs: Array[A]) extends AnyVal {
   private def lastIndex                   = xs.length - 1
   private def sortRef(cmp: Comparator[A]) = java.util.Arrays.sort[A](cast[Array[Ref[A]]](xs), cmp)

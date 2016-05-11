@@ -35,11 +35,6 @@ final class LongOps(val self: Long) extends AnyVal {
   def until(end: Long): LongRange       = LongInterval.until(self, end) map identity
 }
 final class DirectOps[A](val xs: Direct[A]) extends AnyVal {
-  def head: A = apply(Index(0))
-  def last: A = apply(lastIndex)
-  def tail    = xs.drop(1)
-  def init    = xs.dropRight(1)
-
   def reverse: Direct[A] = Each reversed xs
   def apply(i: Vdex): A  = xs elemAt i
   def indices: VdexRange = xs.size.indices

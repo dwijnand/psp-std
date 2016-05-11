@@ -244,8 +244,8 @@ class ViewBasic extends ScalacheckBundle {
         { case xs -> (idx -> size) => xs(idx) }
       ),
       "splitAt/drop" -> sameOutcomes[RTriple, View[Long]](
-        { case xs -> (idx -> size) => xs.m splitAt idx onRight (_ drop size) },
-        { case xs -> (idx -> size) => xs.m drop size splitAt idx onRight identity }
+        { case xs -> (idx -> size) => xs.m splitAt idx appRight (_ drop size) },
+        { case xs -> (idx -> size) => xs.m drop size splitAt idx appRight identity }
       ),
       expectValue(MinInt)(view[Int]().zhead),
       expectValue(5)(view(5).zhead)
@@ -346,7 +346,7 @@ class CollectionsSpec extends ScalacheckBundle {
   val pset: ExSet[AB]     = elems(in: _*)
   val pvec: Vec[AB]       = elems(in: _*)
 
-  def paired[A](x: A): (A, Int) = x -> ("" + x).length
+  def paired[A](x: A): A -> Int = x -> x.any_s.length
 
   def jvmProps = vec[NamedProp](
     expectTypes[String](
@@ -401,15 +401,15 @@ class CollectionsSpec extends ScalacheckBundle {
       sset build,
       sset map identity build,
       sset map fst map paired,
-      sset map fst map paired force,
       sset.m build,
       sset.m map identity build,
       sset.m map fst map paired build
     ),
     expectTypes[sciMap[A, B]](
-      smap map identity,
       smap force,
+      smap map identity,
       smap map identity force,
+      // smap map fst map paired build,
       smap map fst map paired force,
       smap.m build,
       smap.m map identity build,
@@ -457,12 +457,17 @@ class CollectionsSpec extends ScalacheckBundle {
       ),
       expectTypes[jMap[A, B]](
         jmap build,
-        jmap map identity force,
+        // jmap map identity,
         jmap map identity build,
+        jmap map identity force,
+        // jmap map fst map paired,
         jmap map fst map paired build,
         jmap.m build,
+        // jmap.m map identity,
         jmap.m map identity build,
-        jmap.m map fst map paired build
+        jmap.m map identity force,
+        jmap.m map fst map paired build,
+        jmap.m map fst map paired force
       )
     )
   }
