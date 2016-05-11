@@ -11,6 +11,3 @@ coverage:
     project: yes
     patch: no
     changes: no
-
-comment:
-  layout: "header, diff, trends, sunburst, uncovered"
