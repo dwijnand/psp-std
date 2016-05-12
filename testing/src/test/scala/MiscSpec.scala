@@ -12,10 +12,10 @@ class MiscTests {
 
 class ArraySpec extends ScalacheckBundle {
   def bundle = "Array operations"
-  val ys: Array[Long] = 0 to 100 toArray
+  val ys: Array[Int] = 0 to 100 toArray
 
   def props = vec(
-    expectValue(5050L)(ys.toArray.inPlace.shuffle.reducel(_ + _))
+    expectValue(5050)(ys.toArray.inPlace.shuffle.reducel(_ + _))
   )
 }
 

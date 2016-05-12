@@ -4,7 +4,7 @@ package tests
 import api._, std._, all._, StdShow._
 
 class IntViewTests {
-  val ints: IntRange = 1 to 10 map (_.toInt)
+  val ints: IntRange = 1 to 10
   val ints3          = ints take 3
 
   def same[A : Eq : Show](expr: A, expected: A): Unit = {
@@ -50,7 +50,7 @@ class IntViewTests {
     same(ints sliceIndex Nth(2), view(2))
     same(ints sliceIndex Nth(20), view())
     same(ints sliceWhile (_ < 4, _ < 6), view(4, 5))
-    same((ints sorted order[Int].flip).head, 10)
+    same(ints sort order[Int].flip head, 10)
     same(ints mapIf { case 1 => -1 } size, Size(10))
     same(ints mapIf { case 1 => -1 } head, -1)
     same(ints.m.slice(Index(2), Size(2)), view(3, 4))
@@ -58,7 +58,12 @@ class IntViewTests {
     same(ints.m.slice(indexRange(1, 4)), view(2, 3, 4))
     same(ints.m slice nthInclusive(3, 4), view(3, 4))
     same(ints.m drop 2 take 2, view(3, 4))
-    same(1 to 3 map Nth, 0 to 2 map Index)
+    same(1 to 3 map nth, 0 to 2 map newIndex)
+    same(nthInclusive(1, 3), indexRange(0, 3))
+    same(ints takeToFirst (_ > 2), view(1, 2, 3))
+    same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))
+    same(ints.span(_ < 4).collate, view(1, 4, 2, 5, 3, 6))
+    same(ints.partition(_ % 2 == 0).cross.force.size, Size(25))
   }
 
   @Test

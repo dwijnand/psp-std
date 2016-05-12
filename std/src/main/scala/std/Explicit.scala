@@ -53,6 +53,11 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
 
   def order[A](implicit z: Order[A]): Order[A] = z
 
+  def nth(n: Int): Nth         = Nth(n)
+  def nth(n: Long): Nth        = Nth(n)
+  def newIndex(n: Int): Index  = Index(n)
+  def newIndex(n: Long): Index = Index(n)
+
   def byEquals[A]: Hash[A]              = Eq.Inherited
   def byReference[A <: AnyRef]: Hash[A] = Eq.Reference
   def byString[A]: Hash[A]              = Eq.ToString

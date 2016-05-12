@@ -69,32 +69,31 @@ final class ViewOps[R, A](val xs: View[A]) extends AnyVal with TerminalViewOps[A
     case _               => AView[R, A, B](xs, op)
   }
 
-  // def dropIndex(index: Index): View[A]                               = xs splitAt index mapRight (_ drop 1) rejoin
-  // def gatherClass[B: CTag] : View[B]                                 = xs collect classFilter[B]
-  // def gather[B](p: Partial[A, View[B]]): View[B]                     = xs flatMap p.zapply
-  // def mapApply[B, C](x: B)(implicit ev: A <:< (B => C)): View[C]     = xs map (f => ev(f)(x))
-  // def mapBy[B: Eq, C](f: A => B, g: View[A] => C): ExMap[B, C]       = groupBy[B](f) map g // Probably this should be groupBy
-  // def quotientSet(implicit z: Eq[A]): View[ExSet[A]]                 = groupBy[A](identity).values map (_.toExSet)
-  // def sortBy[B](f: A => B)(implicit z: Order[B]): View[A]            = orderOps(orderBy[A](f)).sorted
-  // def sortWith(cmp: OrderRelation[A]): View[A]                       = orderOps(Order(cmp)).sorted
-  // def splitAround(index: Index): A -> Split[A]                       = splitAt(index) |> (lr => (lr onRight (_.head)) -> (lr mapRight (_ tail)))
-  // def takeToFirst(p: ToBool[A]): View[A]                             = xs span !p mapRight (_ take 1) rejoin
-  // def tee(f: A => String): View[A]                                   = xs map (x => sideEffect(x, println(f(x))))
+  // def gatherClass[B: CTag] : View[B]             = xs collect classFilter[B]
+  // def gather[B](p: Partial[A, View[B]]): View[B] = xs flatMap p.zapply
+  // def tee(f: A => String): View[A]               = xs map (x => sideEffect(x, println(f(x))))
 
+  def tee(f: ToUnit[A]): View[A]                       = xs map (x => doto(x)(f))
   def filter(p: ToBool[A]): View[A]                    = xs withFilter p
   def filterNot(p: ToBool[A]): View[A]                 = xs withFilter !p
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs withFilter (regex isMatch _)
-  def init: View[A]                                    = xs dropRight 1
   def mapIf(pf: A ?=> A): View[A]                      = xs map (x => pf.applyOr(x, x))
   def slice(start: Vdex, len: Precise): View[A]        = xs drop Size(start.indexValue) take len
   def slice(r: VdexRange): View[A]                     = if (r.isEmpty) view() else slice(r.head, r.size)
-  def sorted(implicit z: Order[A]): View[A]            = xs.toRefArray.inPlace.sort
-  def tail: View[A]                                    = xs drop 1
-  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
-  def sliceIndex(idx: Vdex): View[A]                   = xs drop idx.excluding take 1
-  def applyIndex(idx: Vdex): A                         = sliceIndex(idx).head
 
+  def sort(implicit z: Order[A]): View[A]      = xs.toRefArray.inPlace.sort
+  def sortBy[B: Order](f: A => B): View[A]     = sort(orderBy[A](f))
+  def sortWith(cmp: OrderRelation[A]): View[A] = sort(Order(cmp))
+
+  def takeToFirst(p: ToBool[A]): View[A]              = xs span !p mapRight (_ take 1) join
+  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A] = xs dropWhile p takeWhile q
+  def sliceIndex(idx: Vdex): View[A]                  = xs drop idx.excluding take 1
+  def applyIndex(idx: Vdex): A                        = sliceIndex(idx).head
+
+  def init: View[A]    = xs dropRight 1
+  def tail: View[A]    = xs drop 1
   def tails: View2D[A] = cond(isEmpty, view(), view(xs) ++ tail.tails)
+  def inits: View2D[A] = cond(isEmpty, view(), view(xs) ++ init.inits)
 
   def collect[B](pf: A ?=> B): View[B]        = Op.Collect(pf)
   def drop(n: Precise): View[A]               = Op.Drop[A](n)
@@ -119,10 +118,11 @@ final class ViewOps[R, A](val xs: View[A]) extends AnyVal with TerminalViewOps[A
 
   def zipped[L, R](implicit z: Splitter[A, L, R]): Zip[L, R] = zipSplit(xs)
 
-  def partition(p: ToBool[A]): Split[A] = Split(xs withFilter p, xs withFilter !p)
-  def span(p: ToBool[A]): Split[A]      = Split(xs takeWhile p, xs dropWhile p)
-  def splitAt(idx: Vdex): Split[A]      = Split(xs take idx.excluding, xs drop idx.excluding)
-  def splitAround(idx: Vdex): Split[A]  = splitAt(idx) mapRight (_ drop 1)
+  def partition(p: ToBool[A]): Split[A]  = Split(xs withFilter p, xs withFilter !p)
+  def span(p: ToBool[A]): Split[A]       = Split(xs takeWhile p, xs dropWhile p)
+  def splitAt(idx: Vdex): Split[A]       = Split(xs take idx.excluding, xs drop idx.excluding)
+  def splitAround(idx: Vdex): Split[A]   = splitAt(idx) mapRight (_ drop 1)
+  def dropIndex(idx: Index): View[A]     = splitAround(idx).join
 }
 
 object View2D {

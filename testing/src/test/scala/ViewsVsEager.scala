@@ -47,7 +47,7 @@ class OperationCounts extends ScalacheckBundle {
 
   def composite: Gen[CompositeOp] = genCompositeOp ^^ CompositeOp
 
-  val counter = OperableCounter(1 to max)
+  val counter = OperableCounter(1L to max)
 
   case class CompositeOp(op: LongOp) {
     lazy val (maybeRes, views, eager) = counter(op ~ Take(3))

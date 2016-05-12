@@ -83,6 +83,10 @@ object all extends AllExplicit with AllImplicit {
     def to(end: Char): CharRange          = LongInterval.to(ch.toLong, end) map (_.toChar)
     def until(end: Char): CharRange       = LongInterval.until(ch.toLong, end) map (_.toChar)
   }
+  implicit class IntOps(val self: Int) extends AnyVal {
+    def to(end: Int): IntRange    = LongInterval.to(self, end) map (_.toInt)
+    def until(end: Int): IntRange = LongInterval.until(self, end) map (_.toInt)
+  }
   implicit class LongOps(val self: Long) extends AnyVal {
     /** Safe in the senses that it won't silently truncate values,
       *  and will translate MaxLong to MaxInt instead of -1.
@@ -226,16 +230,17 @@ object all extends AllExplicit with AllImplicit {
     def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
   implicit class Product2HomoOps[R, A](val x: R)(implicit z: Splitter[R, A, A]) {
-    def each: Each[A] = Each pair x
+    def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
+    def each: Each[A]              = Each pair x
+    def seq: scSeq[A]              = each.seq
   }
   implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
-    def mapLeft[C](f: A => C): C -> B            = f(fst(x)) -> snd(x)
-    def mapRight[C](f: B => C): A -> C           = fst(x)    -> f(snd(x))
-    def xmap[C, D](f: A => C, g: B => D): C -> D = f(fst(x)) -> g(snd(x))
-    def app[C](f: (A, B) => C): C                = f(fst(x), snd(x))
     def appLeft[C](f: A => C): C                 = f(fst(x))
     def appRight[C](f: B => C): C                = f(snd(x))
-    def unify[C](f: A => C, g: B => C): C -> C   = f(fst(x)) -> g(snd(x))
+    def app[C](f: (A, B) => C): C                = f(fst(x), snd(x))
+    def mapEach[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
+    def mapLeft[C](f: A => C): C -> B            = f(fst(x)) -> snd(x)
+    def mapRight[C](f: B => C): A -> C           = fst(x)    -> f(snd(x))
   }
   implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)

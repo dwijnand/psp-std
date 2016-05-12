@@ -57,12 +57,12 @@ class CollectionsSpec extends ScalacheckBundle {
       arr.m flatMap (x => view(x)) build
     ),
     expectTypes[Array[Long]](
-      make0[Array[Long]](1 to 10),
-      make0[Array[Long]](1 to 10 m),
-      make0[Array[Long]](1 to 10 toVec),
-      make1[Array](1 to 10),
-      make1[Array](1 to 10 m),
-      make1[Array](1 to 10 toVec),
+      make0[Array[Long]](1L to 10),
+      make0[Array[Long]](1L to 10 m),
+      make0[Array[Long]](1L to 10 toVec),
+      make1[Array](1L to 10),
+      make1[Array](1L to 10 m),
+      make1[Array](1L to 10 toVec),
       make0[Array[Long]](1L to 10L),
       make0[Array[Long]](1L to 10L m),
       make0[Array[Long]](1L to 10L toVec),
