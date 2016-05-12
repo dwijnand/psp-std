@@ -20,13 +20,15 @@ trait Each[+A]    extends Any with Foreach[A]
 trait Indexed[+A] extends Any with Each[A] { def elemAt(i: Vdex): A }
 trait Direct[+A]  extends Any with Indexed[A] { def size: Precise }
 
+
 trait InSet[-A] extends Any {
   def apply(x: A): Bool
 }
-trait ExSet[A] extends Any with Each[A] with InSet[A] {
+trait ExSet[A] extends Any with Foreach[A] {
+  def size: Precise
   def basis: Each[A]
   def equiv: Hash[A]
-  def size: Precise
+  def apply(x: A): Bool
 }
 
 /** When a Show type class is more trouble than it's worth.

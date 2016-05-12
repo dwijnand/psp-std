@@ -129,9 +129,9 @@ package object tests {
     def take(n: Int): Vec[A]                      = stream take n toVec
   }
 
-  implicit def chooseIndex: Choose[Index]  = Choose.xmap[Long, Index](Index, _.get)
+  implicit def chooseIndex: Choose[Index]  = Choose.xmap[Long, Index](Index, _.indexValue)
   implicit def chooseSize: Choose[Precise] = Choose.xmap[Long, Precise](Finite, _.getLong)
-  implicit def chooseNth: Choose[Nth]      = Choose.xmap[Long, Nth](Nth, _.get)
+  implicit def chooseNth: Choose[Nth]      = Choose.xmap[Long, Nth](Nth, _.nthValue)
 
   def preNewline(s: String): String                               = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def showsAs[A: Show](expected: String, x: A): NamedProp         = preNewline(expected) -> (expected =? show"$x")

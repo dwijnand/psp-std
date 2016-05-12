@@ -7,14 +7,6 @@ import java.util.regex.{ Pattern, Matcher }
 import jl.Integer.parseInt // , jl.Long.parseLong, jl.Double.parseDouble, jl.Float.parseFloat
 
 final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String] with ShowSelf {
-  // private def rebuild(xs: Vec[String]) = new SplitCharView(xs, sep)
-
-  // def collect(pf: String ?=> String): SplitCharView = rebuild(xs collect pf)
-  // def filter(p: ToBool[String]): SplitCharView      = rebuild(xs filter p)
-  // def grep(r: Regex): SplitCharView                 = rebuild(xs filter r.isMatch)
-  // def isEmpty: Bool                                 = xs.isEmpty
-  // def map(f: String => String): SplitCharView       = rebuild(xs map f)
-
   def build(): String                  = xs mk_s sep
   def elemAt(idx: Vdex)                = xs elemAt idx
   def foreach(f: String => Unit): Unit = xs foreach f
@@ -95,8 +87,6 @@ final class Regex(val pattern: Pattern) extends AnyVal with ShowSelf {
 }
 
 object Regex extends (String => Regex) {
-  // def alt(r1: Regex, r2: Regex): Regex = r1 | r2
-
   def quote(s: String): Regex             = apply(Pattern quote s)
   def apply(s: String): Regex             = new Regex(Pattern compile s)
   def apply(s: String, flags: Int): Regex = new Regex(Pattern.compile(s, flags))

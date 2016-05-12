@@ -4,11 +4,11 @@ package std
 import api._, exp._
 
 /** Having an Empty[A] instance in scope allows for using methods
-  *  like zfold, zreduce, zhead, whereupon the implicit empty value
-  *  will be used if the View is indeed empty. One could look at
-  *  standard semantics as using a default Empty[A] instance for all
-  *  types, satisfied by throwing an exception. That sort of Empty[A]
-  *  instance can also be created explicitly.
+  * like zfold, zreduce, zhead, whereupon the implicit empty value
+  * will be used if the View is indeed empty. One could look at
+  * standard semantics as using a default Empty[A] instance for all
+  * types, satisfied by throwing an exception. That sort of Empty[A]
+  * instance can also be created explicitly.
   */
 object Empty {
   def empty[A]: Empty[A]             = new Throws[A]("empty") // the empty empty
@@ -35,4 +35,21 @@ trait StdEmpty {
   implicit lazy val emptyPath: Empty.Const[jPath]             = Empty const NoPath
   implicit lazy val emptyString: Empty.Const[String]          = Empty const ""
   implicit lazy val emptyVdexRange: Empty.Const[VdexRange]    = Empty const indexRange(0, 0)
+}
+
+trait StdTypeClasses {
+  import all._
+
+  /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
+    *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
+    *  "to adhere firmly and closely as though evenly and securely glued" as well
+    *  as "to divide into two parts by a cutting blow".
+    */
+  def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
+  def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R    = f(x._1, x._2) }
+
+  def cleaver[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] = new Cleaver[R, A, B] {
+    def split(x: R): A -> B = l(x) -> r(x)
+    def join(x: A -> B): R  = x app f
+  }
 }

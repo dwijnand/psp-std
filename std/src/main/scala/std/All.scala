@@ -2,8 +2,7 @@ package psp
 package std
 
 import psp.api._
-import scala.{ collection => sc }
-import sc.{ mutable => scm, immutable => sci }
+import java.{ lang => jl }
 import scala.Tuple2
 import java.io.BufferedInputStream
 
@@ -12,7 +11,133 @@ import java.io.BufferedInputStream
   */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+
+  implicit class VindexOps(vdex: Vdex) {
+    def getInt: Int = vdex.indexValue.safeToInt
+  }
+  implicit class AnyOps[A](val x: A) extends AnyVal {
+    def any_s: String                         = s"$x"
+    def id_## : Int                           = java.lang.System.identityHashCode(x)
+    def id_==(y: Any): Boolean                = cast[AnyRef](x) eq cast[AnyRef](y)
+    def matchIf[B : Empty](pf: A ?=> B): B    = matchOr(emptyValue[B])(pf)
+    def matchOr[B](alt: => B)(pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else alt
+
+    @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
+  }
+  implicit class SizeOps(val lhs: Size) extends AnyVal {
+    import Size._
+
+    def getInt: Int = lhs match {
+      case Finite(n) => n.toInt
+      case s         => illegalArgumentException(s)
+    }
+    def isNonZero     = loBound =!= Zero
+    def isZero        = lhs === Zero
+    def atLeast: Size = Size.Range(lhs, Infinite)
+    def atMost: Size  = Size.Range(Zero, lhs)
+
+    def loBound: Atomic = lhs match {
+      case Bounded(lo, _) => lo
+      case x: Atomic      => x
+    }
+
+    /** For instance taking the union of two sets. The new size is
+      *  at least the size of the larger operand, but at most the sum
+      *  of the two sizes.
+      */
+    def union(rhs: Size): Size     = Size.Range(lhs max rhs, lhs + rhs)
+    def intersect(rhs: Size): Size = Size.Range(Size.Zero, lhs min rhs)
+    def diff(rhs: Size): Size      = Size.Range(lhs - rhs, lhs)
+
+    def +(rhs: Size): Size = (lhs, rhs) match {
+      case (Finite(l), Finite(r))                   => Finite(l + r)
+      case (Infinite, Finite(_))                    => Infinite
+      case (Finite(_), Infinite)                    => Infinite
+      case (Infinite, Infinite)                     => Infinite
+      case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 + l2, h1 + h2)
+    }
+    def -(rhs: Size): Size = (lhs, rhs) match {
+      case (Finite(l), Finite(r))                   => Finite(l - r)
+      case (Finite(_), Infinite)                    => Zero
+      case (Infinite, Finite(_))                    => Infinite
+      case (Infinite, Infinite)                     => Unknown
+      case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
+    }
+    def min(rhs: Size): Size = Size.min(lhs, rhs)
+    def max(rhs: Size): Size = Size.max(lhs, rhs)
+  }
+
+  implicit class CharOps(val ch: Char) extends AnyVal {
+    // def isAlphabetic = jl.Character isAlphabetic ch
+    def isControl = jl.Character isISOControl ch
+    // def isDigit      = jl.Character isDigit ch
+    // def isLetter     = jl.Character isLetter ch
+    // def isLower      = jl.Character isLowerCase ch
+    // def isUpper      = jl.Character isUpperCase ch
+    // def toLower      = jl.Character toLowerCase ch
+    // def isSpace      = jl.Character isWhitespace ch
+    def toUpper = jl.Character toUpperCase ch
+    def to_s    = ch.toString
+
+    def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
+    def to(end: Char): CharRange          = LongInterval.to(ch.toLong, end) map (_.toChar)
+    def until(end: Char): CharRange       = LongInterval.until(ch.toLong, end) map (_.toChar)
+  }
+  implicit class LongOps(val self: Long) extends AnyVal {
+    /** Safe in the senses that it won't silently truncate values,
+      *  and will translate MaxLong to MaxInt instead of -1.
+      *  We depend on this!
+      */
+    def safeToInt: Int = self match {
+      case MaxLong => MaxInt
+      case MinLong => MinInt
+      case _       => assertInIntRange() ; self.toInt
+    }
+    def takeNext(len: Precise): LongRange = LongInterval.closed(self, len) map identity
+    def to(end: Long): LongRange          = LongInterval.to(self, end) map identity
+    def until(end: Long): LongRange       = LongInterval.until(self, end) map identity
+
+    private def assertInIntRange(): Unit = assert(MinInt <= self && self <= MaxInt, s"$self out of range")
+  }
+  implicit class PreciseOps(val size: Precise) {
+    def indices: VdexRange = indexRange(0, size.getLong)
+    def lastIndex: Index   = Index(size.getLong - 1) // effectively maps both undefined and zero to no index.
+
+    def +(n: Precise): Precise             = size + n.getLong
+    def -(n: Precise): Precise             = size - n.getLong
+    def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
+
+    def min(rhs: Precise): Precise = all.min(size, rhs)
+  }
+
+  implicit class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
+    import Fun._
+
+    def applyOrElse(x: A, g: A => B): B       = cond(f isDefinedAt x, f(x), g(x))
+    def zfold[C : Empty](x: A)(g: B => C): C  = cond(f isDefinedAt x, g(f(x)), emptyValue)
+    def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
+    def get(x: A): Option[B]                  = zfold(x)(some)
+    def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Opaque(g), f)
+    def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Opaque(g))
+
+    def defaulted(g: A => B): Defaulted[A, B] = f match {
+      case Defaulted(_, u) => Defaulted(g, u)
+      case _               => Defaulted(g, f)
+    }
+
+    def filterIn(p: A => Boolean): FilterIn[A, B] = f match {
+      case FilterIn(p0, u) => FilterIn(x => p0(x) && p(x), u)
+      case _               => FilterIn(p, f)
+    }
+
+    def traced(in: A => Unit, out: B => Unit): Fun[A, B] =
+      mapIn[A](x => doto(x)(in)) mapOut (x => doto(x)(out))
+  }
+
   implicit class ArrayOps[A](xs: Array[A]) {
+    private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
+      java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
+
     def inPlace: InPlace[A] = new InPlace(xs)
     def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
       val arr = newArray[A](xs.length + that.length)
@@ -29,6 +154,8 @@ object all extends AllExplicit with AllImplicit {
   implicit class ApiOrderOps[A](ord: Order[A]) {
     import ord._
 
+    def flip: Order[A] = Order((x, y) => ord.cmp(x, y).flip)
+
     def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
 
     def comparator[A](implicit z: Order[A]): Comparator[A] = new scala.math.Ordering[A] {
@@ -43,7 +170,13 @@ object all extends AllExplicit with AllImplicit {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
   implicit class CmpEnumOps(val cmp: Cmp) {
-    def |(that: => Cmp): Cmp = if (cmp == Cmp.EQ) that else cmp
+    import Cmp._
+    def flip: Cmp = cmp match {
+      case LT => GT
+      case GT => LT
+      case EQ => EQ
+    }
+    def |(that: => Cmp): Cmp = if (cmp == EQ) that else cmp
   }
   implicit class ViewOpOps[A, B](op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
@@ -57,15 +190,13 @@ object all extends AllExplicit with AllImplicit {
     def entries: Zip[K, V]                = intoView(keyVector) mapAndZip lookup
     def keySet: ExSet[K]                  = lookup.keys
     def keyVector: Vec[K]                 = keys.toVec
-    def keys: View[K]                     = keySet.m
-    def map[V1](g: V => V1): ExMap[K, V1] = keySet mapWith (f mapOut g)
+    def keys: View[K]                     = keySet.basis.m
+    def map[V1](g: V => V1): ExMap[K, V1] = keySet map (f mapOut g)
     def values: View[V]                   = keyVector map lookup
   }
   implicit class ExSetOps[A](val xs: ExSet[A]) {
-    private implicit def equiv = xs.equiv
-
-    def mapWith[B](f: Fun[A, B]): ExMap[A, B] = ExMap(xs, f)
-    def union(that: ExSet[A]): ExSet[A]       = xs.m ++ that.m toExSet
+    def map [B](f: A => B): ExMap[A, B]           = Fun.finite(xs, f)
+    def flatMap[B](f: A => (A => B)): ExMap[A, B] = Fun.finite(xs, x => f(x)(x))
   }
 
   /** Extension methods for scala library classes.
@@ -113,7 +244,8 @@ object all extends AllExplicit with AllImplicit {
     def toExSet: ExSet[A]       = xs.toExSet
   }
   implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
-    def doc: Doc = Doc(lhs)
+    def doc: Doc     = Doc(lhs)
+    def show: String = shows show lhs
   }
 
   /** Conversions which require the elements to be pairs. Obtaining evidence of that
@@ -155,110 +287,4 @@ object all extends AllExplicit with AllImplicit {
   implicit class Function2SameOps[A, R](f: BinTo[A, R]) {
     def on[B](g: B => A): (B, B) => R = (x, y) => f(g(x), g(y))
   }
-}
-
-abstract class AllExplicit extends ApiValues with StdEq {
-  final val ->        = Pair
-  final val Array     = scala.Array
-  final val Failure   = scala.util.Failure
-  final val Nil       = scala.collection.immutable.Nil
-  final val NoFile    = jFile("")
-  final val NoIndex   = Index.invalid
-  final val NoPath    = jPath("")
-  final val NoUri     = jUri("")
-  final val None      = scala.None
-  final val Option    = scala.Option
-  final val Some      = scala.Some
-  final val Success   = scala.util.Success
-  final val Try       = scala.util.Try
-  final val sciList   = sci.List
-  final val sciMap    = sci.Map
-  final val sciSeq    = sci.Seq
-  final val sciSet    = sci.Set
-  final val sciVector = sci.Vector
-  final val scmMap    = scm.Map
-
-  final val ConstantFalse  = (x: scala.Any) => false
-  final val ConstantTrue   = (x: scala.Any) => true
-  final val ConstantFalse2 = (x: scala.Any, y: scala.Any) => false
-  final val ConstantTrue2  = (x: scala.Any, y: scala.Any) => true
-
-  // Type aliases I don't like enough to have in the API.
-  type Bag[A]               = ExMap[A, Precise]
-  type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
-  type VdexRange            = ClosedRange[Vdex]
-  type IntRange             = ClosedRange[Int]
-  type LongRange            = ClosedRange[Long]
-  type CharRange            = ClosedRange[Char]
-  type OpenRange[+A]        = Consecutive.Open[A]
-  type ClosedRange[+A]      = Consecutive.Closed[A]
-  type Renderer             = Show[Doc]
-  type View2D[+A]           = View[View[A]]
-
-  // Helpers for inference when calling 'on' on contravariant type classes.
-  def eqBy[A]    = new EqBy[A]
-  def orderBy[A] = new OrderBy[A]
-  def showBy[A]  = new ShowBy[A]
-  def hashBy[A]  = new HashBy[A]
-
-  def byEquals[A]: Hash[A]              = Eq.Inherited
-  def byReference[A <: AnyRef]: Hash[A] = Eq.Reference
-  def byString[A]: Hash[A]              = Eq.ToString
-
-  def classFilter[A : CTag]: Partial[Any, A]       = Partial(isInstance[A], cast[A])
-  def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
-  def inheritShow[A]: Show[A]                      = Show.Inherited
-  def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
-  def println[A : Show](x: A): Unit                = scala.Console.out println render(x)
-  def render[A](x: A)(implicit z: Show[A]): String = z show x
-
-  def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
-  def make0[R]: MakeHelper0[R]         = new MakeHelper0[R]
-  def make1[CC[_]]: MakeHelper1[CC]    = new MakeHelper1[CC]
-  def make2[CC[_, _]]: MakeHelper2[CC] = new MakeHelper2[CC]
-
-  def bufferMap[A, B : Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def inView[A](mf: Suspended[A]): View[A]    = new IdView(Each(mf))
-
-  def closedRange[A](start: Long, size: Precise)(f: Long => A): ClosedRange[A] = LongInterval.closed(start, size) map f
-  def indexRange(start: Long, end: Long): VdexRange                            = LongInterval.until(start, end) map Index
-  def indexed[A](f: Long => A): OpenRange[A]                                   = openRange(0)(f)
-  def intRange(start: Int, end: Int): IntRange                                 = LongInterval.until(start, end) map (_.toInt)
-  def intsFrom(start: Int): OpenRange[Int]                                     = openRange(start)(_.toInt)
-  def longRange(start: Long, end: Long): LongRange                             = LongInterval.until(start, end) map identity
-  def longsFrom(start: Long): OpenRange[Long]                                  = openRange(start)(identity)
-  def openIndices: OpenRange[Index]                                            = openRange(0)(Index)
-  def openRange[A](start: Long)(f: Long => A): OpenRange[A]                    = LongInterval open start map f
-
-  def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]          = heteroViews(l, r).cross
-  def homoViews[A](l: View[A], r: View[A]): Split[A]               = Split(l, r)
-  def heteroViews[A, B](l: View[A], r: View[B]): SplitHetero[A, B] = SplitHetero(l, r)
-
-  def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
-  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                 = new Zip.ZipPairs(xs)
-  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)
-  def zipWith[A, B](l: View[A], f: A => B): Zip[A, B]                             = new Zip.ZipWith(l, f)
-
-  import Builders._
-
-  def viewsAs[R, A](f: R => Foreach[A]): ViewsAs[A, R] = new ViewsAs(f)
-  def builds[A, R](f: Foreach[A] => R): Builds[A, R]   = new Builds(f)
-
-  def intoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): IdView[A, R] = z viewAs xs
-  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R               = z(xs foreach _)
-
-  def arr[A : CTag](xs: A*): Array[A]            = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]                  = elems(xs: _*)
-  def rel[A : Eq, B](xs: (A -> B)*): ExMap[A, B] = elems(xs: _*)
-  def set[A : Eq](xs: A*): ExSet[A]              = elems(xs: _*)
-  def vec[A](xs: A*): Vec[A]                     = elems(xs: _*)
-  def view[A](xs: A*): View[A]                   = inView(xs foreach _)
-  def zip[A, B](xs: (A -> B)*): Zip[A, B]        = zipPairs(view(xs: _*))
-
-  def javaList[A](xs: A*): jList[A]               = elems(xs: _*)
-  def javaMap[K, V](xs: (K -> V)*): jMap[K, V]    = elems(xs: _*)
-  def javaSet[A](xs: A*): jSet[A]                 = elems(xs: _*)
-  def scalaList[A](xs: A*): sciList[A]            = elems(xs: _*)
-  def scalaMap[K, V](xs: (K -> V)*): sciMap[K, V] = elems(xs: _*)
-  def scalaSet[A](xs: A*): sciSet[A]              = elems(xs: _*)
 }

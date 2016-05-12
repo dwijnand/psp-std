@@ -54,7 +54,6 @@ package object gen {
   def indexFrom[A](r: Consecutive.Closed[A]): Gen[Vdex]           = frequency(1 -> NoIndex, 1 -> Index(0), 20 -> oneOf(r.indices.seq), 1 -> r.lastIndex.next)
   def indexRangeFrom(sMax: Long, eMax: Long): Gen[VdexRange]      = longRange(0 upTo sMax, 0 upTo eMax) ^^ (_ map Index)
   def validIndexFrom(r: IntRange): Gen[Vdex]                      = oneOf(r.indices.seq)
-  def subsizeOf(r: IntRange): Gen[Precise]                        = validIndexFrom(r) ^^ (_.sizeIncluding)
 
   def precise: Gen[Precise] = chooseNum(1, MaxInt / 2) map (x => Size(x))
   def atomic: Gen[Atomic]   = frequency(10 -> precise, 1 -> Size.Zero, 1 -> Infinite)
