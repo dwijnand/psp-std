@@ -8,6 +8,12 @@ class IntViewTests {
   val ints3          = ints take 3
   val xints          = view(304, 106, 25)
 
+  val splt  = ints take 6 partition (_ % 2 === 0)
+  val even3 = splt.leftView
+  val odd3  = splt.rightView
+  val zip3  = splt.zip
+  val cro9  = splt.cross
+
   def same[A : Eq : Show](expr: A, expected: A): Unit = {
     assert(expr === expected, pp"""
       |Expected: $expected
@@ -21,8 +27,8 @@ class IntViewTests {
     same(ints exists (_ < 10), true)
     same(ints exists (_ > 10), false)
     same(ints find (_ > 5), some(6))
-    same(ints findOr(_ > 15, 20), 20)
-    same(ints findOr(_ > 5, 20), 6)
+    same(ints find (_ > 15) or 20, 20)
+    same(ints find (_ > 5) or 20, 6)
     same(ints forall (_ < 10), false)
     same(ints forall (_ < 11), true)
     same(ints head, 1)
@@ -44,8 +50,9 @@ class IntViewTests {
     same(ints grep "^[47]$".r last, 7)
     same(ints.tail.head, 2)
     same(ints.init.last, 9)
-    same((ints3.tails drop 1).head.head, 2)
-    same((ints3.tails drop 2).head.head, 3)
+    same(ints3.tails, view(view(1, 2, 3), view(2, 3), view(3), view()))
+    same(ints3.inits, view(view(1, 2, 3), view(1, 2), view(1), view()))
+    same(ints3.tails.flatten, view(1, 2, 3, 2, 3, 3))
     same(ints applyIndex Index(0), 1)
     same(ints applyIndex Nth(2), 2)
     same(ints sliceIndex Nth(2), view(2))
@@ -54,22 +61,32 @@ class IntViewTests {
     same(ints sort order[Int].flip head, 10)
     same(ints mapIf { case 1 => -1 } size, Size(10))
     same(ints mapIf { case 1 => -1 } head, -1)
-    same(ints.m.slice(Index(2), Size(2)), view(3, 4))
-    same(ints.m.slice(Nth(2), Size(2)), view(2, 3))
-    same(ints.m.slice(indexRange(1, 4)), view(2, 3, 4))
-    same(ints.m slice nthInclusive(3, 4), view(3, 4))
-    same(ints.m drop 2 take 2, view(3, 4))
+    same[View[Int]](ints.slice(Index(2), Size(2)), view(3, 4))
+    same[View[Int]](ints.slice(Nth(2), Size(2)), view(2, 3))
+    same[View[Int]](ints slice indexRange(1, 4), view(2, 3, 4))
+    same[View[Int]](ints slice nthInclusive(3, 4), view(3, 4))
+    same[View[Int]](ints drop 2 take 2, view(3, 4))
     same(1 to 3 map nth, 0 to 2 map newIndex)
     same(nthInclusive(1, 3), indexRange(0, 3))
     same(ints takeToFirst (_ > 2), view(1, 2, 3))
     same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))
     same(ints.span(_ < 4).collate, view(1, 4, 2, 5, 3, 6))
-    same(ints.partition(_ % 2 == 0).cross.force.size, Size(25))
+    same(cro9.force.size, Size(9))
     same(xints.sort, view(25, 106, 304))
     same(xints.sortBy(_.any_s), view(106, 25, 304))
     same(xints.sortBy(_.any_s.reverseBytes.utf8String), view(304, 25, 106))
+    same(xints sortWith ((x, y) => longCmp(y - x)), view(304, 106, 25))
     same(ints3 splitAround nth(2) join, view(1, 3))
     same(ints3 dropIndex nth(2), view(1, 3))
+    same(5 +: ints3 :+ 5, view(5, 1, 2, 3, 5))
+    same(zip3 map (_ - _), view(1, 1, 1))
+    same(zip3 mapLeft (_ * 10) pairs, view(20 -> 1, 40 -> 3, 60 -> 5))
+    same(zip3 mapRight (_ => 0) pairs, view(2 -> 0, 4 -> 0, 6 -> 0))
+    same(splt.collate, view(2, 1, 4, 3, 6, 5))
+    same(splt.join, view(2, 4, 6, 1, 3, 5))
+    same(zip3 corresponds (_ > _), true)
+    same(zipViews(ints3, ints3) corresponds (_ >= _), true)
+    same(zipViews(ints3, ints3 :+ 8) corresponds (_ >= _), false)
   }
 
   @Test

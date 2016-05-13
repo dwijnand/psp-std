@@ -38,7 +38,9 @@ object Fun {
   final case class FilterIn[-A, +B](p: A => Bool, u: Fun[A, B])   extends Fun[A, B]
   final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])     extends Fun[A, B]
   final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C]) extends Fun[A, C]
-  final case class FiniteFun[A, +B](keys: ExSet[A], f: Fun[A, B]) extends Fun[A, B]
+  final case class FiniteFun[A, +B](keys: ExSet[A], f: Fun[A, B]) extends Fun[A, B] {
+    def zipped: Zip[A, B] = zipMap(keys, f)
+  }
 
   def apply[A, B](f: A => B): Opaque[A, B]                          = Opaque(f)
   def fromMap[A : Eq, B](xs: sciMap[A, B]): FiniteFun[A, B]         = FiniteFun(xs.keys.toExSet, Fun(xs apply _))

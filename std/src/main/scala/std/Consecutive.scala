@@ -75,7 +75,7 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def applyLong(x: Long): A
 
   def viewLongs: View[Long]  = Each.construct[Long](in.size, in foreach _).m
-  def zipLongs: Zip[Long, A] = zipWith(viewLongs, applyLong)
+  def zipLongs: Zip[Long, A] = zipMap(viewLongs, applyLong)
   def startLong: Long        = in.startLong
 
   import StdShow._

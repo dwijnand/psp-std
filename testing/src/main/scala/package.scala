@@ -145,7 +145,7 @@ package object tests {
   def expectTypes[A: CTag](results: A*): NamedProp                  = expectTypes(classOf[A], results.toVec map (_.getClass) force)
 
   implicit def buildsToBuildable[A, CC[X]](implicit z: Builds[A, CC[A]]): Buildable[A, CC] = new Buildable[A, CC] {
-    def builder: scmBuilder[A, CC[A]] = z.scalaBuilder
+    def builder: scmBuilder[A, CC[A]] = sciVector.newBuilder[A] mapResult (z build _.m)
   }
 
   implicit class PropOps(p: Prop) {
