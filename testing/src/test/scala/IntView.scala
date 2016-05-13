@@ -6,6 +6,7 @@ import api._, std._, all._, StdShow._
 class IntViewTests {
   val ints: IntRange = 1 to 10
   val ints3          = ints take 3
+  val xints          = view(304, 106, 25)
 
   def same[A : Eq : Show](expr: A, expected: A): Unit = {
     assert(expr === expected, pp"""
@@ -64,6 +65,11 @@ class IntViewTests {
     same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))
     same(ints.span(_ < 4).collate, view(1, 4, 2, 5, 3, 6))
     same(ints.partition(_ % 2 == 0).cross.force.size, Size(25))
+    same(xints.sort, view(25, 106, 304))
+    same(xints.sortBy(_.any_s), view(106, 25, 304))
+    same(xints.sortBy(_.any_s.reverseBytes.utf8String), view(304, 25, 106))
+    same(ints3 splitAround nth(2) join, view(1, 3))
+    same(ints3 dropIndex nth(2), view(1, 3))
   }
 
   @Test

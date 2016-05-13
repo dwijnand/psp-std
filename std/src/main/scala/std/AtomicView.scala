@@ -80,6 +80,10 @@ sealed trait RView[A, R] extends View[A] with ConversionsMethods[A] {
     case IdView(underlying) => underlying foreach f
     case _                  => if (!size.isZero) RunView.loop(this)(f)
   }
+  def head: A = this match {
+    case IdView(xs: Direct[A]) => xs(Index(0))
+    case _                     => take(1).force.head
+  }
 
   def collect[B](pf: A ?=> B): MapTo[B]        = Collected(this, pf)
   def drop(n: Precise): MapTo[A]               = Dropped(this, n)
@@ -101,4 +105,3 @@ final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R]
 sealed abstract class CView[A, B, R](val sizeEffect: ToSelf[Size]) extends RView[B, R] {
   def prev: RView[A, R]
 }
-

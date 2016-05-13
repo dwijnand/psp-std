@@ -36,3 +36,37 @@ object Each {
   final class WrapJoin[A](xs: Each[A], ys: Each[A])          extends WrapEach[A](xs.size + ys.size, (xs foreach _) &&& (ys foreach _))
   final class WrapContinually[A](expr: => A)                 extends WrapEach[A](Infinite, f => while (true) f(expr))
 }
+
+object View2D {
+  type Coords = PairOf[Vdex]
+
+  def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
+    xs partition p(xs) app ((ls, rs) => lazyView(ls +: mpartition(rs)(p)))
+
+  class Ops[A](val xss: View2D[A]) extends AnyVal {
+    import StdShow.showString
+
+    def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
+    def transpose: View2D[A]          = openIndices map column
+    def flatten: View[A]              = xss flatMap identity
+    def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
+
+    def grid_s(implicit z: Show[A]): String = {
+      val width = xss.mmap(_.show.length).flatten.max
+      val fmt   = lformat(width)
+      val yss   = xss mmap (x => fmt(z show x))
+
+      (yss map (_.joinWords)).joinLines.trimLines
+    }
+  }
+
+  class FunGrid[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
+    def isEmpty: Bool        = basis.isEmpty || functions.isEmpty
+    def apply(xy: Coords): B = xy app (rows applyIndex _ applyIndex _)
+    def rows: View2D[B]      = basis map (r => functions map (_ apply r))
+    def columns: View2D[B]   = rows.transpose
+
+    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.show.length) max)
+    def lines(implicit z: Show[B]): View[String] = cond(isEmpty, view(), widths zip rows map (lformat(_)(_)))
+  }
+}

@@ -27,14 +27,15 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def lines: SplitCharView               = splitView('\n')
   def splitView(ch: Char): SplitCharView = new SplitCharView(splitChar(ch), ch)
 
-  // def bytes: Array[Byte]                      = self.getBytes
   // def charVec: Vec[Char]                      = charSeq.toVec
   // def length: Int                             = self.length
   // def replaceChar(pair: Char -> Char): String = self.replace(pair._1, pair._2)
 
+  def reverseBytes: Array[Byte]                     = bytes.inPlace.reverse
+  def bytes: Array[Byte]                            = self.getBytes
   def ~(that: String): String                       = this append that
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
-  def capitalize: String                            = if (isEmpty) "" else (self charAt 0).toUpper.to_s ~ self.tail.force
+  def capitalize: String                            = cond(isEmpty, "", (self charAt 0).toUpper.to_s ~ self.tail.force)
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args: Any*): String                    = stringFormat(self, args: _*)
