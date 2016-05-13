@@ -62,7 +62,7 @@ object Zip {
     *  being aware each element has a left and a right.
     */
   implicit class ZipOps[A1, A2](val x: Zip[A1, A2]) extends AnyVal {
-    import x.{ lefts, rights, pairs, size }
+    import x.{ lefts, rights, pairs }
 
     type MapTo[R] = (A1, A2) => R
     type Both     = A1 -> A2

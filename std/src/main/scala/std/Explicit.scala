@@ -105,7 +105,7 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def builds[A, R](f: Foreach[A] => R): Builds[A, R]   = new Builds(f)
 
   def intoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): IdView[A, R] = z viewAs xs
-  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R               = z(xs foreach _)
+  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R               = z build Each(xs foreach _)
 
   def arr[A : CTag](xs: A*): Array[A]              = xs.toArray[A]
   def list[A](xs: A*): Plist[A]                    = elems(xs: _*)

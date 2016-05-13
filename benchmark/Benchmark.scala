@@ -40,7 +40,7 @@ class ScalaVectorBenchmarker {
   def drop_last(): Int = {
     var xs = elems
     var total = 0
-    while (xs.nonEmpty) {
+    while (!xs.isEmpty) {
       total += xs.last
       xs = xs dropRight 1
     }
@@ -51,7 +51,7 @@ class ScalaVectorBenchmarker {
   def drop_head(): Int = {
     var xs = elems
     var total = 0
-    while (xs.nonEmpty) {
+    while (!xs.isEmpty) {
       total += xs.head
       xs = xs drop 1
     }
@@ -88,7 +88,7 @@ class PspVectorBenchmarker {
   def drop_last(): Int = {
     var xs = elems
     var total = 0
-    while (xs.nonEmpty) {
+    while (!xs.isEmpty) {
       total += xs.last
       xs = xs dropRight 1
     }
@@ -99,7 +99,7 @@ class PspVectorBenchmarker {
   def drop_head(): Int = {
     var xs = elems
     var total = 0
-    while (xs.nonEmpty) {
+    while (!xs.isEmpty) {
       total += xs.head
       xs = xs drop 1
     }
