@@ -86,7 +86,7 @@ class ViewBasic extends ScalacheckBundle {
       s <- 0 upTo half
     } yield Index(i) -> Size(s)
 
-    implicit val arbRange = Arb[LongRange](Gen const (0 until len))
+    implicit val arbRange = Arb[LongRange](Gen const (0L until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))
     implicit val emptyInt = Empty[Int](MinInt)
 
