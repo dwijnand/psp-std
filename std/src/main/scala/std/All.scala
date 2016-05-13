@@ -138,6 +138,11 @@ object all extends AllExplicit with AllImplicit {
       mapIn[A](x => doto(x)(in)) mapOut (x => doto(x)(out))
   }
 
+  implicit class ByteArrayOps(xs: Array[Byte]) {
+    def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs
+    def utf8String: String     = new String(utf8Chars)
+  }
+
   implicit class ArrayOps[A](xs: Array[A]) {
     private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
       java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)

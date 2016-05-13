@@ -30,10 +30,10 @@ object JvmName {
   def asJava(clazz: jClass): JvmName  = new JvmName(clazz.getName)
   def asScala(clazz: jClass): JvmName = new JvmName(clazz.getName.mapSplit('.')(decode))
 }
-// final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
-//   def chars: Array[Char] = scala.io.Codec fromUTF8 bytes
-//   def to_s: String       = new String(chars)
-// }
+final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
+  def chars: Array[Char] = scala.io.Codec fromUTF8 bytes
+  def to_s: String       = new String(chars)
+}
 
 trait StdEq0 {
   implicit def sizeEq: Hash[Size] = byEquals
