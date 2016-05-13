@@ -66,7 +66,7 @@ object INREPL {
 
     def > (implicit z: Show[A] = inheritShow)        = run(_ map z.show)
     def >>(implicit z: Show[A])                      = run(_ map z.show)
-    def !>(implicit ord: Order[A], z: Show[A]): Unit = run(_.sorted map z.show)
+    def !>(implicit ord: Order[A], z: Show[A]): Unit = run(_.sort map z.show)
   }
 
   implicit def showToAmmonite[A](implicit z: Show[A]): pprint.PPrinter[A] =

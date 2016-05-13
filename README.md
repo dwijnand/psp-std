@@ -15,7 +15,7 @@ Suggested contents for a basic `build.sbt` follows. Note that the console transc
               scalaVersion :=  "2.11.8"
                  resolvers +=  Opts.resolver.sonatypeReleases
              scalacOptions ++= Seq("-language:_", "-Yno-predef")
-initialCommands in console :=  "import psp._, std._, all._, api._, StdShow._"
+initialCommands in console :=  "import psp._, api._, std._, all._, StdShow._"
        libraryDependencies +=  "org.improving" %% "psp-std" % "0.6.1"
 ```
 
@@ -27,17 +27,17 @@ psp-std repl (ammonite 0.5.7, scala 2.11.8, jvm 1.8.0_92)
 psp> val xs = 1 to 20 splitAt 10
 xs: Split[Int] = Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])
 
-psp> xs mapLeft (_ dropRight 8) rejoin
+psp> xs mapLeft (_ dropRight 8) join
 res0: View[Int] = [ 1, 2, 11, ... ]
 
-psp> xs.zipped filterRight (_ % 3 == 0)
-res1: ZipView[Int, Int] = [ 2 -> 12, 5 -> 15, 8 -> 18 ]
+psp> xs.zip filterRight (_ % 3 == 0)
+res1: Zip[Int, Int] = [ 2 -> 12, 5 -> 15, 8 -> 18 ]
 
-psp> val ys = 1 to 3 cross vec("a", "bb", "ccc") zipped
-ys: ZipView[Int, String] = [ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]
+psp> val ys = zipCross(1 to 3, vec("a", "bb", "ccc"))
+ys: Zip[Int, String] = [ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]
 
 psp> val same = ys filter (_ === _.length)
-same: ZipView[Int, String] = [ 1 -> a, 2 -> bb, 3 -> ccc ]
+same: Zip[Int, String] = [ 1 -> a, 2 -> bb, 3 -> ccc ]
 
 psp> same.rights mk_s '/'
 res2: String = a/bb/ccc
@@ -45,4 +45,4 @@ res2: String = a/bb/ccc
 
 ### Requirements
 
-scala 2.11, java 8, sbt 0.13.7+
+scala 2.11/2.12, java 8, sbt 0.13.7+

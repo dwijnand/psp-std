@@ -121,7 +121,7 @@ trait ShowEach0 {
   implicit def showView[A : Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
 }
 trait ShowEach extends ShowEach0 {
-  implicit def showExMap[K : Show, V : Show] = showBy[ExMap[K, V]](xs => funGrid(xs.entries.pairs)(_.show))
+  implicit def showExMap[K : Show, V : Show] = showBy[ExMap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
 
   implicit def showEach[A : Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
   implicit def showZipped[A1 : Show, A2 : Show]: Show[Zip[A1, A2]]         = showBy[Zip[A1, A2]](_.pairs)

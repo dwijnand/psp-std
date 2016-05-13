@@ -193,15 +193,10 @@ object all extends AllExplicit with AllImplicit {
   }
   implicit class ExMapOps[K, V](val lookup: ExMap[K, V]) {
     import lookup._
-    type Entry = K -> V
 
     def apply(key: K): V                  = lookup(key)
-    def entries: Zip[K, V]                = intoView(keyVector) mapAndZip lookup
-    def keySet: ExSet[K]                  = lookup.keys
-    def keyVector: Vec[K]                 = keys.toVec
-    def keys: View[K]                     = keySet.basis.m
-    def map[V1](g: V => V1): ExMap[K, V1] = keySet map (f mapOut g)
-    def values: View[V]                   = keyVector map lookup
+    def map[V1](g: V => V1): ExMap[K, V1] = keys map (f mapOut g)
+    def values: View[V]                   = keys.toVec map lookup
   }
   implicit class ExSetOps[A](val xs: ExSet[A]) {
     def map [B](f: A => B): ExMap[A, B]           = Fun.finite(xs, f)

@@ -89,15 +89,13 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def openRange[A](start: Long)(f: Long => A): OpenRange[A]                    = LongInterval open start map f
 
   def lazyView[A](expr: => View[A]): View[A] = inView(expr foreach _)
+  def homoViews[A](l: View[A], r: View[A]): Split[A]      = Split(l, r)
 
-  def crossViews[A, B](l: View[A], r: View[B]): Zip[A, B]          = heteroViews(l, r).cross
-  def homoViews[A](l: View[A], r: View[A]): Split[A]               = Split(l, r)
-  def heteroViews[A, B](l: View[A], r: View[B]): SplitHetero[A, B] = SplitHetero(l, r)
-
-  def zipSplit[AB, A, B](xs: View[AB])(implicit z: Splitter[AB, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
-  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                 = new Zip.ZipPairs(xs)
-  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                           = new Zip.ZipViews(l, r)
-  def zipWith[A, B](l: View[A], f: A => B): Zip[A, B]                             = new Zip.ZipWith(l, f)
+  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipCross(l, r)
+  def zipSplit[R, A, B](xs: View[R])(implicit z: Splitter[R, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
+  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                              = new Zip.ZipPairs(xs)
+  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipViews(l, r)
+  def zipMap[A, B](l: View[A], f: A => B): Zip[A, B]                           = new Zip.ZipMap(l, f)
 
   def funGrid[A, B](xs: View[A])(columns: (A => B)*): View2D.FunGrid[A, B] = new View2D.FunGrid(xs, view(columns: _*))
 

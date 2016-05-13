@@ -4,61 +4,43 @@ package std
 import api._, all._, StdShow._
 import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
-import jl.Integer.parseInt // , jl.Long.parseLong, jl.Double.parseDouble, jl.Float.parseFloat
-
-final class SplitCharView(val xs: Vec[String], sep: Char) extends Direct[String] with ShowSelf {
-  def build(): String                  = xs mk_s sep
-  def elemAt(idx: Vdex)                = xs elemAt idx
-  def foreach(f: String => Unit): Unit = xs foreach f
-  def size: Precise                    = xs.size
-  def toVec: Vec[String]               = xs
-  def to_s: String                     = build
-  def mk_s(sep: Char): String          = xs mk_s sep
-}
+import jl.Integer.parseInt
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
   import self.{ toCharArray => chars }
 
-  def r: Regex              = Regex(self)
-  def to_s: String          = self
-  def *(n: Precise): String = Each const self take n join_s
-  def isEmpty               = self == ""
-
-  def lines: SplitCharView               = splitView('\n')
-  def splitView(ch: Char): SplitCharView = new SplitCharView(splitChar(ch), ch)
-
-  // def charVec: Vec[Char]                      = charSeq.toVec
-  // def length: Int                             = self.length
-  // def replaceChar(pair: Char -> Char): String = self.replace(pair._1, pair._2)
-
-  def reverseBytes: Array[Byte]                     = bytes.inPlace.reverse
-  def bytes: Array[Byte]                            = self.getBytes
-  def ~(that: String): String                       = this append that
+  def *(n: Precise): String                         = Each const self take n join_s
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
-  def capitalize: String                            = cond(isEmpty, "", (self charAt 0).toUpper.to_s ~ self.tail.force)
+  def bytes: Array[Byte]                            = self.getBytes
+  def capitalize: String                            = zcond(!isEmpty, (self charAt 0).toUpper.to_s ~ self.tail.force)
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args: Any*): String                    = stringFormat(self, args: _*)
+  def isEmpty: Bool                                 = self === ""
+  def lines: View[String]                           = splitChar('\n')
+  def mapChars(pf: Char ?=> Char): String           = chars mapIf pf force
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
-  def mapChars(pf: Char ?=> Char): String           = chars.m mapIf pf force
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f mk_s ch
   def processEscapes: String                        = StringContext processEscapes self
-  def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
+  def r: Regex                                      = Regex(self)
   def removeAll(regex: Regex): String               = regex matcher self replaceAll ""
+  def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
+  def reverseBytes: Array[Byte]                     = bytes.inPlace.reverse
   def reverseChars: String                          = new String(chars.inPlace.reverse)
   def sanitize: String                              = mapChars { case x if x.isControl => '?' }
-  def splitChar(ch: Char): Vec[String]              = splitRegex(Regex quote ch.any_s)
-  def splitRegex(r: Regex): Vec[String]             = r.pattern split self toVec
+  def splitChar(ch: Char): View[String]             = splitRegex(Regex quote ch.any_s)
+  def splitRegex(r: Regex): View[String]            = r.pattern split self
   def stripMargin(ch: Char): String                 = mapLines(_ removeFirst s"""^${ bs }s*[$ch]""".r)
   def stripMargin: String                           = stripMargin('|')
   def stripPrefix(prefix: String): String           = foldPrefix(prefix)(self)(identity)
   def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
+  def to_s: String                                  = self
   def trimLines: String                             = mapLines(_.trim).trim
+  def ~(that: String): String                       = this append that
 
-  // def toDecimal: BigDecimal = scala.math.BigDecimal(self)
-  // def toDouble: Double      = parseDouble(self removeFirst "[dD]$".r)
-  // def toFloat: Float        = parseFloat(self removeFirst "[fF]$".r)
-  // def toLong: Long          = (self removeFirst "[lL]$".r) |> (s => foldPrefix("0x")(parseLong(s))(parseLong(_, 16)))
+  // def toDouble: Double = parseDouble(self removeFirst "[dD]$".r)
+  // def toFloat: Float   = parseFloat(self removeFirst "[fF]$".r)
+  // def toLong: Long     = (self removeFirst "[lL]$".r) |> (s => foldPrefix("0x")(parseLong(s))(parseLong(_, 16)))
 
   def toBigInt: BigInt = scala.math.BigInt(self)
   def toInt: Int       = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
