@@ -12,10 +12,10 @@ import java.io.BufferedInputStream
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
 
-  implicit class VindexOps(vdex: Vdex) {
+  implicit class VindexOps(private val vdex: Vdex) {
     def getInt: Int = vdex.indexValue.safeToInt
   }
-  implicit class AnyOps[A](val x: A) extends AnyVal {
+  implicit class AnyOps[A](private val x: A) extends AnyVal {
     def any_s: String                         = s"$x"
     def id_## : Int                           = java.lang.System.identityHashCode(x)
     def id_==(y: Any): Boolean                = cast[AnyRef](x) eq cast[AnyRef](y)
@@ -24,7 +24,7 @@ object all extends AllExplicit with AllImplicit {
 
     @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
   }
-  implicit class SizeOps(val lhs: Size) extends AnyVal {
+  implicit class SizeOps(private val lhs: Size) extends AnyVal {
     import Size._
 
     def getInt: Int = lhs match {
@@ -67,7 +67,7 @@ object all extends AllExplicit with AllImplicit {
     def max(rhs: Size): Size = Size.max(lhs, rhs)
   }
 
-  implicit class CharOps(val ch: Char) extends AnyVal {
+  implicit class CharOps(private val ch: Char) extends AnyVal {
     // def isAlphabetic = jl.Character isAlphabetic ch
     def isControl = jl.Character isISOControl ch
     // def isDigit      = jl.Character isDigit ch
@@ -83,11 +83,11 @@ object all extends AllExplicit with AllImplicit {
     def to(end: Char): CharRange          = LongInterval.to(ch.toLong, end) map (_.toChar)
     def until(end: Char): CharRange       = LongInterval.until(ch.toLong, end) map (_.toChar)
   }
-  implicit class IntOps(val self: Int) extends AnyVal {
+  implicit class IntOps(private val self: Int) extends AnyVal {
     def to(end: Int): IntRange    = LongInterval.to(self, end) map (_.toInt)
     def until(end: Int): IntRange = LongInterval.until(self, end) map (_.toInt)
   }
-  implicit class LongOps(val self: Long) extends AnyVal {
+  implicit class LongOps(private val self: Long) extends AnyVal {
     /** Safe in the senses that it won't silently truncate values,
       *  and will translate MaxLong to MaxInt instead of -1.
       *  We depend on this!
@@ -103,7 +103,7 @@ object all extends AllExplicit with AllImplicit {
 
     private def assertInIntRange(): Unit = assert(MinInt <= self && self <= MaxInt, s"$self out of range")
   }
-  implicit class PreciseOps(val size: Precise) {
+  implicit class PreciseOps(private val size: Precise) {
     def indices: VdexRange = indexRange(0, size.getLong)
     def lastIndex: Index   = Index(size.getLong - 1) // effectively maps both undefined and zero to no index.
 
@@ -114,7 +114,7 @@ object all extends AllExplicit with AllImplicit {
     def min(rhs: Precise): Precise = all.min(size, rhs)
   }
 
-  implicit class FunOps[A, B](val f: Fun[A, B]) extends AnyVal {
+  implicit class FunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
     import Fun._
 
     def applyOrElse(x: A, g: A => B): B       = cond(f isDefinedAt x, f(x), g(x))
@@ -138,12 +138,12 @@ object all extends AllExplicit with AllImplicit {
       mapIn[A](x => doto(x)(in)) mapOut (x => doto(x)(out))
   }
 
-  implicit class ByteArrayOps(xs: Array[Byte]) {
+  implicit class ByteArrayOps(private val xs: Array[Byte]) {
     def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs
     def utf8String: String     = new String(utf8Chars)
   }
 
-  implicit class ArrayOps[A](xs: Array[A]) {
+  implicit class ArrayOps[A](private val xs: Array[A]) {
     private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
       java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
 
@@ -156,11 +156,11 @@ object all extends AllExplicit with AllImplicit {
     }
   }
 
-  implicit class HashEqOrdOps[A](z: HashEqOrd[A]) {
+  implicit class HashEqOrdOps[A](private val z: HashEqOrd[A]) {
     def on[B](f: B => A): HashEqOrd[B] = HashEqOrd(z.eqv _ on f, z.cmp _ on f, f andThen z.hash)
   }
 
-  implicit class ApiOrderOps[A](ord: Order[A]) {
+  implicit class ApiOrderOps[A](private val ord: Order[A]) {
     import ord._
 
     def flip: Order[A] = Order((x, y) => ord.cmp(x, y).flip)
@@ -172,13 +172,13 @@ object all extends AllExplicit with AllImplicit {
     }
   }
 
-  implicit class ArrowAssocRef[A](val self: A) extends AnyVal {
+  implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
     @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
   }
-  implicit class JavaIteratorOps[A](it: jIterator[A]) {
+  implicit class JavaIteratorOps[A](private val it: jIterator[A]) {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
-  implicit class CmpEnumOps(val cmp: Cmp) {
+  implicit class CmpEnumOps(private val cmp: Cmp) {
     import Cmp._
     def flip: Cmp = cmp match {
       case LT => GT
@@ -187,18 +187,18 @@ object all extends AllExplicit with AllImplicit {
     }
     def |(that: => Cmp): Cmp = if (cmp == EQ) that else cmp
   }
-  implicit class ViewOpOps[A, B](op: Op[A, B]) {
+  implicit class ViewOpOps[A, B](private val op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
   }
-  implicit class ExMapOps[K, V](val lookup: ExMap[K, V]) {
+  implicit class ExMapOps[K, V](private val lookup: ExMap[K, V]) {
     import lookup._
 
     def apply(key: K): V                  = lookup(key)
     def map[V1](g: V => V1): ExMap[K, V1] = keys map (f mapOut g)
     def values: View[V]                   = keys.toVec map lookup
   }
-  implicit class ExSetOps[A](val xs: ExSet[A]) {
+  implicit class ExSetOps[A](private val xs: ExSet[A]) {
     def map [B](f: A => B): ExMap[A, B]           = Fun.finite(xs, f)
     def flatMap[B](f: A => (A => B)): ExMap[A, B] = Fun.finite(xs, x => f(x)(x))
   }

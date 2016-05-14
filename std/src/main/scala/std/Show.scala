@@ -19,7 +19,7 @@ object Doc {
   def apply[A](x: A)(implicit z: Show[A]): Shown[A] = Shown[A](x, z)
   def apply(s: String): Literal                     = Literal(s)
 
-  implicit class DocOps(lhs: Doc) {
+  implicit class DocOps(private val lhs: Doc) {
     def render(implicit z: Renderer): String = z show lhs
     def ~(rhs: Doc): Doc                     = Doc.Cat(lhs, rhs)
   }
