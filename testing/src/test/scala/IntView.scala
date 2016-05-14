@@ -66,7 +66,7 @@ class IntViewTests {
     same[View[Int]](ints slice indexRange(1, 4), view(2, 3, 4))
     same[View[Int]](ints slice nthInclusive(3, 4), view(3, 4))
     same[View[Int]](ints drop 2 take 2, view(3, 4))
-    same(1 to 3 map nth, 0 to 2 map newIndex)
+    same(1 to 3 map nth, 0 to 2 map index)
     same(nthInclusive(1, 3), indexRange(0, 3))
     same(ints takeToFirst (_ > 2), view(1, 2, 3))
     same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))

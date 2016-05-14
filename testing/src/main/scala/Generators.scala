@@ -48,7 +48,7 @@ package object gen {
   def zeroPlusInt: Gen[Int]         = intUpTo(0, MaxInt)
   def zeroPlusLong: Gen[Long]       = 0L upTo MaxLong
 
-  def intRange(start: Gen[Int], end: Gen[Int]): Gen[IntRange]     = (start, end) >> all.intRange
+  def intRange(start: Gen[Int], end: Gen[Int]): Gen[IntRange]     = (start, end) >> (_ until _)
   def longRange(start: Gen[Long], end: Gen[Long]): Gen[LongRange] = (start, end) >> (_ to _)
   def letterFrom(s: String): Gen[Char]                            = oneOf(s.charSeq)
   def indexFrom[A](r: ClosedRange[A]): Gen[Vdex]                  = frequency(1 -> NoIndex, 1 -> Index(0), 20 -> oneOf(r.size.indices.seq), 1 -> r.size.lastIndex.next)

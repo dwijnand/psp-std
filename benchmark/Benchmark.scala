@@ -6,9 +6,9 @@ import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations._
 
 object Values {
-  final val max        = 1000
-  final val scalaElems = intRange(1, max + 1).toScalaVector
-  final val pspElems   = intRange(1, max + 1).toVec
+  final val range      = 1 to 1000
+  final val scalaElems = range.toScalaVector
+  final val pspElems   = range.toVec
 }
 
 @BenchmarkMode(Array(Mode.AverageTime))

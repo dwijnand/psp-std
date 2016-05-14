@@ -14,7 +14,7 @@ object all extends AllExplicit with AllImplicit {
   /** The type of args forces all the interpolation variables to
     * be of a type which is implicitly convertible to Doc.
     */
-  implicit class DocInterpolators(private val sc: StringContext) extends AnyVal {
+  implicit class DocInterpolators(private val sc: StringContext) {
     def pp(args: Doc*): String  = ShowInterpolator(sc).pp(args: _*)
     def fpp(args: Doc*): String = ShowInterpolator(sc).fpp(args: _*)
     def sm(args: Doc*): String  = ShowInterpolator(sc).sm(args: _*)
@@ -24,11 +24,10 @@ object all extends AllExplicit with AllImplicit {
     def getInt: Int = vdex.indexValue.safeToInt
   }
   implicit class AnyOps[A](private val x: A) extends AnyVal {
-    def any_s: String                         = s"$x"
-    def id_## : Int                           = java.lang.System.identityHashCode(x)
-    def id_==(y: Any): Boolean                = cast[AnyRef](x) eq cast[AnyRef](y)
-    def matchIf[B : Empty](pf: A ?=> B): B    = matchOr(emptyValue[B])(pf)
-    def matchOr[B](alt: => B)(pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else alt
+    def any_s: String                      = s"$x"
+    def id_## : Int                        = java.lang.System.identityHashCode(x)
+    def id_==(y: Any): Boolean             = cast[AnyRef](x) eq cast[AnyRef](y)
+    def matchIf[B : Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
 
     @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
   }
@@ -215,21 +214,21 @@ object all extends AllExplicit with AllImplicit {
     *  We'd like to get away from all such classes,
     *  but scala doesn't allow it.
     */
-  implicit class OptionOps[A](val x: Option[A]) extends AnyVal {
+  implicit class OptionOps[A](private val x: Option[A]) extends AnyVal {
     def or(alt: => A): A               = x getOrElse alt
     def toVec: Vec[A]                  = this zfold (x => vec(x))
     def zfold[B : Empty](f: A => B): B = x.fold[B](emptyValue)(f)
     def zget(implicit z: Empty[A]): A  = x getOrElse z.empty
     def |(alt: => A): A                = x getOrElse alt
   }
-  implicit class TryOps[A](val x: Try[A]) extends AnyVal {
+  implicit class TryOps[A](private val x: Try[A]) extends AnyVal {
     def |(expr: => A): A = x.toOption | expr
     def fold[B](f: Throwable => B, g: A => B): B = x match {
       case Success(x) => g(x)
       case Failure(t) => f(t)
     }
   }
-  implicit class InputStreamOps(val in: InputStream) extends AnyVal {
+  implicit class InputStreamOps(private val in: InputStream) extends AnyVal {
     def buffered: BufferedInputStream = in match {
       case in: BufferedInputStream => in
       case _                       => new BufferedInputStream(in)
@@ -237,12 +236,12 @@ object all extends AllExplicit with AllImplicit {
     def slurp(): Array[Byte]             = ll.Streams slurp buffered
     def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
-  implicit class Product2HomoOps[R, A](val x: R)(implicit z: Splitter[R, A, A]) {
+  implicit class Product2HomoOps[R, A](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Each[A]              = Each pair x
     def seq: scSeq[A]              = each.seq
   }
-  implicit class Product2HeteroOps[+A, +B](val x: A -> B) extends AnyVal {
+  implicit class Product2HeteroOps[+A, +B](private val x: A -> B) extends AnyVal {
     def appLeft[C](f: A => C): C                 = f(fst(x))
     def appRight[C](f: B => C): C                = f(snd(x))
     def app[C](f: (A, B) => C): C                = f(fst(x), snd(x))
@@ -250,13 +249,13 @@ object all extends AllExplicit with AllImplicit {
     def mapLeft[C](f: A => C): C -> B            = f(fst(x)) -> snd(x)
     def mapRight[C](f: B => C): A -> C           = fst(x)    -> f(snd(x))
   }
-  implicit class EqViewOps[A](val xs: View[A])(implicit eqv: Eq[A]) {
+  implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
     def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
     def indexOf(x: A): Index    = xs indexWhere (_ === x)
     def toExSet: ExSet[A]       = xs.toExSet
   }
-  implicit class ShowableDocOps[A](val lhs: A)(implicit shows: Show[A]) {
+  implicit class ShowableDocOps[A](private val lhs: A)(implicit shows: Show[A]) {
     def doc: Doc     = Doc(lhs)
     def show: String = shows show lhs
   }
@@ -265,39 +264,39 @@ object all extends AllExplicit with AllImplicit {
     *  up front simplifies everything else, because we don't have to mix and match
     *  between arity-1 and arity-2 type constructors.
     */
-  implicit class SplittableViewOps[R, A, B](val xs: View[R])(implicit sp: Splitter[R, A, B]) {
+  implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
     def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
     def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
   }
-  implicit class BooleanAlgebraOps[A](val lhs: A)(implicit z: BooleanAlgebra[A]) {
+  implicit class BooleanAlgebraOps[A](private val lhs: A)(implicit z: BooleanAlgebra[A]) {
     def &&(rhs: A): A = z.and(lhs, rhs)
     def ||(rhs: A): A = z.or(lhs, rhs)
     def unary_! : A   = z complement lhs
   }
-  implicit class EqOps[A](val lhs: A)(implicit z: Eq[A]) {
+  implicit class EqOps[A](private val lhs: A)(implicit z: Eq[A]) {
     def ===(rhs: A): Boolean = z.eqv(lhs, rhs)
     def =!=(rhs: A): Boolean = !z.eqv(lhs, rhs)
   }
-  implicit class HashOps[A](val lhs: A)(implicit z: Hash[A]) {
+  implicit class HashOps[A](private val lhs: A)(implicit z: Hash[A]) {
     def hash: Long   = z hash lhs
     def hashInt: Int = hash.toInt
   }
-  implicit class OrderOps[A](val lhs: A)(implicit z: Order[A]) {
+  implicit class OrderOps[A](private val lhs: A)(implicit z: Order[A]) {
     def <(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.LT
     def <=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.GT
     def >(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.GT
     def >=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.LT
   }
-  implicit class SplitterOps[R, A, B](val lhs: R)(implicit z: Splitter[R, A, B]) {
+  implicit class SplitterOps[R, A, B](private val lhs: R)(implicit z: Splitter[R, A, B]) {
     def toPair: A -> B = z split lhs
   }
-  implicit class SuspendedOps[A](s1: Suspended[A]) {
+  implicit class SuspendedOps[A](private val s1: Suspended[A]) {
     def &&& (s2: Suspended[A]): Suspended[A] = f => sideEffect(s1(f), s2(f))
   }
-  implicit class Function2Ops[A1, A2, R](f: (A1, A2) => R) {
+  implicit class Function2Ops[A1, A2, R](private val f: (A1, A2) => R) {
     def map[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
   }
-  implicit class Function2SameOps[A, R](f: BinTo[A, R]) {
+  implicit class Function2SameOps[A, R](private val f: BinTo[A, R]) {
     def on[B](g: B => A): (B, B) => R = (x, y) => f(g(x), g(y))
   }
 }

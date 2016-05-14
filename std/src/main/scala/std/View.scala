@@ -7,7 +7,7 @@ final class ViewOps[R, A](val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
   def byEquals: EqViewOps[A]         = by(Eq.Inherited)
   def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](xs.toRefs)(Eq.Reference)
-  def byString: EqViewOps[A]         = by(Eq.ToString)
+  def byToString: EqViewOps[A]       = by(Eq.ToString)
 
   def partition(p: ToBool[A]): Split[A]                      = Split(xs withFilter p, xs withFilter !p)
   def span(p: ToBool[A]): Split[A]                           = Split(xs takeWhile p, xs dropWhile p)

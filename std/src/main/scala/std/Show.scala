@@ -49,7 +49,7 @@ class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer 
   }
 }
 
-case class ShowInterpolator(val stringContext: StringContext) extends AnyVal {
+case class ShowInterpolator(val stringContext: StringContext) {
   def escapedParts    = stringContext.parts.toList map (_.processEscapes)
   def escaped: String = escapedParts.join_s
 

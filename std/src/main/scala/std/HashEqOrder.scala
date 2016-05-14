@@ -22,7 +22,7 @@ object HashEqOrd {
 }
 object Eq {
   val Inherited = hash[Any](_ == _)(_.##)
-  val Reference = hash[AnyRef](_ eq _)(_.id_##)
+  val Reference = hash[Any](_ id_== _)(_.id_##)
   val ToString  = hashBy[Any](_.any_s)(Inherited)
 
   def apply[A](e: Relation[A]): Eq[A]                = new EqImpl[A](e)
