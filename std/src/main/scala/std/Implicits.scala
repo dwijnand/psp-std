@@ -10,7 +10,6 @@ trait AllImplicit extends StdEmpty with StdImplicits { self =>
   implicit def constantPredicate[A](value: Boolean): ToBool[A]        = cond(value, ConstantTrue, ConstantFalse)
   implicit def defaultRenderer: FullRenderer                          = new FullRenderer(minElements = 3, maxElements = 10)
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B      = f.toPartial
-  implicit def opsStringContext(sc: StringContext): ShowInterpolator  = new ShowInterpolator(sc)
   implicit def predicate1Algebra[A]: BooleanAlgebra[ToBool[A]]        = new Algebras.Predicate1Algebra[A]
   implicit def predicate2Algebra[A, B]: BooleanAlgebra[ToBool2[A, B]] = new Algebras.Predicate2Algebra[A, B]
   implicit def promoteSize(x: Long): Precise                          = Size(x)

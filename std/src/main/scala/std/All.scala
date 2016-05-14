@@ -11,6 +11,14 @@ import java.io.BufferedInputStream
   */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+  /** The type of args forces all the interpolation variables to
+    * be of a type which is implicitly convertible to Doc.
+    */
+  implicit class DocInterpolators(private val sc: StringContext) extends AnyVal {
+    def pp(args: Doc*): String  = ShowInterpolator(sc).pp(args: _*)
+    def fpp(args: Doc*): String = ShowInterpolator(sc).fpp(args: _*)
+    def sm(args: Doc*): String  = ShowInterpolator(sc).sm(args: _*)
+  }
 
   implicit class VindexOps(private val vdex: Vdex) {
     def getInt: Int = vdex.indexValue.safeToInt

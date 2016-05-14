@@ -49,20 +49,19 @@ class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer 
   }
 }
 
-final class ShowInterpolator(val stringContext: StringContext) extends AnyVal {
+case class ShowInterpolator(val stringContext: StringContext) extends AnyVal {
   def escapedParts    = stringContext.parts.toList map (_.processEscapes)
   def escaped: String = escapedParts.join_s
 
   /** The type of args forces all the interpolation variables to
     *  be of a type which is implicitly convertible to Doc.
     */
-  def show(args: Doc*): String = StringContext(escapedParts: _*).raw(args.map(_.render): _*)
-  def pp(args: Doc*): String   = show(args: _*)
+  def pp(args: Doc*): String = StringContext(escapedParts: _*).raw(args.map(_.render): _*)
 
   /** Can't see any way to reuse the standard (type-safe) f-interpolator, will
     *  apparently have to reimplement it entirely.
     */
-  def fshow(args: Doc*): String = escaped.format(args.map(_.render): _*)
+  def fpp(args: Doc*): String = escaped.format(args.map(_.render): _*)
 
   final def sm(args: Doc*): String = {
     def isLineBreak(c: Char) = c == '\n' || c == '\f' // compatible with StringLike#isLineBreak
