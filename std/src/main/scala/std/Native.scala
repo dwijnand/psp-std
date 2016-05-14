@@ -38,10 +38,10 @@ final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
 
-  def isEmpty            = length <= 0
-  def length: Int        = underlying.length
-  def size: Precise      = Size(length)
-  def elemAt(i: Vdex): A = underlying(i.getInt)
+  def isEmpty           = length <= 0
+  def length: Int       = underlying.length
+  def size: Precise     = Size(length)
+  def apply(i: Vdex): A = underlying(i.getInt)
 
   def updated(i: Vdex, elem: A): Vec[A] = make(_.updated(i.getInt, elem))
   def :+(elem: A): Vec[A]               = make(_ :+ elem)

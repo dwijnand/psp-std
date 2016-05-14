@@ -88,12 +88,10 @@ object OperableCounter {
   import Operable._
   import Op._
 
-  class CountXs[A](xs: Direct[A], val counter: OpCount) extends Direct[A] with ShowSelf {
+  class CountXs[A](xs: Direct[A], val counter: OpCount) extends StdDirect[A](xs.size) with ShowSelf {
     import Unsafe.inheritedShow
 
-    def size: Precise               = xs.size
-    def elemAt(idx: Vdex): A        = sideEffect(xs elemAt idx, counter access idx)
-    def foreach(f: A => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
+    def apply(idx: Vdex): A = sideEffect(xs(idx), counter access idx)
 
     // toString accesses not to be counted
     def to_s = (

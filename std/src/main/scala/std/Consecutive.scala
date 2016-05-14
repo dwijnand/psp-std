@@ -93,23 +93,23 @@ object Consecutive {
 
     def applyLong(x: Long): A       = f(x)
     def size                        = Infinite
-    def elemAt(vdex: Vdex): A       = f(in(vdex))
+    def apply(vdex: Vdex): A        = f(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (f andThen g)
     def map[B](g: A => B): Open[B]  = in map (f andThen g)
-    def head: A                     = elemAt(Index(0))
+    def head: A                     = apply(Index(0))
   }
   final class Closed[+A](val in: LongInterval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
 
     def applyLong(x: Long): A        = f(x)
     def containsLong(n: Long): Bool  = in contains n
-    def elemAt(vdex: Vdex): A        = f(in(vdex))
+    def apply(vdex: Vdex): A         = f(in(vdex))
     def foreach(g: A => Unit): Unit  = in foreach (f andThen g)
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size
 
-    def head: A                          = elemAt(Index(0))
-    def last: A                          = elemAt(size.lastIndex)
+    def head: A                          = apply(Index(0))
+    def last: A                          = apply(size.lastIndex)
     def drop(n: Precise): Closed[A]      = Consecutive(in drop n, f)
     def dropRight(n: Precise): Closed[A] = Consecutive(in dropRight n, f)
     def take(n: Precise): Closed[A]      = Consecutive(in take n, f)

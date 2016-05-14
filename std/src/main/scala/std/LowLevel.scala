@@ -142,10 +142,10 @@ object ll {
     private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
-    @inline def foreach(f: A => Unit): Unit = this foreachIndex (i => f(elemAt(i)))
+    @inline def foreach(f: A => Unit): Unit = foreachLong(0, size.lastIndex.indexValue, i => f(apply(Index(i))))
 
     def isFull                         = seen >= cap
-    def elemAt(index: Vdex): A         = cast(buffer((readPointer + index.getInt) % cap))
+    def apply(index: Vdex): A          = cast(buffer((readPointer + index.getInt) % cap))
     def size: Precise                  = capacity min Size(seen)
     def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
     def +=(x: A): this.type            = sideEffect(this, setHead(x))

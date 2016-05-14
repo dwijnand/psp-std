@@ -15,10 +15,15 @@ trait Foreach[+A] extends Any {
   def size: Size
   def foreach(f: A => Unit): Unit
 }
-trait View[+A]    extends Any with Foreach[A]
-trait Each[+A]    extends Any with Foreach[A]
-trait Indexed[+A] extends Any with Each[A] { def elemAt(i: Vdex): A }
-trait Direct[+A]  extends Any with Indexed[A] { def size: Precise }
+trait View[+A] extends Any with Foreach[A]
+trait Each[+A] extends Any with Foreach[A]
+
+trait Indexed[+A] extends Any with Each[A] {
+  def apply(idx: Vdex): A
+}
+trait Direct[+A] extends Any with Indexed[A] {
+  def size: Precise
+}
 
 
 trait InSet[-A] extends Any {
