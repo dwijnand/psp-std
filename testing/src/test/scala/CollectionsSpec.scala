@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import std._, api._, all._
+import std._, all._
 
 class CollectionsSpec extends ScalacheckBundle {
   def bundle = "Type Inference, General"
@@ -28,10 +28,10 @@ class CollectionsSpec extends ScalacheckBundle {
 
   def jvmProps = vec[NamedProp](
     expectTypes[String](
-      make("abc")(_ map identity),
-      make("abc")(_ map (_.toInt.toChar)),
-      make("abc")(_ map (_.toInt) map (_.toChar)),
-      make("abc")(_ flatMap (_.toString * 3)),
+      remake("abc")(_ map identity),
+      remake("abc")(_ map (_.toInt.toChar)),
+      remake("abc")(_ map (_.toInt) map (_.toChar)),
+      remake("abc")(_ flatMap (_.toString * 3)),
       "abc" map identity build,
       "abc" map (_.toInt.toChar) build,
       "abc" map (_.toInt) map (_.toChar) build,
@@ -40,10 +40,10 @@ class CollectionsSpec extends ScalacheckBundle {
       "abc" map identity flatMap ("" + _) build
     ),
     expectTypes[Array[Int]](
-      make(arr)(_ map identity),
-      make(arr)(_ flatMap (x => vec(x))),
-      make(arr)(_ map (_.toString) map (_.toInt)),
-      make(arr)(_ map (_.toString) flatMap (_.toString) map (_.toInt)),
+      remake(arr)(_ map identity),
+      remake(arr)(_ flatMap (x => vec(x))),
+      remake(arr)(_ map (_.toString) map (_.toInt)),
+      remake(arr)(_ map (_.toString) flatMap (_.toString) map (_.toInt)),
       arr.inPlace map identity,
       arr.inPlace.reverse,
       arr ++ arr,
@@ -57,18 +57,12 @@ class CollectionsSpec extends ScalacheckBundle {
       arr.m flatMap (x => view(x)) build
     ),
     expectTypes[Array[Long]](
-      make0[Array[Long]](1L to 10),
-      make0[Array[Long]](1L to 10 m),
-      make0[Array[Long]](1L to 10 toVec),
-      make1[Array](1L to 10),
-      make1[Array](1L to 10 m),
-      make1[Array](1L to 10 toVec),
-      make0[Array[Long]](1L to 10L),
-      make0[Array[Long]](1L to 10L m),
-      make0[Array[Long]](1L to 10L toVec),
-      make1[Array](1L to 10L),
-      make1[Array](1L to 10L m),
-      make1[Array](1L to 10L toVec),
+      make[Array[Long]](1L to 10),
+      make[Array[Long]](1L to 10 m),
+      make[Array[Long]](1L to 10 toVec),
+      make[Array[Long]](1L to 10L),
+      make[Array[Long]](1L to 10L m),
+      make[Array[Long]](1L to 10L toVec),
       arr.map(_.toLong).to[Array].inPlace.reverse
     )
   )

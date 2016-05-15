@@ -1,7 +1,6 @@
 val xs = 1 to 20 splitAt 10
-xs mapLeft (_ dropRight 8) rejoin
-xs.zipped filterRight (_ % 3 == 0)
-val ys = 1 to 3 cross vec("a", "bb", "ccc") zipped
+xs mapLeft (_ dropRight 8) join
+xs.zip filterRight (_ % 3 == 0)
+val ys = zipCross(1 to 3, vec("a", "bb", "ccc"))
 val same = ys filter (_ === _.length)
 same.rights mk_s '/'
-

@@ -6,35 +6,25 @@ import api._, all._
 /** When a View is split into two disjoint views.
   * Notably, that's span, partition, and splitAt.
   */
-final case class Split[A](leftView: View[A], rightView: View[A]) extends TwoHeteroViews[A, A] {
+final case class Split[A](leftView: View[A], rightView: View[A]) {
   type V = View[A]
 
-  def collate: V                           = pairs flatMap (_.each)
+  def appLeft[B](f: V => B): B             = f(leftView)
+  def appRight[B](f: V => B): B            = f(rightView)
+  def app[B](f: (V, V) => B): B            = views app f
   def mapBoth[B](f: V => B): PairOf[B]     = views map2 f
   def mapEach(f: ToSelf[V]): Split[A]      = Split(f(leftView), f(rightView))
   def mapLeft(f: ToSelf[V]): Split[A]      = Split(f(leftView), rightView)
   def mapRight(f: ToSelf[V]): Split[A]     = Split(leftView, f(rightView))
-  def appLeft[B](f: V => B): B             = f(leftView)
-  def appRight[B](f: V => B): B            = f(rightView)
-  def join: V                              = app(_ ++ _)
+  def pairs: View[PairOf[A]]               = zip.pairs
   def sort(implicit z: Order[A]): Split[A] = mapEach(_.sort)
-}
+  def views: PairOf[V]                     = leftView -> rightView
 
-trait TwoHeteroViews[+L, +R] extends Any {
-  private[this] type LV = View[L]
-  private[this] type RV = View[R]
+  def collate: V = pairs flatMap (_.each)
+  def join: V    = app(_ ++ _)
 
-  def leftView: LV
-  def rightView: RV
-
-  def app[B](f: (LV, RV) => B): B = views app f
-
-  /** M[A -> B] vs. M[A] -> M[B] in views vs. pairs.
-   */
-  def views: LV -> RV     = leftView -> rightView
-  def pairs: View[L -> R] = zip.pairs
-  def zip: Zip[L, R]      = this app zipViews
-  def cross: Zip[L, R]    = this app zipCross
+  def cross: Zip[A, A] = app(zipCross)
+  def zip: Zip[A, A]   = app(zipViews)
 }
 
 /** When a View presents as a sequence of pairs.
@@ -73,42 +63,32 @@ object Zip {
     type OptBoth  = Option[Both]
 
     def foldl[B](zero: B)(f: (B, A1, A2) => B): B =
-      ll.foldLeft[A1 -> A2, B](pairs, zero, (res, x) => f(res, fst(x), snd(x)))
+      ll.foldLeft[Both, B](pairs, zero, (res, x) => f(res, fst(x), snd(x)))
 
     def find(p: PredBoth): OptBoth =
       foldl(none())((res, x, y) => cond(p(x, y), return some(x -> y), res))
 
-    def foreach(f: (A1, A2) => Unit): Unit = (lefts, rights) match {
+    def foreach(f: MapTo[Unit]): Unit = (lefts, rights) match {
       case (xs: Direct[A1], ys) => xs.size.indices zip ys mapLeft xs.apply
       case (xs, ys: Direct[A2]) => xs zip ys.size.indices mapRight ys.apply
       case _                    => lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return)))
     }
 
-    private def checkForall(p: PredBoth, ignoreStubs: Boolean): Bool = {
-      val it = new ZipIterator(lefts.iterator, rights.iterator)
-      if (it exists (x => !(x app p))) return false
-      ignoreStubs || !it.hasMore
-    }
-
-    def drop(n: Precise): This        = zipSplit(pairs drop n)
-    def dropWhileFst(p: LPred): This  = zipSplit(pairs dropWhile (_ appLeft p))
-    def dropWhileSnd(p: RPred): This  = zipSplit(pairs dropWhile (_ appRight p))
-    def filter(p: PredBoth): This     = withFilter(p)
-    def filterLeft(p: LPred): This    = withFilter((x, _) => p(x))
-    def filterRight(p: RPred): This   = withFilter((_, y) => p(y))
-    def take(n: Precise): This        = zipSplit(pairs take n)
-    def takeWhileFst(p: LPred): This  = zipSplit(pairs takeWhile (_ appLeft p))
-    def takeWhileSnd(p: RPred): This  = zipSplit(pairs takeWhile (_ appRight p))
-    def withFilter(p: PredBoth): This = zipSplit(inView[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
-
-    def corresponds(p: PredBoth): Bool            = checkForall(p, ignoreStubs = false)
-    def exists(p: PredBoth): Bool                 = !forall(!p)
-    def flatMap[B](f: MapTo[Foreach[B]]): View[B] = inView(mf => foreach((x, y) => f(x, y) foreach mf))
-    def forall(p: PredBoth): Bool                 = checkForall(p, ignoreStubs = true)
-    def mapLeft[B1](f: A1 => B1): Zip[B1, A2]     = zipViews(lefts map f, rights)
-    def mapRight[B2](f: A2 => B2): Zip[A1, B2]    = zipViews(lefts, rights map f)
-    def map[B](f: MapTo[B]): View[B]              = inView(mf => foreach((x, y) => mf(f(x, y))))
-    def unzip: View[A1] -> View[A2]               = lefts -> rights
+    def corresponds(p: PredBoth): Bool         = iterator |> (it => it.forall(_ app p) && !it.hasMore)
+    def drop(n: Precise): This                 = zipSplit(pairs drop n)
+    def exists(p: PredBoth): Bool              = !forall(!p)
+    def filter(p: PredBoth): This              = withFilter(p)
+    def filterLeft(p: LPred): This             = withFilter((x, _) => p(x))
+    def filterRight(p: RPred): This            = withFilter((_, y) => p(y))
+    def first[B: Empty](pf: Both ?=> B): B     = pairs zfirst pf
+    def forall(p: PredBoth): Bool              = iterator forall (_ app p)
+    def iterator: ZipIterator[A1, A2]          = new ZipIterator(lefts.iterator, rights.iterator)
+    def mapLeft[B1](f: A1 => B1): Zip[B1, A2]  = zipViews(lefts map f, rights)
+    def mapRight[B2](f: A2 => B2): Zip[A1, B2] = zipViews(lefts, rights map f)
+    def map[B](f: MapTo[B]): View[B]           = inView(mf => foreach((x, y) => mf(f(x, y))))
+    def take(n: Precise): This                 = zipSplit(pairs take n)
+    def unzip: View[A1] -> View[A2]            = lefts -> rights
+    def withFilter(p: PredBoth): This          = zipSplit(inView[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
 
     def force[R](implicit z: Builds[Both, R]): R = z build pairs
   }

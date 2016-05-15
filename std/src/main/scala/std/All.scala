@@ -75,16 +75,9 @@ object all extends AllExplicit with AllImplicit {
   }
 
   implicit class CharOps(private val ch: Char) extends AnyVal {
-    // def isAlphabetic = jl.Character isAlphabetic ch
     def isControl = jl.Character isISOControl ch
-    // def isDigit      = jl.Character isDigit ch
-    // def isLetter     = jl.Character isLetter ch
-    // def isLower      = jl.Character isLowerCase ch
-    // def isUpper      = jl.Character isUpperCase ch
-    // def toLower      = jl.Character toLowerCase ch
-    // def isSpace      = jl.Character isWhitespace ch
-    def toUpper = jl.Character toUpperCase ch
-    def to_s    = ch.toString
+    def toUpper   = jl.Character toUpperCase ch
+    def to_s      = ch.toString
 
     def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
     def to(end: Char): CharRange          = LongInterval.to(ch.toLong, end) map (_.toChar)
@@ -119,6 +112,10 @@ object all extends AllExplicit with AllImplicit {
     def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
 
     def min(rhs: Precise): Precise = all.min(size, rhs)
+  }
+  implicit class PartialOps[A, B](pf: A ?=> B) {
+    def applyOr(x: A, alt: => B): B           = if (pf isDefinedAt x) pf(x) else alt
+    def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
   }
 
   implicit class FunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
@@ -203,7 +200,7 @@ object all extends AllExplicit with AllImplicit {
 
     def apply(key: K): V                  = lookup(key)
     def map[V1](g: V => V1): ExMap[K, V1] = keys map (f mapOut g)
-    def values: View[V]                   = keys.toVec map lookup
+    def values: View[V]                   = keys.toEach map lookup
   }
   implicit class ExSetOps[A](private val xs: ExSet[A]) {
     def map [B](f: A => B): ExMap[A, B]           = Fun.finite(xs, f)
@@ -236,19 +233,25 @@ object all extends AllExplicit with AllImplicit {
     def slurp(): Array[Byte]             = ll.Streams slurp buffered
     def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
-  implicit class Product2HomoOps[R, A](private val x: R)(implicit z: Splitter[R, A, A]) {
+  implicit class SplittableValueSameTypeOps[R, A](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Each[A]              = Each pair x
-    def seq: scSeq[A]              = each.seq
   }
-  implicit class Product2HeteroOps[+A, +B](private val x: A -> B) extends AnyVal {
-    def appLeft[C](f: A => C): C                 = f(fst(x))
-    def appRight[C](f: B => C): C                = f(snd(x))
-    def app[C](f: (A, B) => C): C                = f(fst(x), snd(x))
-    def mapEach[C](f: A => C, g: B => C): C -> C = f(fst(x)) -> g(snd(x))
-    def mapLeft[C](f: A => C): C -> B            = f(fst(x)) -> snd(x)
-    def mapRight[C](f: B => C): A -> C           = fst(x)    -> f(snd(x))
+  implicit class SplittableValueOps[R, A, B](private val x: R)(implicit z: Splitter[R, A, B]) {
+    def _1: A                                    = fst(z split x)
+    def _2: B                                    = snd(z split x)
+    def appLeft[C](f: A => C): C                 = f(_1)
+    def appRight[C](f: B => C): C                = f(_2)
+    def app[C](f: (A, B) => C): C                = f(_1, _2)
+    def mapEach[C](f: A => C, g: B => C): C -> C = f(_1) -> g(_2)
+    def mapLeft[C](f: A => C): C -> B            = f(_1) -> _2
+    def mapRight[C](f: B => C): A -> C           = _1 -> f(_2)
   }
+  implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
+    def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
+    def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
+  }
+
   implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
     def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
@@ -258,15 +261,6 @@ object all extends AllExplicit with AllImplicit {
   implicit class ShowableDocOps[A](private val lhs: A)(implicit shows: Show[A]) {
     def doc: Doc     = Doc(lhs)
     def show: String = shows show lhs
-  }
-
-  /** Conversions which require the elements to be pairs. Obtaining evidence of that
-    *  up front simplifies everything else, because we don't have to mix and match
-    *  between arity-1 and arity-2 type constructors.
-    */
-  implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
-    def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
-    def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
   }
   implicit class BooleanAlgebraOps[A](private val lhs: A)(implicit z: BooleanAlgebra[A]) {
     def &&(rhs: A): A = z.and(lhs, rhs)
@@ -290,13 +284,10 @@ object all extends AllExplicit with AllImplicit {
   implicit class SplitterOps[R, A, B](private val lhs: R)(implicit z: Splitter[R, A, B]) {
     def toPair: A -> B = z split lhs
   }
-  implicit class SuspendedOps[A](private val s1: Suspended[A]) {
-    def &&& (s2: Suspended[A]): Suspended[A] = f => sideEffect(s1(f), s2(f))
-  }
   implicit class Function2Ops[A1, A2, R](private val f: (A1, A2) => R) {
-    def map[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
+    def andThen[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
   }
   implicit class Function2SameOps[A, R](private val f: BinTo[A, R]) {
-    def on[B](g: B => A): (B, B) => R = (x, y) => f(g(x), g(y))
+    def on[B](g: B => A): BinTo[B, R] = (x, y) => f(g(x), g(y))
   }
 }

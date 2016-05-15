@@ -72,7 +72,7 @@ object ll {
   //       22: if_icmpne     5
   //       25: return
 
-  final def foldLeft[A, B](xs: Foreach[A], initial: B, f: (B, A) => B): B = {
+  final def foldLeft[A, B](xs: View[A], initial: B, f: (B, A) => B): B = {
     var res = initial
     xs foreach (x => res = f(res, x))
     res
@@ -82,14 +82,14 @@ object ll {
   //   xs.zipIndex foreach ((x, i) => res = f(res, x, i))
   //   res
   // }
-  final def foldRight[A, B](xs: Foreach[A], initial: B, f: (A, B) => B): B = {
+  final def foldRight[A, B](xs: View[A], initial: B, f: (A, B) => B): B = {
     val arr: Array[Ref[A]] = doto(xs.toRefArray)(_.inPlace.reverse)
     var res: B = initial
     arr foreach (x => res = f(x, res))
     res
   }
 
-  def foreachTakeWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
+  def foreachTakeWhile[A](xs: View[A], f: A => Unit, p: ToBool[A]): Int = {
     var taken = 0
     xs foreach { x =>
       if (!p(x)) return taken
@@ -98,7 +98,7 @@ object ll {
     }
     taken
   }
-  def foreachDropWhile[A](xs: Foreach[A], f: A => Unit, p: ToBool[A]): Int = {
+  def foreachDropWhile[A](xs: View[A], f: A => Unit, p: ToBool[A]): Int = {
     var dropping = true
     var dropped  = 0
     xs foreach { x =>
@@ -110,7 +110,7 @@ object ll {
     }
     dropped
   }
-  def foreachSlice[A](xs: Foreach[A], range: VdexRange, f: A => Unit): Unit = {
+  def foreachSlice[A](xs: View[A], range: VdexRange, f: A => Unit): Unit = {
     if (range.isEmpty) return
     val start = range.head.indexValue
     val last  = range.last.indexValue
@@ -124,11 +124,11 @@ object ll {
   }
 
   // Precondition: n > 0
-  def foreachTakeRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit =
+  def foreachTakeRight[A](xs: View[A], f: A => Unit, n: Precise): Unit =
     (CBuf[A](n) ++= xs) foreach f
 
   // Precondition: n > 0
-  def foreachDropRight[A](xs: Foreach[A], f: A => Unit, n: Precise): Unit =
+  def foreachDropRight[A](xs: View[A], f: A => Unit, n: Precise): Unit =
     foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
 
   /** Circular Buffer. */
@@ -142,14 +142,15 @@ object ll {
     private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
+    def head: A                             = apply(Index(0))
     @inline def foreach(f: A => Unit): Unit = foreachLong(0, size.lastIndex.indexValue, i => f(apply(Index(i))))
 
-    def isFull                         = seen >= cap
-    def apply(index: Vdex): A          = cast(buffer((readPointer + index.getInt) % cap))
-    def size: Precise                  = capacity min Size(seen)
-    def ++=(xs: Foreach[A]): this.type = sideEffect(this, xs foreach setHead)
-    def +=(x: A): this.type            = sideEffect(this, setHead(x))
-    def push(x: A): A                  = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
+    def isFull                      = seen >= cap
+    def apply(index: Vdex): A       = cast(buffer((readPointer + index.getInt) % cap))
+    def size: Precise               = capacity min Size(seen)
+    def ++=(xs: View[A]): this.type = sideEffect(this, xs foreach setHead)
+    def +=(x: A): this.type         = sideEffect(this, setHead(x))
+    def push(x: A): A               = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
   }
   object Streams {
     final val InputStreamBufferSize = 8192

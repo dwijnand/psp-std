@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import psp._, std._, all._, api._, macros._
+import psp._, std._, all._, api._, macros._, StdShow._
 import Expressions._
 
 class Typecheck extends ScalacheckBundle {
@@ -31,12 +31,13 @@ class Typecheck extends ScalacheckBundle {
    */
   def divide(what: String, xs: Vec[Typechecked]): NamedProp = divide(what, xs, xs count (_.code startsWith "/* ok */"))
 
-  def divide(what: String, xs: Vec[Typechecked], expectedTypecheck: Int): NamedProp = {
-    val (good, bad) = xs.toScalaVector partition (_.typechecks)
+  def divide(what: String, xs: Vec[Typechecked], expectedTypecheck: Precise): NamedProp = {
+    val good -> bad = xs partition (_.typechecks) mapBoth (_.force)
+
     NamedProp(
       s"$expectedTypecheck/${xs.size} expressions from $what should typecheck",
-      (Prop(expectedTypecheck == good.size) :|
-        ("good:\n  " + (good mkString "\n  ") + "\n\nbad:\n  " + (bad mkString "\n  ") + "\n")
+      (Prop(expectedTypecheck === good.size) :|
+        ("good:\n  " + (good mk_s "\n  ") + "\n\nbad:\n  " + (bad mk_s "\n  ") + "\n")
       )
     )
   }

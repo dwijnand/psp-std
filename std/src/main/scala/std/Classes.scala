@@ -9,16 +9,6 @@ class FormatFun(val fmt: String) extends (Any => String) with ShowSelf {
   def apply(x: Any): String = stringFormat(fmt, x)
   def to_s                  = fmt
 }
-class Partial[A, B](p: ToBool[A], f: A => B) extends (A ?=> B) {
-  def isDefinedAt(x: A): Boolean            = p(x)
-  def apply(x: A): B                        = f(x)
-  def applyOr(x: A, alt: => B): B           = if (p(x)) f(x) else alt
-  def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
-}
-object Partial {
-  def apply[A, B](pf: A ?=> B): Partial[A, B]             = apply(pf isDefinedAt _, pf apply _)
-  def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B] = new Partial(p, f)
-}
 final class JvmName(val raw: String) extends ShowSelf {
   def segments: Vec[String] = raw splitChar '.'
   def short: String         = segments.last
@@ -38,7 +28,7 @@ final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
 trait StdEq0 {
   implicit def sizeEq: Hash[Size] = byEquals
   implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] =
-    Order(((x: A, y: A) => x compareTo y) map (x => longCmp(x)))
+    Order(((x: A, y: A) => x compareTo y) andThen (x => longCmp(x)))
 }
 trait StdEq1 extends StdEq0 {
   implicit def eqViewsAs[R, A](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =

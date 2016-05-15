@@ -26,6 +26,7 @@ final case object Pnil extends Plist[Nothing] {
   def tail = abort("Pnil.tail")
 }
 final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
+  def head: A               = basis.head
   def basis                 = xs.m
   def equiv                 = byEquals
   def apply(x: A): Bool     = xs(x)
@@ -38,6 +39,7 @@ final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
 
+  def head: A           = underlying(0)
   def isEmpty           = length <= 0
   def length: Int       = underlying.length
   def size: Precise     = Size(length)

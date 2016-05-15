@@ -45,7 +45,7 @@ object Op {
 
   final case class Collect[A, B](pf: A ?=> B)                 extends Op[A, B]
   final case class Maps[A, B](f: A => B)                      extends Op[A, B]
-  final case class FlatMap[A, B](f: A => Foreach[B])          extends Op[A, B]
+  final case class FlatMap[A, B](f: A => View[B])          extends Op[A, B]
   final case class Compose[A, B, C](p: Op[A, B], q: Op[B, C]) extends Op[A, C]
 }
 

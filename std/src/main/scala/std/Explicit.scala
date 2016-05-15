@@ -68,14 +68,12 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def classFilter[A : CTag]: Partial[Any, A]       = Partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
   def inheritShow[A]: Show[A]                      = Show.Inherited
-  def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n == 0, "%s", new Pstring("%%-%ds") format n))
+  def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n <= 0, "%s", new Pstring("%%-%ds") format n))
   def println[A : Show](x: A): Unit                = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x
 
-  def make[R](xs: R): RemakeHelper[R]  = new RemakeHelper[R](xs)
-  def make0[R]: MakeHelper0[R]         = new MakeHelper0[R]
-  def make1[CC[_]]: MakeHelper1[CC]    = new MakeHelper1[CC]
-  def make2[CC[_, _]]: MakeHelper2[CC] = new MakeHelper2[CC]
+  def make[R] : MakeHelper[R]           = new MakeHelper[R]
+  def remake[R](xs: R): RemakeHelper[R] = new RemakeHelper[R](xs)
 
   def bufferMap[A, B : Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
 
@@ -97,19 +95,22 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
 
   import Builders._
 
-  def builds[A, R](f: Foreach[A] => R): Builds[A, R]                 = new Builds(f)
-  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R               = z build Each(xs foreach _)
+  def builds[A, R](f: View[A] => R): Builds[A, R]      = new Builds(f)
+  def elems[A, R](xs: A*)(implicit z: Builds[A, R]): R = z build Each.elems(xs: _*)
+
   def inView[A](mf: Suspended[A]): View[A]                           = new IdView(Each(mf))
   def intoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): IdView[A, R] = z viewAs xs
   def lazyView[A](expr: => View[A]): View[A]                         = inView(expr foreach _)
-  def viewsAs[R, A](f: R => Foreach[A]): ViewsAs[A, R]               = new ViewsAs(f)
+  def rview[A, R](xs: A*): IdView[A, R]                              = new IdView(elems(xs: _*))
+  def view[A](xs: A*): View[A]                                       = new IdView(Each.elems(xs: _*))
+  def viewsAs[R, A](f: R => Each[A]): ViewsAs[A, R]                  = new ViewsAs(x => new IdView(f(x)))
 
   def arr[A : CTag](xs: A*): Array[A]              = xs.toArray[A]
   def list[A](xs: A*): Plist[A]                    = elems(xs: _*)
+  def nil[A](): Plist[A]                           = cast(Pnil)
   def rel[A : Hash, B](xs: (A -> B)*): ExMap[A, B] = elems(xs: _*)
   def set[A : Hash](xs: A*): ExSet[A]              = elems(xs: _*)
   def vec[A](xs: A*): Vec[A]                       = elems(xs: _*)
-  def view[A](xs: A*): View[A]                     = inView(xs foreach _)
   def zip[A, B](xs: (A -> B)*): Zip[A, B]          = zipPairs(view(xs: _*))
 
   def javaList[A](xs: A*): jList[A]               = elems(xs: _*)
