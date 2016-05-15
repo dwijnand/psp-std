@@ -3,41 +3,103 @@ package std
 
 import api._, all._
 
+sealed trait Cont[A] extends Any
+
+trait Each[+A] extends Any with Foreach[A]
+
+trait Indexed[+A] extends Any with Each[A] {
+  def apply(idx: Vdex): A
+}
+trait Direct[+A] extends Any with Indexed[A] {
+  def size: Precise
+}
+
+object Cont {
+  def apply[A](mf: Suspended[A]): Cont[A] = Opaque(mf)
+
+  final case class Opaque[A](mf: Suspended[A])                extends Cont[A]
+  final case class Join[A](c1: Cont[A], c2: Cont[A])          extends Cont[A]
+  final case class Filter[A](c: Cont[A], p: ToBool[A])        extends Cont[A]
+  final case class Mapped[A, B](c: Cont[A], g: A => B)        extends Cont[B]
+  final case class FlatMap[A, B](c: Cont[A], g: A => Cont[B]) extends Cont[B]
+  final case class Sized[A](c: Cont[A], size: Size)           extends Cont[A]
+
+  final class Stream[A](head: => A, tail: => Stream[A])
+
+  implicit class ContOps[A](c: Cont[A]) {
+    def join(that: Cont[A]): Cont[A]         = Join(c, that)
+    def filter(p: ToBool[A]): Cont[A]        = Filter(c, p)
+    def map[B](f: A => B): Cont[B]           = Mapped(c, f)
+    def flatMap[B](f: A => Cont[B]): Cont[B] = FlatMap(c, f)
+    def sized(size: Size): Cont[A]           = Sized(c, size)
+
+    def resume(f: ToUnit[A]): Unit = c match {
+      case Opaque(mf)     => mf(f)
+      case Join(c1, c2)   => c1 resume f ; c2 resume f
+      case Filter(c, p)   => c resume (x => if (p(x)) f(x))
+      case Mapped(c, g)   => c resume (x => g andThen f)
+      case FlatMap(c, g)  => c resume (x => g(x) resume f)
+      case Sized(c, size) => c resume f
+    }
+    def size: Size = c match {
+      case Sized(_, size) => size
+      case Join(c1, c2)   => c1.size + c2.size
+      case Filter(c, _)   => c.size.atMost
+      case Mapped(c, _)   => c.size
+      case _              => Size.Unknown
+    }
+  }
+}
+
 abstract class StdDirect[A](val size: Precise) extends Direct[A] {
+  def head: A                           = apply(Index(0))
   final def foreach(f: A => Unit): Unit = size.indices foreach (i => f(apply(i)))
 }
 
 object Each {
-  def apply[A](mf: Suspended[A]): Each[A]                          = construct(Size.Unknown, mf)
-  def array[A](xs: Array[A]): WrapArray[A]                         = new WrapArray[A](xs)
-  def const[A](elem: A): Each[A]                                   = apply(mf => while (true) mf(elem))
-  def construct[A](size: Size, mf: Suspended[A]): Each[A]          = new WrapSuspended(size, mf)
-  def continually[A](elem: => A): Each[A]                          = new WrapContinually(elem)
-  def each[A](xs: Foreach[A]): Each[A]                             = construct(xs.size, xs foreach _)
-  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]                  = construct(xs.size, mf => xs.entrySet foreach (k => mf(k.toPair)))
-  def java[A](xs: jIterable[A]): Each[A]                           = apply(xs.iterator foreach _)
-  def join[A](xs: Each[A], ys: Each[A]): Each[A]                   = new WrapJoin(xs, ys)
-  def jvmString(s: String): WrapString                             = new WrapString(s)
-  def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): WrapPair[A] = new WrapPair(z split x)
-  def reversed[A](xs: Direct[A]): WrapReverse[A]                   = new WrapReverse(xs)
-  def scalaMap[A, B](xs: scMap[A, B]): Each[A -> B]                = construct(xs.size, xs foreach _)
-  def scala[A](xs: sCollection[A]): Each[A]                        = construct(xs.size, xs foreach _)
-  def unapplySeq[A](xs: Foreach[A]): Some[scSeq[A]]                = Some(xs.seq)
+  def suspend[A](c: Cont[A]): Each[A] = new Suspend(c)
 
-  abstract class WrapEach[A](val size: Size, mf: Suspended[A]) extends Each[A] {
-    def foreach(f: A => Unit): Unit = mf(f)
+  class Suspend[A](c: Cont[A]) extends Each[A] {
+    def head: A                     = { c resume (x => return x) ; ??? }
+    def size: Size                  = c.size
+    def foreach(f: A => Unit): Unit = c resume f
   }
-  abstract class WrapDirect[A, R](size: Precise, f: Long => A) extends StdDirect[A](size) {
-    def apply(i: Vdex): A = f(i.indexValue)
+  class Indexed[A](f: Int => A, start: Int, end: Int) extends Each[A] {
+    def head: A                     = f(start)
+    def size: Precise               = Size(end - start)
+    def foreach(g: A => Unit): Unit = ll.foreachInt(start, end - 1, f andThen g)
   }
-  final class WrapString(xs: String)        extends WrapDirect[Char, String](xs.length, xs charAt _.toInt)
-  final class WrapArray[A](xs: Array[_])    extends WrapDirect[A, Array[A]](xs.length, i => cast[A](xs(i.toInt)))
-  final class WrapReverse[A](xs: Direct[A]) extends WrapDirect[A, Direct[A]](xs.size, i => xs(xs.size.lastIndex - i))
-  final class WrapPair[A](xs: PairOf[A])    extends WrapDirect[A, PairOf[A]](2, i => cond(i == 0, fst(xs), snd(xs)))
+  class Const[A](elem: A) extends Each[A] {
+    def head: A                     = elem
+    def size                        = Infinite
+    def foreach(f: A => Unit): Unit = while (true) f(elem)
+  }
+  class Continual[A](elem: => A) extends Each[A] {
+    def head: A                     = elem
+    def size                        = Infinite
+    def foreach(f: A => Unit): Unit = while (true) f(elem)
+  }
 
-  final class WrapSuspended[A](size: Size, mf: Suspended[A]) extends WrapEach(size, mf)
-  final class WrapJoin[A](xs: Each[A], ys: Each[A])          extends WrapEach[A](xs.size + ys.size, (xs foreach _) &&& (ys foreach _))
-  final class WrapContinually[A](expr: => A)                 extends WrapEach[A](Infinite, f => while (true) f(expr))
+  def array[A](xs: Array[A]): Each[A]                          = new Indexed(xs.apply, 0, xs.length)
+  def elems[A](xs: A*): Each[A]                                = new Indexed[A](xs.apply, 0, xs.length)
+  def jvmString(s: String): Each[Char]                         = new Indexed(s charAt _, 0, s.length)
+  def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): Each[A] = new Indexed(i => cond(i == 0, x._1, x._2), 0, 2)
+  def const[A](elem: A): Each[A]                               = new Const(elem)
+  def continually[A](expr: => A): Each[A]                      = new Continual(expr)
+
+  def apply[A](mf: Suspended[A]): Each[A]                 = new Suspend(Cont(mf))
+  def construct[A](size: Size, mf: Suspended[A]): Each[A] = new Suspend(Cont(mf) sized size)
+  def each[A](xs: Foreach[A]): Each[A]                    = new Suspend(Cont[A](xs foreach _) sized xs.size)
+  def join[A](xs: Foreach[A], ys: Foreach[A]): Each[A]    = new Suspend(Cont[A](xs foreach _) join Cont[A](ys foreach _))
+  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]         = new Suspend(Cont[A->B](xs.entrySet map (_.toPair) foreach _) sized xs.size)
+  def java[A](xs: jIterable[A]): Each[A]                  = new Suspend(Cont[A](xs.iterator foreach _))
+
+  def scala[A](xs: sCollection[A]): Each[A] = xs match {
+    case xs: sciIndexedSeq[_] => new Indexed(xs.apply, 0, xs.length)
+    case _                    => construct(xs.size, xs.foreach)
+  }
+
+  def unapplySeq[A](xs: Each[A]): Some[scSeq[A]] = Some(xs.seq)
 }
 
 object View2D {
@@ -45,23 +107,6 @@ object View2D {
 
   def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
     xs partition p(xs) app ((ls, rs) => lazyView(ls +: mpartition(rs)(p)))
-
-  class Ops[A](val xss: View2D[A]) extends AnyVal {
-    import StdShow.showString
-
-    def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
-    def transpose: View2D[A]          = openIndices map column
-    def flatten: View[A]              = xss flatMap identity
-    def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
-
-    def grid_s(implicit z: Show[A]): String = {
-      val width = xss.mmap(_.show.length).flatten.max
-      val fmt   = lformat(width)
-      val yss   = xss mmap (x => fmt(z show x))
-
-      (yss map (_.joinWords)).joinLines.trimLines
-    }
-  }
 
   class FunGrid[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
     def isEmpty: Bool        = basis.isEmpty || functions.isEmpty

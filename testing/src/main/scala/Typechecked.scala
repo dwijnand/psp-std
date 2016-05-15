@@ -1,7 +1,7 @@
 package psp
 package std
 
-import all._
+import api._, all._
 import scala.reflect.macros.blackbox.Context
 
 /** TODO - mock the ridiculous scala ast with a clean one with the same structure.
@@ -28,12 +28,12 @@ package macros {
     def tree: String = "<error>"
     def tpe: String = "<error>"
   }
-  final case class Typechecked(code: String, result: TypecheckResult) {
+  final case class Typechecked(code: String, result: TypecheckResult) extends ShowSelf {
     def typechecks = !result.isError
-    def message = result.errorMessage
-    def tree = result.tree
-    def tpe = result.tpe
-    override def toString = if (result.isError) s"$code\n$message\n" else s"$tree: $tpe"
+    def message    = result.errorMessage
+    def tree       = result.tree
+    def tpe        = result.tpe
+    def to_s       = if (result.isError) s"$code\n$message\n" else s"$tree: $tpe"
   }
   object Typechecked {
     def error(code: String, message: String): Typechecked           = new Typechecked(code, TypeError(message))

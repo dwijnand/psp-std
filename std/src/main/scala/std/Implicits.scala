@@ -40,16 +40,15 @@ trait StdOps1 extends StdOps0 {
 trait StdOps2 extends StdOps1 {
   implicit def opsAlreadyView[A](x: View[A]): ViewOps[View[A], A]             = new ViewOps(x)
   implicit def opsView[R, A](xs: R)(implicit z: ViewsAs[A, R]): ViewOps[R, A] = new ViewOps(z viewAs xs)
-
-  implicit def opsView2D[A](x: View2D[A]): View2D.Ops[A] = new View2D.Ops(x)
-  implicit def opsWrapString(x: String): Pstring         = new Pstring(x)
+  implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                       = new View2DOps(x)
+  implicit def opsWrapString(x: String): Pstring                              = new Pstring(x)
 }
 trait StdOps extends StdOps2 {
-  implicit def opsForeach[A](xs: Foreach[A]): ForeachOps[A]                      = new ForeachOps(xs)
   implicit def opsIdView[R, A](xs: R)(implicit ev: R <:< Each[A]): ViewOps[R, A] = new ViewOps(new IdView(ev(xs)))
 }
 
 trait ViewersAs0 {
+  implicit def viewsAsPspSet[A, CC[X] <: ExSet[X]]: ViewsAs[A, CC[A]]           = viewsAs(_.toEach)
   implicit def viewsAsJavaIterable[A, CC[X] <: jIterable[X]]: ViewsAs[A, CC[A]] = viewsAs(Each java _)
   implicit def viewsAsScala[A, CC[X] <: sCollection[X]]: ViewsAs[A, CC[A]]      = viewsAs(Each scala _)
 }
@@ -57,6 +56,7 @@ trait ViewersAs extends ViewersAs0 with Builders {
   implicit def viewsAsJavaMap[K, V, CC[X, Y] <: jMap[X, Y]]: ViewsAs[K -> V, CC[K, V]]   = viewsAs(Each javaMap _)
   implicit def viewsAsJvmArray[A]: ViewsAs[A, Array[A]]                                  = viewsAs(Each array _)
   implicit def viewsAsJvmString: ViewsAs[Char, String]                                   = viewsAs(Each jvmString _)
-  implicit def viewsAsPspEach[A, CC[X] <: Foreach[X]]: ViewsAs[A, CC[A]]                 = viewsAs(identity)
-  implicit def viewsAsScalaMap[K, V, CC[X, Y] <: scMap[X, Y]]: ViewsAs[K -> V, CC[K, V]] = viewsAs(Each scalaMap _)
+  implicit def viewsAsPspEach[A, CC[X] <: Each[X]]: ViewsAs[A, CC[A]]                    = viewsAs(identity)
+  implicit def viewsAsPspView[A, CC[X] <: View[X]]: ViewsAs[A, CC[A]]                    = viewsAs(xs => Each apply (xs foreach _))
+  implicit def viewsAsScalaMap[K, V, CC[X, Y] <: scMap[X, Y]]: ViewsAs[K -> V, CC[K, V]] = viewsAs(Each scala _)
 }

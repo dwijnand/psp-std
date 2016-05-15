@@ -12,28 +12,9 @@ import Api._
   *  size of a View may not be.
   */
 trait Foreach[+A] extends Any {
-  def size: Size
   def foreach(f: A => Unit): Unit
-}
-trait View[+A] extends Any with Foreach[A]
-trait Each[+A] extends Any with Foreach[A]
-
-trait Indexed[+A] extends Any with Each[A] {
-  def apply(idx: Vdex): A
-}
-trait Direct[+A] extends Any with Indexed[A] {
-  def size: Precise
-}
-
-
-trait InSet[-A] extends Any {
-  def apply(x: A): Bool
-}
-trait ExSet[A] extends Any with Foreach[A] {
-  def size: Precise
-  def basis: Each[A]
-  def equiv: Hash[A]
-  def apply(x: A): Bool
+  def size: Size
+  def head: A
 }
 
 /** When a Show type class is more trouble than it's worth.
