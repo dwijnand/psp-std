@@ -52,7 +52,7 @@ class ViewBasic extends ScalacheckBundle {
   def pvector: Vec[Int]     = elems(1, 2, 3)
   def parray: Array[Int]    = arr(1, 2, 3)
   def pseq: Each[Int]       = elems(1, 2, 3)
-  def punfold: Indexed[Int] = intsFrom(1)
+  def punfold: Indexed[Int] = openRange(1)(_.toInt)
 
   case class Bippy(s: String, i: Int) {
     override def toString = s
@@ -67,7 +67,7 @@ class ViewBasic extends ScalacheckBundle {
 
   // def closure              = transitiveClosure(parray)(x => view(x.init.force, x.tail.force))
   // def closureBag           = closure flatMap (x => x) toBag // That's my closure bag, baby
-  def xxNumbers: View[Int] = intsFrom(0).m grep """^(.*)\1""".r
+  def xxNumbers: View[Int] = openRange(0)(_.toInt).m grep """^(.*)\1""".r
 
   def props = miscProps ++ vecProps ++ rangeProps
 
@@ -121,19 +121,20 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3 ]", plist),
     showsAs("[ 1, 2, 3 ]", pvector),
     showsAs("[ 1, 2, 3 ]", parray),
-    showsAs("[ 1, 2, 3, 1, 2, 3 ]", plist.m ++ plist.m force),
-    showsAs("[ 1, 2, 3, 1, 2, 3 ]", pvector ++ pvector force),
-    showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray ++ parray force),
-    showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray.m ++ parray.m force),
+    showsAs("[ 1, 2, 3, 1, 2, 3 ]", plist ++ plist),
+    showsAs("[ 1, 2, 3, 1, 2, 3 ]", plist.m ++ plist.m),
+    showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray ++ parray),
+    showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray.m ++ parray.m),
+    showsAs("[ 1, 2, 3, 1, 2, 3 ]", pvector ++ pvector),
     showsAs("[1..)", punfold),
     // showsAs("[ 1, 2, 3 ], [ 1, 2 ], [ 1 ], [  ], [ 2 ], [ 2, 3 ], [ 3 ]", closure mk_s ", "),
     // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries.to[Vec[Int -> Precise]] mk_s ", "),
     seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),
     seqShows("11, 22, 33, 44", indexRange(1, 50) grep """(.)\1""".r),
-    seqShows("99, 1010, 1111", xxNumbers slice (8 takeNext 3).map(Index)),
+    seqShows("99, 1010, 1111", xxNumbers.slice(8, Size(3))),
     expectValue[Size](4)(strs.byRef.distinct.force.size),
     expectValue[Size](3)(strs.byEquals.distinct.force.size),
-    expectValue[Size](2)(strs.byString.distinct.force.size)
+    expectValue[Size](2)(strs.byToString.distinct.force.size)
   )
 
   lazy val vecProps = {

@@ -12,7 +12,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def *(n: Precise): String                         = Each const self take n join_s
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
-  def capitalize: String                            = zcond(!isEmpty, (self charAt 0).toUpper.to_s ~ self.tail.force)
+  def capitalize: String                            = zcond(!isEmpty, (self charAt 0).toUpper.to_s ~ tail.force)
   def charSeq: scSeq[Char]                          = chars.m.seq
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args: Any*): String                    = stringFormat(self, args: _*)
@@ -34,6 +34,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def stripMargin: String                           = stripMargin('|')
   def stripPrefix(prefix: String): String           = foldPrefix(prefix)(self)(identity)
   def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
+  def tail: String                                  = zcond(!isEmpty, self substring 1)
   def to_s: String                                  = self
   def trimLines: String                             = mapLines(_.trim).trim
   def ~(that: String): String                       = this append that

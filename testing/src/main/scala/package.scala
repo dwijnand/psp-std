@@ -134,13 +134,13 @@ package object tests {
   implicit def chooseNth: Choose[Nth]      = Choose.xmap[Long, Nth](Nth, _.nthValue)
 
   def preNewline(s: String): String                               = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
-  def showsAs[A: Show](expected: String, x: A): NamedProp         = preNewline(expected) -> (expected =? show"$x")
+  def showsAs[A: Show](expected: String, x: A): NamedProp         = preNewline(expected) -> (expected =? pp"$x")
   def seqShows[A: Show](expected: String, xs: Each[A]): NamedProp = preNewline(expected) -> (expected =? (xs mk_s ", "))
 
   def expectValue[A](expected: A)(x: A): NamedProp = x.any_s -> (expected =? x)
 
-  def expectType(expected: jClass, found: jClass): NamedProp        = fshow"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
-  def expectTypes(expected: jClass, found: Each[jClass]): NamedProp = fshow"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
+  def expectType(expected: jClass, found: jClass): NamedProp        = fpp"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
+  def expectTypes(expected: jClass, found: Each[jClass]): NamedProp = fpp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
   def expectType[A: CTag](result: A): NamedProp                     = expectType(classOf[A], result.getClass)
   def expectTypes[A: CTag](results: A*): NamedProp                  = expectTypes(classOf[A], results.toVec map (_.getClass) force)
 
@@ -165,8 +165,8 @@ package object tests {
     }
   }
 
-  def printResult[A: Show](msg: String)(result: A): A              = doto(result)(r => println(show"$msg: $r"))
-  def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A = doto(result)(r => if (r === x) println(show"$msg: $r"))
+  def printResult[A: Show](msg: String)(result: A): A              = doto(result)(r => println(pp"$msg: $r"))
+  def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A = doto(result)(r => if (r === x) println(pp"$msg: $r"))
 
   /** How to check for function equivalence? In the absence of mathematical breakthroughs,
    *  recursively throw scalacheck at it again, verifying arbitrary inputs have the same result.

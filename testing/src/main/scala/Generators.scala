@@ -29,7 +29,7 @@ package gen {
 }
 
 package object gen {
-  def chooseFrom[A](xs: Direct[Gen[A]]): Gen[A]      = indexFrom(xs.indices) >> xs.elemAt
+  def chooseFrom[A](xs: Direct[Gen[A]]): Gen[A]      = indexFrom(xs.size.indices) >> xs.apply
   def chooseFrom[A](xs: Gen[A]*): Gen[A]             = chooseFrom(xs.toVec)
   def directOfN[A](n: Int, g: Gen[A]): Gen[Vec[A]]   = containerOfN[Vec, A](n, g)(?, _.trav)
   def directOf[A](g: Gen[A]): Gen[Vec[A]]            = containerOf[Vec, A](g)(?, _.trav)
@@ -48,12 +48,12 @@ package object gen {
   def zeroPlusInt: Gen[Int]         = intUpTo(0, MaxInt)
   def zeroPlusLong: Gen[Long]       = 0L upTo MaxLong
 
-  def intRange(start: Gen[Int], end: Gen[Int]): Gen[IntRange]     = (start, end) >> all.intRange
+  def intRange(start: Gen[Int], end: Gen[Int]): Gen[IntRange]     = (start, end) >> (_ until _)
   def longRange(start: Gen[Long], end: Gen[Long]): Gen[LongRange] = (start, end) >> (_ to _)
   def letterFrom(s: String): Gen[Char]                            = oneOf(s.charSeq)
-  def indexFrom[A](r: Consecutive.Closed[A]): Gen[Vdex]           = frequency(1 -> NoIndex, 1 -> Index(0), 20 -> oneOf(r.indices.seq), 1 -> r.lastIndex.next)
+  def indexFrom[A](r: ClosedRange[A]): Gen[Vdex]                  = frequency(1 -> NoIndex, 1 -> Index(0), 20 -> oneOf(r.size.indices.seq), 1 -> r.size.lastIndex.next)
   def indexRangeFrom(sMax: Long, eMax: Long): Gen[VdexRange]      = longRange(0 upTo sMax, 0 upTo eMax) ^^ (_ map Index)
-  def validIndexFrom(r: IntRange): Gen[Vdex]                      = oneOf(r.indices.seq)
+  def validIndexFrom(r: IntRange): Gen[Vdex]                      = oneOf(r.size.indices.seq)
 
   def precise: Gen[Precise] = chooseNum(1, MaxInt / 2) map (x => Size(x))
   def atomic: Gen[Atomic]   = frequency(10 -> precise, 1 -> Size.Zero, 1 -> Infinite)

@@ -34,9 +34,9 @@ final class InPlace[A](val xs: Array[A]) extends AnyVal {
   def sort(implicit z: Order[A]): Array[A] = sideEffect(xs, if (isReference) sortRef(z.comparator) else sortInPlace(xs))
   // def sortBy[B: Order](f: A => B): Array[A]         = sort(orderBy[A](f))
 
-  def map(f: ToSelf[A]): Array[A] = sideEffect(xs, intRange(0, xs.length) foreach (i => xs(i) = f(xs(i))))
-  def reverse(): Array[A]         = sideEffect(xs, intRange(0, midpoint) foreach (i => swap(i, lastIndex - i)))
-  def shuffle(): Array[A]         = sideEffect(xs, intRange(0, xs.length) foreach (i => swap(i, i + randomPosInt(lastIndex - i))))
+  def map(f: ToSelf[A]): Array[A] = sideEffect(xs, 0 until xs.length foreach (i => xs(i) = f(xs(i))))
+  def reverse(): Array[A]         = sideEffect(xs, 0 until midpoint foreach (i => swap(i, lastIndex - i)))
+  def shuffle(): Array[A]         = sideEffect(xs, 0 until xs.length foreach (i => swap(i, i + randomPosInt(lastIndex - i))))
 
   // TODO: rotate right and left
   // def >>(n: Int): Array[A]

@@ -96,10 +96,7 @@ trait Converters2 extends Converters1 {
   implicit def convertJvmArray[A](xs: Array[A]): IdView[A, Array[A]]            = intoView(xs)
   implicit def convertPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]] = intoView(xs)
 }
-trait Converters3 extends Converters2 {
-  implicit def convertJvmString(s: String): IdView[Char, String] = intoView(s)
-}
-trait ConvertersOf extends Converters3
+trait ConvertersOf extends Converters2
 
 object Builds {
   def javaList[A]: Builds[A, jList[A]]               = ?

@@ -3,6 +3,10 @@ package std
 
 import api._, all._
 
+abstract class StdDirect[A](val size: Precise) extends Direct[A] {
+  final def foreach(f: A => Unit): Unit = size.indices foreach (i => f(apply(i)))
+}
+
 object Each {
   def apply[A](mf: Suspended[A]): Each[A]                          = construct(Size.Unknown, mf)
   def array[A](xs: Array[A]): WrapArray[A]                         = new WrapArray[A](xs)
@@ -23,13 +27,12 @@ object Each {
   abstract class WrapEach[A](val size: Size, mf: Suspended[A]) extends Each[A] {
     def foreach(f: A => Unit): Unit = mf(f)
   }
-  abstract class WrapDirect[A, R](val size: Precise, f: Long => A) extends Direct[A] {
-    def elemAt(i: Vdex): A          = f(i.indexValue)
-    def foreach(f: A => Unit): Unit = size.indices foreach (i => f(elemAt(i)))
+  abstract class WrapDirect[A, R](size: Precise, f: Long => A) extends StdDirect[A](size) {
+    def apply(i: Vdex): A = f(i.indexValue)
   }
   final class WrapString(xs: String)        extends WrapDirect[Char, String](xs.length, xs charAt _.toInt)
   final class WrapArray[A](xs: Array[_])    extends WrapDirect[A, Array[A]](xs.length, i => cast[A](xs(i.toInt)))
-  final class WrapReverse[A](xs: Direct[A]) extends WrapDirect[A, Direct[A]](xs.size, i => xs(xs.lastIndex - i))
+  final class WrapReverse[A](xs: Direct[A]) extends WrapDirect[A, Direct[A]](xs.size, i => xs(xs.size.lastIndex - i))
   final class WrapPair[A](xs: PairOf[A])    extends WrapDirect[A, PairOf[A]](2, i => cond(i == 0, fst(xs), snd(xs)))
 
   final class WrapSuspended[A](size: Size, mf: Suspended[A]) extends WrapEach(size, mf)

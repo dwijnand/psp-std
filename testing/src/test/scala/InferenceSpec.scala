@@ -6,8 +6,8 @@ import psp.std._, all._, api._, StdShow._
 class SliceSpec extends ScalacheckBundle {
   def bundle = "Slice Operations"
   def checkSlice[A : Eq : Show](xs: Direct[A], start: Int, end: Int, expect: Direct[A]): Direct[NamedProp] = vec(
-    show"$xs.slice($start, $end) === $expect"              -> Prop(make1[Direct](xs slice indexRange(start, end)) === expect),
-    show"$xs drop $start take ($end - $start) === $expect" -> Prop(make1[Direct](xs drop start take end - start) === expect)
+    pp"$xs.slice($start, $end) === $expect"              -> Prop(make1[Direct](xs slice indexRange(start, end)) === expect),
+    pp"$xs drop $start take ($end - $start) === $expect" -> Prop(make1[Direct](xs drop start take end - start) === expect)
   )
 
   def props = checkSlice('a' to 'g', 2, 5, 'c' to 'e')

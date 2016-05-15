@@ -61,7 +61,7 @@ object Zip {
   /** A Zip has similar operations to a View, but with the benefit of
     *  being aware each element has a left and a right.
     */
-  implicit class ZipOps[A1, A2](val x: Zip[A1, A2]) extends AnyVal {
+  implicit class ZipOps[A1, A2](private val x: Zip[A1, A2]) extends AnyVal {
     import x.{ lefts, rights, pairs }
 
     type MapTo[R] = (A1, A2) => R
@@ -79,8 +79,8 @@ object Zip {
       foldl(none())((res, x, y) => cond(p(x, y), return some(x -> y), res))
 
     def foreach(f: (A1, A2) => Unit): Unit = (lefts, rights) match {
-      case (xs: Direct[A1], ys) => xs.indices zip ys mapLeft (xs elemAt _)
-      case (xs, ys: Direct[A2]) => xs zip ys.indices mapRight (ys elemAt _)
+      case (xs: Direct[A1], ys) => xs.size.indices zip ys mapLeft xs.apply
+      case (xs, ys: Direct[A2]) => xs zip ys.size.indices mapRight ys.apply
       case _                    => lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return)))
     }
 
