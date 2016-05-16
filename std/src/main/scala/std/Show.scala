@@ -125,4 +125,5 @@ trait ShowEach extends ShowEach0 {
   implicit def showEach[A : Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
   implicit def showZipped[A1 : Show, A2 : Show]: Show[Zip[A1, A2]]         = showBy[Zip[A1, A2]](_.pairs)
   implicit def showArray[A : Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
+  implicit def showSplit[A: Show] : Show[Split[A]]                         = showBy[Split[A]](x => "Split(".doc ~ x.leftView ~ ", " ~ x.rightView ~ ")")
 }

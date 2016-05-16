@@ -14,13 +14,6 @@ class IntViewTests {
   val zip3  = splt.zip
   val cro9  = splt.cross
 
-  def same[A : Eq : Show](expr: A, expected: A): Unit = {
-    assert(expr === expected, pp"""
-      |Expected: $expected
-      |  Actual: $expr
-      """)
-  }
-
   @Test
   def noTypeClassNeededTests(): Unit = {
     same(ints count (_ < 3), 2)
@@ -104,5 +97,19 @@ class IntViewTests {
     same(ints zreducer (_ + _), 55)
     same(ints3 zfoldl[Int](_ - _), -6)
     same(ints3 zfoldr[Int](_ - _), 2)
+  }
+
+  @Test
+  def readmeShowTests(): Unit = {
+    val xs = 1 to 20 splitAt index(10)
+    val ys = zipCross(1 to 3, vec("a", "bb", "ccc"))
+    val zs = ys filter (_ === _.length)
+
+    sameDoc(xs, "Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])")
+    sameDoc(xs mapLeft (_ dropRight 8) join, "[ 1, 2, 11, ... ]")
+    sameDoc(xs.zip filterRight (_ % 3 == 0), "[ 2 -> 12, 5 -> 15, 8 -> 18 ]")
+    sameDoc(ys, "[ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]")
+    sameDoc(zs, "[ 1 -> a, 2 -> bb, 3 -> ccc ]")
+    sameDoc(zs.rights mk_s '/', "a/bb/ccc")
   }
 }

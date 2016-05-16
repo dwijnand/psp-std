@@ -70,6 +70,15 @@ package object tests {
   def sameOutcomes2[A1: Arb, A2: Arb, B: Eq](f: (A1, A2) => B, g: (A1, A2) => B): Prop =
     forAll((p1: A1, p2: A2) => sameBehavior(f(p1, p2), g(p1, p2)))
 
+  def same[A : Eq : Show](expr: A, expected: A): Unit = {
+    assert(expr === expected, pp"""
+      |Expected: $expected
+      |  Actual: $expr
+      """)
+  }
+
+  def sameDoc[A](expr: Doc, expected: Doc): Unit = same(expr.show, expected.show)
+
   implicit class ArbitraryOps[A](x: Arb[A]) {
     def map[B](f: A => B): Arb[B]    = Arb(x.arbitrary map f)
     def filter(p: ToBool[A]): Arb[A] = Arb(x.arbitrary filter p)

@@ -80,12 +80,12 @@ object all extends AllExplicit with AllImplicit {
     def to_s      = ch.toString
 
     def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
-    def to(end: Char): CharRange          = LongInterval.to(ch.toLong, end) map (_.toChar)
-    def until(end: Char): CharRange       = LongInterval.until(ch.toLong, end) map (_.toChar)
+    def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
+    def until(end: Char): CharRange       = ch.toLong until end.toLong map (_.toChar)
   }
   implicit class IntOps(private val self: Int) extends AnyVal {
-    def to(end: Int): IntRange    = LongInterval.to(self, end) map (_.toInt)
-    def until(end: Int): IntRange = LongInterval.until(self, end) map (_.toInt)
+    def to(end: Int): IntRange    = self.toLong to end.toLong map (_.toInt)
+    def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
   }
   implicit class LongOps(private val self: Long) extends AnyVal {
     /** Safe in the senses that it won't silently truncate values,
@@ -97,13 +97,14 @@ object all extends AllExplicit with AllImplicit {
       case MinLong => MinInt
       case _       => assertInIntRange() ; self.toInt
     }
-    def takeNext(len: Precise): LongRange = LongInterval.closed(self, len) map identity
-    def to(end: Long): LongRange          = LongInterval.to(self, end) map identity
-    def until(end: Long): LongRange       = LongInterval.until(self, end) map identity
+    def takeNext(len: Precise): LongRange = closedRange(self, len)(x => x)
+    def to(end: Long): LongRange          = Interval.to(self, end) map identity
+    def until(end: Long): LongRange       = Interval.until(self, end) map identity
 
     private def assertInIntRange(): Unit = assert(MinInt <= self && self <= MaxInt, s"$self out of range")
   }
   implicit class PreciseOps(private val size: Precise) {
+    def exclusive: Index   = Index(size.getLong)
     def indices: VdexRange = indexRange(0, size.getLong)
     def lastIndex: Index   = Index(size.getLong - 1) // effectively maps both undefined and zero to no index.
 
@@ -180,6 +181,10 @@ object all extends AllExplicit with AllImplicit {
     @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
   }
   implicit class JavaIteratorOps[A](private val it: jIterator[A]) {
+    def toScala: scIterator[A] = new scIterator[A] {
+      def hasNext: Bool = it.hasNext
+      def next(): A     = it.next()
+    }
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
   implicit class CmpEnumOps(private val cmp: Cmp) {
@@ -246,6 +251,8 @@ object all extends AllExplicit with AllImplicit {
     def mapEach[C](f: A => C, g: B => C): C -> C = f(_1) -> g(_2)
     def mapLeft[C](f: A => C): C -> B            = f(_1) -> _2
     def mapRight[C](f: B => C): A -> C           = _1 -> f(_2)
+
+    def apply[C](f: (A, B) => C): C = f(_1, _2)
   }
   implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
     def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
