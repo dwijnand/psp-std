@@ -120,27 +120,29 @@ object all extends AllExplicit with AllImplicit {
   }
 
   implicit class FunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
+    type This = Fun[A, B]
+
     import Fun._
 
-    def applyOrElse(x: A, g: A => B): B       = cond(f isDefinedAt x, f(x), g(x))
-    def zfold[C : Empty](x: A)(g: B => C): C  = cond(f isDefinedAt x, g(f(x)), emptyValue)
-    def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
+    def andThen[C](g: B => C): Fun[A, C]      = AndThen(f, Opaque(g))
+    def applyOrElse(x: A, g: A => B): B       = cond(f contains x, f(x), g(x))
+    def compose[C](g: C => A): Fun[C, B]      = AndThen(Opaque(g), f)
     def get(x: A): Option[B]                  = zfold(x)(some)
-    def mapIn[C](g: C => A): Fun[C, B]        = AndThen(Opaque(g), f)
-    def mapOut[C](g: B => C): Fun[A, C]       = AndThen(f, Opaque(g))
+    def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
+    def zfold[C : Empty](x: A)(g: B => C): C  = cond(f contains x, g(f(x)), emptyValue)
 
     def defaulted(g: A => B): Defaulted[A, B] = f match {
       case Defaulted(_, u) => Defaulted(g, u)
       case _               => Defaulted(g, f)
     }
-
-    def filterIn(p: A => Boolean): FilterIn[A, B] = f match {
-      case FilterIn(p0, u) => FilterIn(x => p0(x) && p(x), u)
-      case _               => FilterIn(p, f)
+    def filterIn(p: ToBool[A]): Filtered[A, B] = f match {
+      case Filtered(q, u) => Filtered(q && p, u)
+      case _              => Filtered(p, f)
     }
 
-    def traced(in: A => Unit, out: B => Unit): Fun[A, B] =
-      mapIn[A](x => doto(x)(in)) mapOut (x => doto(x)(out))
+    def teeIn(g: ToUnit[A]): This                   = compose[A](x => doto(x)(g))
+    def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
+    def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
 
   implicit class ByteArrayOps(private val xs: Array[Byte]) {
@@ -161,6 +163,12 @@ object all extends AllExplicit with AllImplicit {
     }
   }
 
+  implicit class EqClassOps[A](private val z: Eq[A]) {
+    def toHash: Hash[A] = z match {
+      case heq: Hash[A] => heq
+      case _            => Eq.hash(z.eqv)(_ => 0)
+    }
+  }
   implicit class HashEqOrdOps[A](private val z: HashEqOrd[A]) {
     def on[B](f: B => A): HashEqOrd[B] = HashEqOrd(z.eqv _ on f, z.cmp _ on f, f andThen z.hash)
   }
@@ -199,17 +207,6 @@ object all extends AllExplicit with AllImplicit {
   implicit class ViewOpOps[A, B](private val op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
-  }
-  implicit class ExMapOps[K, V](private val lookup: ExMap[K, V]) {
-    import lookup._
-
-    def apply(key: K): V                  = lookup(key)
-    def map[V1](g: V => V1): ExMap[K, V1] = keys map (f mapOut g)
-    def values: View[V]                   = keys.toEach map lookup
-  }
-  implicit class ExSetOps[A](private val xs: ExSet[A]) {
-    def map [B](f: A => B): ExMap[A, B]           = Fun.finite(xs, f)
-    def flatMap[B](f: A => (A => B)): ExMap[A, B] = Fun.finite(xs, x => f(x)(x))
   }
 
   /** Extension methods for scala library classes.
@@ -255,7 +252,7 @@ object all extends AllExplicit with AllImplicit {
     def apply[C](f: (A, B) => C): C = f(_1, _2)
   }
   implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
-    def toExMap(implicit z: Eq[A]): ExMap[A, B]                         = toMap[ExMap]
+    def toPmap(implicit z: Hash[A]): Pmap[A, B]                         = toMap[Pmap]
     def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
   }
 
@@ -263,7 +260,15 @@ object all extends AllExplicit with AllImplicit {
     def contains(x: A): Boolean = xs exists (_ === x)
     def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
     def indexOf(x: A): Index    = xs indexWhere (_ === x)
-    def toExSet: ExSet[A]       = xs.toExSet
+
+    def hashFun(): HashFun[A] = eqv match {
+      case heq: Hash[A] =>
+        val buf = bufferMap[Long, View[A]]()
+        xs foreach (x => (heq hash x) |> (h => buf(h) = buf(h) :+ x))
+        Fun(buf.result mapValues (_.distinct))
+      case _ =>
+        Fun const xs
+    }
   }
   implicit class ShowableDocOps[A](private val lhs: A)(implicit shows: Show[A]) {
     def doc: Doc     = Doc(lhs)

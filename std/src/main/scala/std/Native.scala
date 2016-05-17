@@ -25,17 +25,6 @@ final case object Pnil extends Plist[Nothing] {
   def head = abort("Pnil.head")
   def tail = abort("Pnil.tail")
 }
-final class Pset[A](private val xs: sciSet[A]) extends ExSet[A] {
-  def head: A               = basis.head
-  def basis                 = xs.m
-  def equiv                 = byEquals
-  def apply(x: A): Bool     = xs(x)
-  def foreach(f: A => Unit) = xs foreach f
-  def size: Precise         = xs.size
-
-  def map[B](f: A => B): ExMap[A, B]               = Fun.finite(this, f)
-  def flatMap[B](f: A => ExMap[A, B]): ExMap[A, B] = Fun.finite(this, x => f(x)(x))
-}
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
 

@@ -39,7 +39,7 @@ class OperationCounts extends ScalacheckBundle {
     lowHalf     ^^ (n => TakeWhile(less(n))),
     chooseSmall ^^ (n => Maps(multiply(n))),
     chooseSmall ^^ (n => Filter(divides(n))),
-    chooseSmall ^^ (n => Collect(Partial(divides(n), (_: Long) / n))),
+    chooseSmall ^^ (n => Collect(Fun.partial(divides(n), (_: Long) / n))),
     chooseSmall ^^ (n => FlatMap(pairup)),
     chooseRange ^^ (r => Slice[Long](r))
   )

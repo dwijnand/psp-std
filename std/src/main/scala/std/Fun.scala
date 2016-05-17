@@ -3,67 +3,82 @@ package std
 
 import api._, all._, Fun._
 
-trait ExSet[A] extends Any {
-  def size: Precise
-  def basis: View[A]
-  def equiv: Hash[A]
-  def apply(x: A): Bool
+/** When you come down to it,
+ *
+ *  A function is an unrestricted K => V.
+ *  A partial function is K => V augmented with a predicate.
+ *  A predicate is a function which requires V=Bool.
+ *
+ *  An intensional set is a predicate.
+ *  An extensional set is a view augmented with an equality relation.
+ *  An extensional set is also a map which requires V=Bool.
+ *
+ *  A map is a function augmented with an extensional set of keys.
+ */
 
-  private implicit def heq: Hash[A] = equiv
-
-  def toEach: Each[A] = basis.distinct.force
+final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
+  def apply(key: A): B              = lookup(key)
+  def contains(x: A): Bool          = keySet contains x
+  def keys: View[A]                 = keySet.basis
+  def map[C](f: B => C): Pmap[A, C] = Pmap(keySet, lookup andThen f)
+  def pairs: View[A->B]             = zipped.pairs
+  def values: View[B]               = keys map lookup
+  def zipped: Zip[A, B]             = zipMap(keys, lookup)
+}
+final case class Pset[A](basis: View[A], table: HashFun[A])(implicit heq: Hash[A]) {
+  def size                                  = basis.size
+  def map[B](f: A => B): Pmap[A, B]         = Pmap(this, Fun(f))
+  def mapToSet[B: Hash](f: A => B): Pset[B] = basis map f toPset
+  def contains(x: A): Bool                  = table(x.hash) exists (_ === x)
 }
 
-/** A richer function abstraction.
-  *
-  *  No way to avoid at least having apply as a member method if there's
-  *  to be any hope of seeing these converted into scala.Functions.
-  */
-sealed abstract class Fun[-A, +B] { self =>
+object Pset {
+  def apply[A](xs: View[A])(implicit z: Eq[A]): Pset[A] = Pset(xs, xs.hashFun)(z.toHash)
+}
 
+sealed abstract class Fun[-A, +B] { self =>
   final def apply(x: A): B = this match {
     case Opaque(g)       => g(x)
-    case OrElse(u1, u2)  => if (u1 isDefinedAt x) u1(x) else u2(x)
-    case Defaulted(g, u) => if (u isDefinedAt x) u(x) else g(x)
-    case FilterIn(_, u)  => u(x) // filter is checked at isDefinedAt
+    case OrElse(u1, u2)  => if (u1 contains x) u1(x) else u2(x)
+    case Defaulted(g, u) => if (u contains x) u(x) else g(x)
+    case Filtered(_, u)  => u(x) // filter is checked at contains
     case AndThen(u1, u2) => u2(u1(x))
-    case FiniteFun(_, g) => g(x)
+    case FiniteMap(pm)   => pm(x)
+    case Const(x)        => x
   }
-  final def isDefinedAt(x: A): Boolean = this match {
-    case Opaque(_)        => true
-    case OrElse(u1, u2)   => (u1 isDefinedAt x) || (u2 isDefinedAt x)
-    case FilterIn(p, u)   => p(x) && (u isDefinedAt x)
-    case Defaulted(_, u)  => u isDefinedAt x
-    case AndThen(u1, u2)  => (u1 isDefinedAt x) && (u2 isDefinedAt u1(x))
-    case FiniteFun(ks, _) => ks(x)
+  final def contains(x: A): Bool = this match {
+    case Opaque(_)       => true
+    case Const(_)        => true
+    case OrElse(u1, u2)  => (u1 contains x) || (u2 contains x)
+    case Filtered(p, u)  => p(x) && (u contains x)
+    case Defaulted(_, u) => u contains x
+    case AndThen(u1, u2) => (u1 contains x) && (u2 contains u1(x))
+    case FiniteMap(pm)   => pm contains x
   }
-  def toPartial = new Partial(isDefinedAt, apply)
-}
-
-class Partial[-A, +B](p: ToBool[A], f: A => B) extends (A ?=> B) {
-  def isDefinedAt(x: A): Boolean = p(x)
-  def apply(x: A): B             = f(x)
+  def toPartial: A ?=> B = Fun.partial(contains, apply)
 }
 
 object Fun {
   final case class Opaque[-A, +B](f: A => B)                      extends Fun[A, B]
   final case class Defaulted[-A, +B](g: A => B, u: Fun[A, B])     extends Fun[A, B]
-  final case class FilterIn[-A, +B](p: A => Bool, u: Fun[A, B])   extends Fun[A, B]
+  final case class Filtered[-A, +B](p: A => Bool, u: Fun[A, B])   extends Fun[A, B]
   final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])     extends Fun[A, B]
   final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C]) extends Fun[A, C]
-  final case class FiniteFun[A, +B](keys: ExSet[A], f: Fun[A, B]) extends Fun[A, B] {
-    def zipped: Zip[A, B] = zipMap(keys.toEach, f)
+  final case class FiniteMap[A, +B](pm: Pmap[A, B])               extends Fun[A, B]
+  final case class Const[A](value: A)                             extends Fun[Any, A]
+  // final case class Kleisli[F[+X], -A, +B](f: A => F[B])           extends Fun[A, F[B]]
+
+  class Partial[-A, +B](p: ToBool[A], f: A => B) extends (A ?=> B) {
+    def isDefinedAt(x: A): Bool = p(x)
+    def apply(x: A): B          = f(x)
   }
 
-  def apply[A, B](f: A => B): Opaque[A, B]                          = Opaque(f)
-  def fromMap[A : Eq, B](xs: sciMap[A, B]): FiniteFun[A, B]         = FiniteFun(xs.keys.toExSet, Fun(xs apply _))
-  def finite[A, B](keys: ExSet[A], lookup: A => B): FiniteFun[A, B] = FiniteFun(keys, Fun(lookup))
-}
+  def apply[A, B](f: A => B): Opaque[A, B] = Opaque(f)
+  def const[A](value: A): Const[A]         = Const(value)
 
-object Partial {
-  def apply[A, B](pf: A ?=> B): Partial[A, B] = pf match {
+  def partial[A, B](p: ToBool[A], f: A => B): Partial[A, B] = new Partial(p, f)
+  def partial[A, B](pf: A ?=> B): Partial[A, B] = pf match {
     case x: Partial[A, B] => x
-    case _                => new Partial(pf.isDefinedAt, pf.apply)
+    case _                => partial(pf.isDefinedAt, pf.apply)
   }
-  def apply[A, B](p: ToBool[A], f: A => B): Partial[A, B] = new Partial(p, f)
 }
