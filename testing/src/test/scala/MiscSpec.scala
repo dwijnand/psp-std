@@ -23,7 +23,7 @@ class ADTSpec extends ScalacheckBundle {
   def bundle = "ADTs defined in psp-api"
 
   val f1 = Fun((_: Int) * 2)
-  val f2 = f1 mapOut (_ * 3)
+  val f2 = f1 andThen (_ * 3)
   val f3 = f2 filterIn (_ <= 2)
   val f4 = f3 defaulted (_ => 99)
   val xs = vec(1, 2, 3)

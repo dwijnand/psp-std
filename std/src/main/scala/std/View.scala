@@ -77,7 +77,7 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
 
   def iterator: scIterator[A]                = toScalaStream.iterator
   def toArray(implicit z: CTag[A]): Array[A] = to[Array]
-  def toExSet(implicit z: Eq[A]): ExSet[A]   = to[ExSet]
+  def toPset(implicit z: Eq[A]): Pset[A]     = to[Pset]
   def toPlist: Plist[A]                      = to[Plist]
   def toRefArray(): Array[Ref[A]]            = asRefs.force
   def toScalaStream: sciStream[A]            = to[sciStream]

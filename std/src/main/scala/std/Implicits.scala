@@ -14,7 +14,6 @@ trait AllImplicit extends StdEmpty with StdImplicits { self =>
   implicit def predicate2Algebra[A, B]: BooleanAlgebra[ToBool2[A, B]] = new Algebras.Predicate2Algebra[A, B]
   implicit def promoteSize(x: Long): Precise                          = Size(x)
   implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc       = Doc(x)
-  implicit def pfToPartial[A, B](pf: A ?=> B): Partial[A, B]          = Partial(pf)
 }
 
 /** This file needs to not import `object all` because that's cycle city,
@@ -48,7 +47,7 @@ trait StdOps extends StdOps2 {
 }
 
 trait ViewersAs0 {
-  implicit def viewsAsPspSet[A, CC[X] <: ExSet[X]]: ViewsAs[A, CC[A]]           = viewsAs(_.toEach)
+  implicit def viewsAsPspSet[A, CC[X] <: Pset[X]]: ViewsAs[A, CC[A]]            = viewsAs(Each each _.basis)
   implicit def viewsAsJavaIterable[A, CC[X] <: jIterable[X]]: ViewsAs[A, CC[A]] = viewsAs(Each java _)
   implicit def viewsAsScala[A, CC[X] <: sCollection[X]]: ViewsAs[A, CC[A]]      = viewsAs(Each scala _)
 }

@@ -22,7 +22,7 @@ class InferenceSpec extends ScalacheckBundle {
   val ls: sciList[Int]   = elems(1, 2, 3)
   val ss: String         = "123"
   val vs: sciVector[Int] = elems(1, 2, 3)
-  val xs: ExSet[Int]     = elems(1, 2, 3)
+  val xs: Pset[Int]      = elems(1, 2, 3)
 
   val b1 = as map identity build
   val b2 = ds map identity build
@@ -30,7 +30,7 @@ class InferenceSpec extends ScalacheckBundle {
   val b4 = ls.m map identity build
   val b5 = ss map identity build
   val b6 = vs.m map identity build
-  // val b7 = xs map identity //build
+  val b7 = xs mapToSet identity
 
   def ptBuild = vec[NamedProp](
     expectType[Array[Int]](b1),
@@ -38,8 +38,8 @@ class InferenceSpec extends ScalacheckBundle {
     expectType[Each[Int]](b3),
     expectType[sciList[Int]](b4),
     expectType[String](b5),
-    expectType[sciVector[Int]](b6)
-    // expectType[exSet[Int]](b7)
+    expectType[sciVector[Int]](b6),
+    expectType[Pset[Int]](b7)
   )
   def ptArray = expectTypes[Array[Int]](
     as.m map identity build,
@@ -86,7 +86,7 @@ class InferenceSpec extends ScalacheckBundle {
     expectType[String]        (ss map identity build),
     expectType[String]        (ss.m map identity force),
     expectType[View[Char]]    (ss.m map identity),
-    expectType[ExSet[Int]]    (xs.m map identity force),
+    expectType[Pset[Int]]     (xs.m map identity force),
     expectType[Each[Int]]     (fs map identity),
     expectType[Each[Int]]     (fs.m map identity force),
     expectType[Direct[Int]]   (ds map identity build),

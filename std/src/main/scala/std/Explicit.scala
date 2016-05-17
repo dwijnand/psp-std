@@ -32,7 +32,7 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   final val ConstantTrue2  = (x: scala.Any, y: scala.Any) => true
 
   // Type aliases I don't like enough to have in the API.
-  type Bag[A]               = ExMap[A, Precise]
+  type Bag[A]               = Pmap[A, Precise]
   type CanBuild[-Elem, +To] = scala.collection.generic.CanBuildFrom[_, Elem, To]
   type VdexRange            = ClosedRange[Vdex]
   type IntRange             = ClosedRange[Int]
@@ -42,8 +42,7 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   type ClosedRange[+A]      = Consecutive.Closed[A]
   type Renderer             = Show[Doc]
   type View2D[+A]           = View[View[A]]
-
-  type ExMap[A, +B] = Fun.FiniteFun[A, B]
+  type HashFun[+A]          = Fun[Long, View[A]]
 
   // Helpers for inference when calling 'on' on contravariant type classes.
   def eqBy[A]    = new EqBy[A]
@@ -65,7 +64,7 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def byReference[A]: Hash[A] = Eq.Reference
   def byToString[A]: Hash[A]  = Eq.ToString
 
-  def classFilter[A : CTag]: Partial[Any, A]       = Partial(isInstance[A], cast[A])
+  def classFilter[A : CTag]: Any ?=> A             = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
   def inheritShow[A]: Show[A]                      = Show.Inherited
   def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n <= 0, "%s", new Pstring("%%-%ds") format n))
@@ -105,18 +104,20 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def view[A](xs: A*): View[A]                                       = new IdView(Each.elems(xs: _*))
   def viewsAs[R, A](f: R => Each[A]): ViewsAs[A, R]                  = new ViewsAs(x => new IdView(f(x)))
 
-  def arr[A : CTag](xs: A*): Array[A]              = xs.toArray[A]
-  def list[A](xs: A*): Plist[A]                    = elems(xs: _*)
-  def nil[A](): Plist[A]                           = cast(Pnil)
-  def rel[A : Hash, B](xs: (A -> B)*): ExMap[A, B] = elems(xs: _*)
-  def set[A : Hash](xs: A*): ExSet[A]              = elems(xs: _*)
-  def vec[A](xs: A*): Vec[A]                       = elems(xs: _*)
-  def zip[A, B](xs: (A -> B)*): Zip[A, B]          = zipPairs(view(xs: _*))
+  def arr[A : CTag](xs: A*): Array[A]     = xs.toArray[A]
+  def vec[A](xs: A*): Vec[A]              = elems(xs: _*)
+  def zip[A, B](xs: (A -> B)*): Zip[A, B] = zipPairs(view(xs: _*))
+
+  def pmap[A : Hash, B](xs: (A->B)*): Pmap[A, B] = elems(xs: _*)
+  def pset[A : Hash](xs: A*): Pset[A]            = elems(xs: _*)
+  def plist[A](xs: A*): Plist[A]                 = elems(xs: _*)
+  def pnil[A](): Plist[A]                        = cast(Pnil)
+
+  def scalaList[A](xs: A*): sciList[A]            = elems(xs: _*)
+  def scalaMap[K, V](xs: (K -> V)*): sciMap[K, V] = elems(xs: _*)
+  def scalaSet[A](xs: A*): sciSet[A]              = elems(xs: _*)
 
   def javaList[A](xs: A*): jList[A]               = elems(xs: _*)
   def javaMap[K, V](xs: (K -> V)*): jMap[K, V]    = elems(xs: _*)
   def javaSet[A](xs: A*): jSet[A]                 = elems(xs: _*)
-  def scalaList[A](xs: A*): sciList[A]            = elems(xs: _*)
-  def scalaMap[K, V](xs: (K -> V)*): sciMap[K, V] = elems(xs: _*)
-  def scalaSet[A](xs: A*): sciSet[A]              = elems(xs: _*)
 }

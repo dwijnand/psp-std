@@ -21,7 +21,7 @@ class CollectionsSpec extends ScalacheckBundle {
   val jseq: jList[AB]     = elems(in: _*)
   val jset: jSet[AB]      = elems(in: _*)
   val jmap: jMap[A, B]    = elems(in: _*)
-  val pset: ExSet[AB]     = elems(in: _*)
+  val pset: Pset[AB]      = elems(in: _*)
   val pvec: Vec[AB]       = elems(in: _*)
 
   def paired[A](x: A): A -> Int = x -> x.any_s.length
@@ -50,10 +50,10 @@ class CollectionsSpec extends ScalacheckBundle {
       arr.m ++ arr.m force,
       arr.m.build,
       arr flatMap (x => vec(x)) build,
-      arr flatMap (x => list(x)) build,
+      arr flatMap (x => plist(x)) build,
       arr flatMap (x => view(x)) build,
       arr.m flatMap (x => vec(x)) build,
-      arr.m flatMap (x => list(x)) build,
+      arr.m flatMap (x => plist(x)) build,
       arr.m flatMap (x => view(x)) build
     ),
     expectTypes[Array[Long]](
@@ -146,13 +146,16 @@ class CollectionsSpec extends ScalacheckBundle {
 
   def pspProps: Vec[NamedProp] = {
     vec(
-      expectTypes[ExSet[AB]](
+      expectTypes[Pset[AB]](
         pset build,
-        // pset mapToSet identity build,
-        // pset map fst map paired build,
+        pset mapToSet identity,
+        pset mapToSet fst mapToSet paired,
         pset.m build,
         pset.m map identity build,
         pset.m map fst map paired build
+      ),
+      expectTypes[Pmap[AB, Int]](
+        pset map (x => fst(x).length)
       ),
       expectTypes[Vec[AB]](
         pvec build,
