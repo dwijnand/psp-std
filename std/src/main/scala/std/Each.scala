@@ -64,28 +64,30 @@ object Each {
     def size: Size                  = c.size
     def foreach(f: A => Unit): Unit = c resume f
   }
-  class Indexed[A](f: Int => A, start: Int, end: Int) extends Each[A] {
-    def head: A                     = f(start)
-    def size: Precise               = Size(end - start)
-    def foreach(g: A => Unit): Unit = ll.foreachInt(start, end - 1, f andThen g)
+  class IntIndexed[A](f: Int => A, start: Int, end: Int) extends StdDirect[A](Size(end - start)) {
+    def apply(idx: Vdex): A    = f(start + idx.indexValue.toInt)
+    def reverse: IntIndexed[A] = intIndexed(n => f(end - 1 - n), 0, size.getInt)
   }
-  class Const[A](elem: A) extends Each[A] {
+  class Const[A](elem: A) extends Indexed[A] {
+    def apply(idx: Vdex): A         = elem
     def head: A                     = elem
     def size                        = Infinite
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
-  class Continual[A](elem: => A) extends Each[A] {
+  class Continual[A](elem: => A) extends Indexed[A] {
+    def apply(idx: Vdex): A         = elem
     def head: A                     = elem
     def size                        = Infinite
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
 
-  def array[A](xs: Array[A]): Each[A]                          = new Indexed(xs.apply, 0, xs.length)
-  def elems[A](xs: A*): Each[A]                                = new Indexed[A](xs.apply, 0, xs.length)
-  def jvmString(s: String): Each[Char]                         = new Indexed(s charAt _, 0, s.length)
-  def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): Each[A] = new Indexed(i => cond(i == 0, x._1, x._2), 0, 2)
-  def const[A](elem: A): Each[A]                               = new Const(elem)
-  def continually[A](expr: => A): Each[A]                      = new Continual(expr)
+  def array[A](xs: Array[A]): Each[A]                                 = intIndexed(xs.apply, 0, xs.length)
+  def elems[A](xs: A*): Each[A]                                       = intIndexed[A](xs.apply, 0, xs.length)
+  def jvmString(s: String): Each[Char]                                = intIndexed(s charAt _, 0, s.length)
+  def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): Each[A]        = intIndexed(i => cond(i == 0, x._1, x._2), 0, 2)
+  def const[A](elem: A): Each[A]                                      = new Const(elem)
+  def continually[A](expr: => A): Each[A]                             = new Continual(expr)
+  def intIndexed[A](f: Int => A, start: Int, end: Int): IntIndexed[A] = new IntIndexed(f, start, end)
 
   def apply[A](mf: Suspended[A]): Each[A]                 = new Suspend(Cont(mf))
   def construct[A](size: Size, mf: Suspended[A]): Each[A] = new Suspend(Cont(mf) sized size)
@@ -95,7 +97,7 @@ object Each {
   def java[A](xs: jIterable[A]): Each[A]                  = new Suspend(Cont[A](xs.iterator foreach _))
 
   def scala[A](xs: sCollection[A]): Each[A] = xs match {
-    case xs: sciIndexedSeq[_] => new Indexed(xs.apply, 0, xs.length)
+    case xs: sciIndexedSeq[_] => intIndexed(xs.apply, 0, xs.length)
     case _                    => construct(xs.size, xs.foreach)
   }
 

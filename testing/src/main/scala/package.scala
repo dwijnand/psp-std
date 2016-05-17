@@ -2,6 +2,7 @@ package psp
 
 import api._, std._, all._, StdShow._
 import scala.Console.{ println => _, _ }
+import org.scalacheck.util.Pretty, Pretty.pretty
 
 package object tests {
   val PassGreen = GREEN + "\u2713" + RESET // check mark
@@ -139,14 +140,14 @@ package object tests {
   }
 
   implicit def chooseIndex: Choose[Index]  = Choose.xmap[Long, Index](Index, _.indexValue)
-  implicit def chooseSize: Choose[Precise] = Choose.xmap[Long, Precise](Finite, _.getLong)
+  implicit def chooseSize: Choose[Precise] = Choose.xmap[Long, Precise](Precise, _.getLong)
   implicit def chooseNth: Choose[Nth]      = Choose.xmap[Long, Nth](Nth, _.nthValue)
 
   def preNewline(s: String): String                               = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def showsAs[A: Show](expected: String, x: A): NamedProp         = preNewline(expected) -> (expected =? pp"$x")
   def seqShows[A: Show](expected: String, xs: Each[A]): NamedProp = preNewline(expected) -> (expected =? (xs mk_s ", "))
 
-  def expectValue[A](expected: A)(x: A): NamedProp = x.any_s -> (expected =? x)
+  def expectValue[A: Eq](expected: A)(x: A): NamedProp = x.any_s -> (expected =? x)
 
   def expectType(expected: jClass, found: jClass): NamedProp        = fpp"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
   def expectTypes(expected: jClass, found: Each[jClass]): NamedProp = fpp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
@@ -171,6 +172,17 @@ package object tests {
       case True  => False
       case False => True
       case x     => x
+    }
+  }
+
+  implicit class TestOnlyAnyOps[A](private val lhs: A) {
+    def =?(rhs: A)(implicit eqv: Eq[A], pp: A => Pretty): Prop = {
+      def label = {
+        val exp = pretty(rhs, Pretty.Params(0))
+        val act = pretty(lhs, Pretty.Params(0))
+        s"Expected $exp but got $act"
+      }
+      cond(lhs === rhs, proved, falsified :| label)
     }
   }
 

@@ -35,8 +35,8 @@ object all extends AllExplicit with AllImplicit {
     import Size._
 
     def getInt: Int = lhs match {
-      case Finite(n) => n.toInt
-      case s         => illegalArgumentException(s)
+      case Precise(n) => n.toInt
+      case s          => illegalArgumentException(s)
     }
     def isNonZero     = loBound =!= Zero
     def isZero        = lhs === Zero
@@ -57,16 +57,16 @@ object all extends AllExplicit with AllImplicit {
     def diff(rhs: Size): Size      = Size.Range(lhs - rhs, lhs)
 
     def +(rhs: Size): Size = (lhs, rhs) match {
-      case (Finite(l), Finite(r))                   => Finite(l + r)
-      case (Infinite, Finite(_))                    => Infinite
-      case (Finite(_), Infinite)                    => Infinite
+      case (Precise(l), Precise(r))                 => Precise(l + r)
+      case (Infinite, Precise(_))                   => Infinite
+      case (Precise(_), Infinite)                   => Infinite
       case (Infinite, Infinite)                     => Infinite
       case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 + l2, h1 + h2)
     }
     def -(rhs: Size): Size = (lhs, rhs) match {
-      case (Finite(l), Finite(r))                   => Finite(l - r)
-      case (Finite(_), Infinite)                    => Zero
-      case (Infinite, Finite(_))                    => Infinite
+      case (Precise(l), Precise(r))                 => Precise(l - r)
+      case (Precise(_), Infinite)                   => Zero
+      case (Infinite, Precise(_))                   => Infinite
       case (Infinite, Infinite)                     => Unknown
       case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
     }

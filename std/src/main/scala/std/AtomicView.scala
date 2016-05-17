@@ -18,6 +18,7 @@ object View {
   final case class Mapped[A, B, R](prev: RView[A, R], f: A => B)           extends CView[A, B, R](x => x)
   final case class FlatMapped[A, B, R](prev: RView[A, R], f: A => View[B]) extends CView[A, B, R](x => cond(x.isZero, x, Size.Unknown))
   final case class Collected[A, B, R](prev: RView[A, R], pf: A ?=> B)      extends CView[A, B, R](_.atMost)
+  final case class Reversed[A, R](prev: RView[A, R])                       extends CView[A, A, R](x => x)
 
   def unapply[A, B, R](xs: CView[A, B, R]): Some[RView[A, R] -> ToSelf[Size]] = Some(xs.prev -> xs.sizeEffect)
 }
@@ -26,6 +27,8 @@ object RunView {
   def loop[C](xs: View[C])(f: C => Unit): Unit = {
     type Pred = (ToBool[C] @unchecked) // silencing patmat warnings
     xs match {
+      case Reversed(Reversed(xs))            => loop(xs)(f)
+      case Reversed(xs)                      => loop(xs.toVec.reverse)(f)
       case FlatSlice(Mapped(prev, g), range) => sliced(prev, range, g andThen f)
       case FlatSlice(xs, range)              => sliced(xs, range, f)
       case Mapped(xs, g)                     => loop(xs)(g andThen f)
@@ -35,8 +38,8 @@ object RunView {
       case DropWhile(xs, p: Pred)            => ll.foreachDropWhile(xs, f, p)
       case Collected(xs, pf)                 => loop(xs)(x => if (pf isDefinedAt x) f(pf(x)))
       case Joined(xs, ys)                    => loop(xs)(f); loop(ys)(f)
-      case DroppedR(xs, Finite(0))           => loop(xs)(f)
-      case TakenR(xs, Finite(0))             => ()
+      case DroppedR(xs, Precise(0))          => loop(xs)(f)
+      case TakenR(xs, Precise(0))            => ()
       case DroppedR(xs, n)                   => ll.foreachDropRight(xs, f, n)
       case TakenR(xs, n)                     => ll.foreachTakeRight(xs, f, n)
       case Dropped(xs, n: Precise)           => ll.foreachSlice(xs, indexRange(n.getLong, MaxLong), f)
@@ -69,6 +72,7 @@ object RunView {
 
 sealed trait RView[A, R] extends View[A] {
   type MapTo[X] = RView[X, R]
+  type This     = MapTo[A]
 
   def xs: RView[A, R] = this
 
@@ -83,16 +87,17 @@ sealed trait RView[A, R] extends View[A] {
   def head: A = take(1).force.head
 
   def collect[B](pf: A ?=> B): MapTo[B]     = Collected(this, pf)
-  def drop(n: Precise): MapTo[A]            = Dropped(this, n)
-  def dropRight(n: Precise): MapTo[A]       = DroppedR(this, n)
-  def dropWhile(p: ToBool[A]): MapTo[A]     = DropWhile(this, p)
+  def drop(n: Precise): This                = Dropped(this, n)
+  def dropRight(n: Precise): This           = DroppedR(this, n)
+  def dropWhile(p: ToBool[A]): This         = DropWhile(this, p)
   def flatMap[B](f: A => View[B]): MapTo[B] = FlatMapped(this, f)
   def join(that: View[A]): View[A]          = Joined(this, that)
   def map[B](f: A => B): MapTo[B]           = Mapped(this, f)
-  def take(n: Precise): MapTo[A]            = Taken(this, n)
-  def takeRight(n: Precise): MapTo[A]       = TakenR(this, n)
-  def takeWhile(p: ToBool[A]): MapTo[A]     = TakenWhile(this, p)
-  def withFilter(p: ToBool[A]): MapTo[A]    = Filtered(this, p)
+  def take(n: Precise): This                = Taken(this, n)
+  def takeRight(n: Precise): This           = TakenR(this, n)
+  def takeWhile(p: ToBool[A]): This         = TakenWhile(this, p)
+  def withFilter(p: ToBool[A]): This        = Filtered(this, p)
+  def reverseView: This                     = Reversed(this)
 
   def build(implicit z: Builds[A, R]): R = xs.force[R]
 }
