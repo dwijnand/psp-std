@@ -60,6 +60,8 @@ trait StdEq1 extends StdEq0 {
   }
 }
 trait StdEq extends StdEq1 {
+  implicit def intervalHashEqOrd: Hash[Interval] = Eq.Inherited
+
   implicit def product2HashEqOrder[A: HashEqOrd, B: HashEqOrd]: HashEqOrd[A -> B] =
     HashEqOrd[A -> B](
       (x, y) => fst(x) === fst(y) && snd(x) === snd(y),

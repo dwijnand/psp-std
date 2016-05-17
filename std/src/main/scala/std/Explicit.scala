@@ -77,13 +77,13 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
 
   def bufferMap[A, B : Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
 
-  def closedRange[A](start: Long, size: Precise)(f: Long => A): ClosedRange[A] = LongInterval.closed(start, size) map f
-  def indexRange(start: Long, end: Long): VdexRange                            = LongInterval.until(start, end) map Index
-  def nthInclusive(start: Long, end: Long): VdexRange                          = LongInterval.to(start, end) map (n => Nth(n))
-  def longRange(start: Long, end: Long): LongRange                             = LongInterval.until(start, end) map identity
+  def closedRange[A](start: Long, size: Precise)(f: Long => A): ClosedRange[A] = Interval.closed(start, size) map f
+  def indexRange(start: Long, end: Long): VdexRange                            = Interval.until(start, end) map Index
+  def nthInclusive(start: Long, end: Long): VdexRange                          = Interval.to(start, end) map (n => Nth(n))
+  def longRange(start: Long, end: Long): LongRange                             = Interval.until(start, end) map identity
   def longsFrom(start: Long): OpenRange[Long]                                  = openRange(start)(identity)
   def openIndices: OpenRange[Index]                                            = openRange(0)(Index)
-  def openRange[A](start: Long)(f: Long => A): OpenRange[A]                    = LongInterval open start map f
+  def openRange[A](start: Long)(f: Long => A): OpenRange[A]                    = Interval open start map f
 
   def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipCross(l, r)
   def zipSplit[R, A, B](xs: View[R])(implicit z: Splitter[R, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
