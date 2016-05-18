@@ -1,8 +1,7 @@
-val root        = fbt.Build.root
-val std         = fbt.Build.std
-val consoleOnly = fbt.Build.consoleOnly
-val testing     = fbt.Build.testing
-val benchmark   = fbt.Build.benchmark
+val root      = pspstd.PspStd.root
+val std       = pspstd.PspStd.std
+val testing   = pspstd.PspStd.testing
+val benchmark = pspstd.PspStd.benchmark
 
 // To sync with Maven central, you need to supply the following information:
 pomExtra in Global := (

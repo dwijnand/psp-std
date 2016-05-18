@@ -7,46 +7,34 @@ import ammonite.repl.frontend.FrontEnd
 import java.lang.System
 
 object ReplMain {
-  def storage = Ref(Storage(defaultAmmoniteHome, None))
+  def storage = Storage(defaultAmmoniteHome, None)
   def initImports = sm"""
     |import psp._, std._, all._, api._
     |import StdShow._, INREPL._
     |import Unsafe.promoteIndex
   """
-  // Working around ammonite bugs.
-  // https://github.com/lihaoyi/Ammonite/issues/213
-  def workarounds = {
-    def mkNames(name: String, variance: String): String = s"type $name[${variance}A] = psp.api.$name[A] ; val $name = psp.std.$name"
-    def cov         = vec("Order", "Eq", "Show") map (mkNames(_, "-"))
-    def inv         = vec("Empty") map (mkNames(_, ""))
-    cov ++ inv joinLines
-  }
 
-  def main(args: Array[String]): Unit = REPL.start(args: _*)
+  def main(args: Array[String]): Unit = new REPL(Ref(storage), initImports, args.toVec).start()
 }
-
-trait ReplOverrides extends Repl {
-  private def banner = s"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
-  override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
-  override val prompt   = Ref("psp> ")
-
-  override def printBanner(): Unit = printStream println banner
-}
-
-import ReplMain._
 
 /** This sets up the ammonite repl with the correct compiler settings
  *  and desired namespace elements and aesthetics.
  */
-object REPL extends Repl(System.in, System.out, System.err, storage, "", Nil) with ReplOverrides {
+class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", Nil) {
+  override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
+  override val prompt   = Ref("psp> ")
+
+  private def banner               = s"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
+  override def printBanner(): Unit = printStream println banner
+
   import interp.replApi._
 
-  def start(args: String*): Unit = {
-    compiler.settings.processArguments(args.toList, processAll = true)
-    load(initImports)
-    load(workarounds)
+  def start(): Unit = {
+    compiler.settings.processArguments(scalacArgs.to, processAll = true)
+    load(initCode)
     run()
   }
+
   override def action() = {
     val res = super.action()
     printStream.println("") // Blank line between results.
