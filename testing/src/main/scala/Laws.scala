@@ -11,6 +11,12 @@ abstract class Laws[A : Eq] {
   def identity(f: BinOp[A], id: A): Forall1[A]           = a         => f(a, id) === a
   def idempotence(f: BinOp[A]): Forall1[A]               = a         => f(a, a) === a
 }
+abstract class RelationLaws[A] {
+  def reflexive(f: EqRelation[A]): Forall1[A]     = a => f(a, a)
+  def transitive(f: EqRelation[A]): Forall3[A]    = (a, b, c) => f(a, b) && f(b, c) implies f(a, c)
+  def symmetric(f: EqRelation[A]): Forall2[A]     = (a, b) => f(a, b) === f(b, a)
+  def antisymmetric(f: EqRelation[A]): Forall2[A] = (a, b) => f(a, b) =!= f(b, a)
+}
 abstract class AlgebraLaws[A : Eq : BooleanAlgebra] extends Laws[A] {
   def complement(f: BinOp[A], id: A): Forall1[A] = a => f(a, !a) === id
 }
@@ -26,13 +32,3 @@ class ScalacheckCallback extends Test.TestCallback {
   override def chain(testCallback: Test.TestCallback): Test.TestCallback = super.chain(testCallback)
 }
 
-/***
-trait RelationLaws[A] {
-  implicit def arbA: Arbitrary[A]
-
-  def reflexive(r: Relation[A])                        = forAll((a: A) => r(a, a))
-  def transitive(r: Relation[A])                       = forAll((a: A, b: A, c: A) => r(a, b) && r(b, c) ==> r(a, c))
-  def symmetric(r: Relation[A])                        = forAll((a: A, b: A) => r(a, b) ==> r(b, a))
-  def antisymmetric(r: Relation[A])(implicit z: Eq[A]) = forAll((a: A, b: A) => r(a, b) && r(b, a) ==> z.eqv(a, b))
-}
-***/

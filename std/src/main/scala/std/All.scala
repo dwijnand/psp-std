@@ -287,9 +287,10 @@ object all extends AllExplicit with AllImplicit {
     def show: String = shows show lhs
   }
   implicit class BooleanAlgebraOps[A](private val lhs: A)(implicit z: BooleanAlgebra[A]) {
-    def &&(rhs: A): A = z.and(lhs, rhs)
-    def ||(rhs: A): A = z.or(lhs, rhs)
-    def unary_! : A   = z complement lhs
+    def implies(rhs: A): A = !(lhs && !rhs)
+    def &&(rhs: A): A      = z.and(lhs, rhs)
+    def ||(rhs: A): A      = z.or(lhs, rhs)
+    def unary_! : A        = z complement lhs
   }
   implicit class EqOps[A](private val lhs: A)(implicit z: Eq[A]) {
     def ===(rhs: A): Boolean = z.eqv(lhs, rhs)
