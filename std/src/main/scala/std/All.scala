@@ -11,6 +11,7 @@ import java.io.BufferedInputStream
   */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
+
   /** The type of args forces all the interpolation variables to
     * be of a type which is implicitly convertible to Doc.
     */
@@ -24,10 +25,10 @@ object all extends AllExplicit with AllImplicit {
     def getInt: Int = vdex.indexValue.safeToInt
   }
   implicit class AnyOps[A](private val x: A) extends AnyVal {
-    def any_s: String                      = s"$x"
-    def id_## : Int                        = java.lang.System.identityHashCode(x)
-    def id_==(y: Any): Boolean             = cast[AnyRef](x) eq cast[AnyRef](y)
-    def matchIf[B : Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
+    def any_s: String                     = s"$x"
+    def id_## : Int                       = java.lang.System.identityHashCode(x)
+    def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
+    def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
 
     @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
   }
@@ -88,6 +89,7 @@ object all extends AllExplicit with AllImplicit {
     def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
   }
   implicit class LongOps(private val self: Long) extends AnyVal {
+
     /** Safe in the senses that it won't silently truncate values,
       *  and will translate MaxLong to MaxInt instead of -1.
       *  We depend on this!
@@ -95,7 +97,7 @@ object all extends AllExplicit with AllImplicit {
     def safeToInt: Int = self match {
       case MaxLong => MaxInt
       case MinLong => MinInt
-      case _       => assertInIntRange() ; self.toInt
+      case _       => assertInIntRange(); self.toInt
     }
     def takeNext(len: Precise): LongRange = closedRange(self, len)(x => x)
     def to(end: Long): LongRange          = Interval.to(self, end) map identity
@@ -129,7 +131,7 @@ object all extends AllExplicit with AllImplicit {
     def compose[C](g: C => A): Fun[C, B]      = AndThen(Opaque(g), f)
     def get(x: A): Option[B]                  = zfold(x)(some)
     def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
-    def zfold[C : Empty](x: A)(g: B => C): C  = cond(f contains x, g(f(x)), emptyValue)
+    def zfold[C: Empty](x: A)(g: B => C): C   = cond(f contains x, g(f(x)), emptyValue)
 
     def defaulted(g: A => B): Defaulted[A, B] = f match {
       case Defaulted(_, u) => Defaulted(g, u)
@@ -214,11 +216,11 @@ object all extends AllExplicit with AllImplicit {
     *  but scala doesn't allow it.
     */
   implicit class OptionOps[A](private val x: Option[A]) extends AnyVal {
-    def or(alt: => A): A               = x getOrElse alt
-    def toVec: Vec[A]                  = this zfold (x => vec(x))
-    def zfold[B : Empty](f: A => B): B = x.fold[B](emptyValue)(f)
-    def zget(implicit z: Empty[A]): A  = x getOrElse z.empty
-    def |(alt: => A): A                = x getOrElse alt
+    def or(alt: => A): A              = x getOrElse alt
+    def toVec: Vec[A]                 = this zfold (x => vec(x))
+    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
+    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
+    def |(alt: => A): A               = x getOrElse alt
   }
   implicit class TryOps[A](private val x: Try[A]) extends AnyVal {
     def |(expr: => A): A = x.toOption | expr

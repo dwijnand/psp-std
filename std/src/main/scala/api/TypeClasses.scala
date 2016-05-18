@@ -39,10 +39,10 @@ trait MJoiner[M[+X], +R, -A, -B] extends Any {
 trait MCleaver[M[+X], R, A, B] extends Any with MJoiner[M, R, A, B] with MSplitter[M, R, A, B]
 
 /** Scala makes certain things impossible with type parameters and a
- *  nearly disjoint set of ambitions impossible with type members.
- *  We are left with building them in redundantly so we always have
- *  what we need.
- */
+  *  nearly disjoint set of ambitions impossible with type members.
+  *  We are left with building them in redundantly so we always have
+  *  what we need.
+  */
 trait ASplitter[-R] extends Any {
   type Left
   type Right
@@ -82,12 +82,12 @@ trait Empty[+A] extends Any with MEmpty[Id, A] {
   def empty: A
 }
 trait Splitter[-R, +A, +B] extends Any with MSplitter[Id, R, A, B] with ASplitter[R] {
-  type Left  <: A
+  type Left <: A
   type Right <: B
   def split(x: R): A -> B
 }
 trait Joiner[+R, -A, -B] extends Any with MJoiner[Id, R, A, B] with AJoiner[R] {
-  type Left  >: A
+  type Left >: A
   type Right >: B
   def join(x: A -> B): R
 }

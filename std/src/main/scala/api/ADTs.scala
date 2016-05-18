@@ -69,7 +69,7 @@ object Size {
     case (Size.Range(l1, h1), Size.Range(l2, h2)) => Range(min(l1, l2), min(h1, h2))
   }
   def max(lhs: Size, rhs: Size): Size = (lhs, rhs) match {
-    case (Precise(x), Precise(y))                   => if (x >= y) lhs else rhs
+    case (Precise(x), Precise(y))                 => if (x >= y) lhs else rhs
     case (Infinite, _) | (_, Infinite)            => Infinite
     case (Size.Range(l1, h1), Size.Range(l2, h2)) => Range(max(l1, l2), max(h1, h2))
   }
@@ -77,6 +77,7 @@ object Size {
   def apply(size: Long): Precise = new Precise(if (size < 0L) 0L else size)
 
   object Range {
+
     /** Preserving associativity/commutativity of Size prevents us from
       *  modifying values to enforce any invariants on Bounded.
       */

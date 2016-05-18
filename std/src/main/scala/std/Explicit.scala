@@ -53,8 +53,8 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def order[A](implicit z: Order[A]): Order[A] = z
 
   /** Unfortunately we need the overloads for function type
-   *  inference.
-   */
+    *  inference.
+    */
   def nth(n: Int): Nth      = Nth(n)
   def nth(n: Long): Nth     = Nth(n)
   def index(n: Int): Index  = Index(n)
@@ -64,17 +64,17 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def byReference[A]: Hash[A] = Eq.Reference
   def byToString[A]: Hash[A]  = Eq.ToString
 
-  def classFilter[A : CTag]: Any ?=> A             = Fun.partial(isInstance[A], cast[A])
+  def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
   def inheritShow[A]: Show[A]                      = Show.Inherited
   def lformat[A](n: Int): FormatFun                = new FormatFun(cond(n <= 0, "%s", new Pstring("%%-%ds") format n))
-  def println[A : Show](x: A): Unit                = scala.Console.out println render(x)
+  def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x
 
-  def make[R] : MakeHelper[R]           = new MakeHelper[R]
+  def make[R]: MakeHelper[R]            = new MakeHelper[R]
   def remake[R](xs: R): RemakeHelper[R] = new RemakeHelper[R](xs)
 
-  def bufferMap[A, B : Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def bufferMap[A, B: Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
 
   def closedRange[A](start: Long, size: Precise)(f: Long => A): ClosedRange[A] = Interval.closed(start, size) map f
   def indexRange(start: Long, end: Long): VdexRange                            = Interval.until(start, end) map Index
@@ -104,20 +104,20 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def view[A](xs: A*): View[A]                                       = new IdView(Each.elems(xs: _*))
   def viewsAs[R, A](f: R => Each[A]): ViewsAs[A, R]                  = new ViewsAs(x => new IdView(f(x)))
 
-  def arr[A : CTag](xs: A*): Array[A]     = xs.toArray[A]
+  def arr[A: CTag](xs: A*): Array[A]      = xs.toArray[A]
   def vec[A](xs: A*): Vec[A]              = elems(xs: _*)
   def zip[A, B](xs: (A -> B)*): Zip[A, B] = zipPairs(view(xs: _*))
 
-  def pmap[A : Hash, B](xs: (A->B)*): Pmap[A, B] = elems(xs: _*)
-  def pset[A : Hash](xs: A*): Pset[A]            = elems(xs: _*)
-  def plist[A](xs: A*): Plist[A]                 = elems(xs: _*)
-  def pnil[A](): Plist[A]                        = cast(Pnil)
+  def pmap[A: Hash, B](xs: (A -> B)*): Pmap[A, B] = elems(xs: _*)
+  def pset[A: Hash](xs: A*): Pset[A]              = elems(xs: _*)
+  def plist[A](xs: A*): Plist[A]                  = elems(xs: _*)
+  def pnil[A](): Plist[A]                         = cast(Pnil)
 
   def scalaList[A](xs: A*): sciList[A]            = elems(xs: _*)
   def scalaMap[K, V](xs: (K -> V)*): sciMap[K, V] = elems(xs: _*)
   def scalaSet[A](xs: A*): sciSet[A]              = elems(xs: _*)
 
-  def javaList[A](xs: A*): jList[A]               = elems(xs: _*)
-  def javaMap[K, V](xs: (K -> V)*): jMap[K, V]    = elems(xs: _*)
-  def javaSet[A](xs: A*): jSet[A]                 = elems(xs: _*)
+  def javaList[A](xs: A*): jList[A]            = elems(xs: _*)
+  def javaMap[K, V](xs: (K -> V)*): jMap[K, V] = elems(xs: _*)
+  def javaSet[A](xs: A*): jSet[A]              = elems(xs: _*)
 }

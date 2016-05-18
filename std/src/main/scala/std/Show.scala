@@ -27,15 +27,14 @@ object Doc {
 
 class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
 
-  def showEach[A : Show](xs: Each[A]): String = xs match {
+  def showEach[A: Show](xs: Each[A]): String = xs match {
     case x: Consecutive.Open[A]   => pp"[${ x.head }..)"
     case x: Consecutive.Closed[A] => if (x.isEmpty) "[]" else pp"[${ x.head }..${ x.last }]"
     case _                        => showView(xs.m map (_.doc))
   }
 
   def showView(xs: View[Doc]): String =
-    "[ " +
-    (xs splitAt maxElements.lastIndex match {
+    "[ " + (xs splitAt maxElements.lastIndex match {
           case Split(xs, ys) if ys.isEmpty => xs map show mk_s ", "
           case Split(xs, _)                => (xs take minElements map show mk_s ", ") + ", ..."
         }) + " ]"
@@ -66,9 +65,7 @@ case class ShowInterpolator(val stringContext: StringContext) {
   final def sm(args: Doc*): String = {
     def isLineBreak(c: Char) = c == '\n' || c == '\f' // compatible with StringLike#isLineBreak
     def stripTrailingPart(s: String): String = (
-      s splitAround (s indexWhere isLineBreak)
-            mapBoth (_.force[String])
-                app (_ append _.stripMargin)
+      s splitAround (s indexWhere isLineBreak) mapBoth (_.force[String]) app (_ append _.stripMargin)
     )
 
     val stripped = escapedParts.m matchIf { case hd +: tl => hd.stripMargin +: (tl map stripTrailingPart force) }
@@ -100,12 +97,12 @@ trait ShowInstances extends ShowEach {
   implicit def showString: Show[String]       = inheritShow
   implicit def showThrowable: Show[Throwable] = inheritShow
 
-  implicit def showClass: Show[jClass]                    = Show(JvmName asScala _ short)
-  implicit def showDirect: Show[ShowDirect]               = Show(_.to_s)
-  implicit def showVdex: Show[Vdex]                       = showBy(_.indexValue)
-  implicit def showOption[A : Show]: Show[Option[A]]      = Show(_.fold("-")(_.doc.render))
-  implicit def showPair[A : Show, B : Show]: Show[A -> B] = Show { case a -> b => a.doc ~ " -> " ~ b render }
-  implicit def showOp[A, B]: Show[Op[A, B]]               = Show(op => op[ConstString](""))
+  implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
+  implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
+  implicit def showVdex: Show[Vdex]                     = showBy(_.indexValue)
+  implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.doc.render))
+  implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show { case a -> b => a.doc ~ " -> " ~ b render }
+  implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstString](""))
 
   implicit def showFunGrid[A, B](implicit z: Show[B]): Show[View2D.FunGrid[A, B]] = showBy(_.lines.joinLines)
 
@@ -117,13 +114,13 @@ trait ShowInstances extends ShowEach {
   }
 }
 trait ShowEach0 {
-  implicit def showView[A : Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
+  implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
 }
 trait ShowEach extends ShowEach0 {
-  implicit def showPmap[K : Show, V : Show] = showBy[Pmap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
+  implicit def showPmap[K: Show, V: Show] = showBy[Pmap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
 
-  implicit def showEach[A : Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
-  implicit def showZipped[A1 : Show, A2 : Show]: Show[Zip[A1, A2]]         = showBy[Zip[A1, A2]](_.pairs)
-  implicit def showArray[A : Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
-  implicit def showSplit[A: Show] : Show[Split[A]]                         = showBy[Split[A]](x => "Split(".doc ~ x.leftView ~ ", " ~ x.rightView ~ ")")
+  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
+  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]]          = showBy[Zip[A1, A2]](_.pairs)
+  implicit def showArray[A: Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
+  implicit def showSplit[A: Show]: Show[Split[A]]                         = showBy[Split[A]](x => "Split(".doc ~ x.leftView ~ ", " ~ x.rightView ~ ")")
 }

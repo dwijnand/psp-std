@@ -71,7 +71,7 @@ object Zip {
     def foreach(f: MapTo[Unit]): Unit = (lefts, rights) match {
       case (xs: Direct[A1], ys) => xs.size.indices zip ys mapLeft xs.apply
       case (xs, ys: Direct[A2]) => xs zip ys.size.indices mapRight ys.apply
-      case _                    => lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return)))
+      case _                    => lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return )))
     }
 
     def corresponds(p: PredBoth): Bool         = iterator |> (it => it.forall(_ app p) && !it.hasMore)

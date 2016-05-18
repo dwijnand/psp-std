@@ -60,14 +60,14 @@ abstract class ApiValues extends ApiTypes {
   def ?[A](implicit value: A): A                         = value
   def castRef[A](value: A): Ref[A]                       = cast(value)
   def cast[A](value: Any): A                             = value.asInstanceOf[A]
-  def classOf[A : CTag](): Class[_ <: A]                 = cast(classTag[A].runtimeClass)
-  def classTag[A : CTag]: CTag[A]                        = ?[CTag[A]]
+  def classOf[A: CTag](): Class[_ <: A]                  = cast(classTag[A].runtimeClass)
+  def classTag[A: CTag]: CTag[A]                         = ?[CTag[A]]
   def cond[A](p: Bool, thenp: => A, elsep: => A): A      = if (p) thenp else elsep
   def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
   def emptyValue[A](implicit z: Empty[A]): A             = z.empty
   def fst[A, B](x: A -> B): A                            = x._1
   def identity[A](x: A): A                               = x
-  def isInstance[A : CTag](x: Any): Bool                 = classOf[A]() isAssignableFrom x.getClass
+  def isInstance[A: CTag](x: Any): Bool                  = classOf[A]() isAssignableFrom x.getClass
   def jFile(path: String): jFile                         = new jFile(path)
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
@@ -83,8 +83,8 @@ abstract class ApiValues extends ApiTypes {
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
-  def zcond[A : Empty](p: Bool, thenp: => A): A          = cond(p, thenp, emptyValue[A])
-  def newArray[A : CTag](len: Int): Array[A]             = new Array[A](len)
+  def zcond[A: Empty](p: Bool, thenp: => A): A           = cond(p, thenp, emptyValue[A])
+  def newArray[A: CTag](len: Int): Array[A]              = new Array[A](len)
 
   /** Safe in the senses that it won't silently truncate values,
     *  and will translate MaxLong to MaxInt instead of -1.
@@ -103,7 +103,6 @@ abstract class ApiValues extends ApiTypes {
     }
     java.lang.String.format(s, args map unwrapArg: _*)
   }
-
 
   // You can't use string interpolation without a StringContext term in scope.
   def StringContext = scala.StringContext

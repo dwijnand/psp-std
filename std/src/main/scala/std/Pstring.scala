@@ -60,7 +60,7 @@ final class Regex(val pattern: Pattern) extends AnyVal with ShowSelf {
   def ends: Regex                            = append("$")
   def flags: Int                             = pattern.flags
   def isMatch(input: jCharSequence): Boolean = matcher(input).matches
-  def isMatch[A : Show](x: A): Boolean       = isMatch(x.doc.render)
+  def isMatch[A: Show](x: A): Boolean        = isMatch(x.doc.render)
   def literal: Regex                         = surround("\\Q", "\\E") // Not setFlag(LITERAL) lest further regex additions be misinterpreted
   def mapRegex(f: ToSelf[String]): Regex     = Regex(f(to_s), flags)
   def starts: Regex                          = mapRegex("^" + _)
