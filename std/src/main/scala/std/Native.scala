@@ -28,11 +28,12 @@ final case object Pnil extends Plist[Nothing] {
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
 
-  def head: A           = underlying(0)
-  def isEmpty           = length <= 0
-  def length: Int       = underlying.length
-  def size: Precise     = Size(length)
-  def apply(i: Vdex): A = underlying(i.getInt)
+  def head: A            = underlying(0)
+  def isEmpty            = length <= 0
+  def length: Int        = underlying.length
+  def size: Precise      = Size(length)
+  def apply(i: Vdex): A  = underlying(i.getInt)
+  def reverse: Direct[A] = Each.intIndexed(underlying, 0, length).reverse
 
   def updated(i: Vdex, elem: A): Vec[A] = make(_.updated(i.getInt, elem))
   def :+(elem: A): Vec[A]               = make(_ :+ elem)

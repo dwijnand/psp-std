@@ -9,13 +9,14 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Eq.Reference)
   def byToString: EqViewOps[A]       = by(Eq.ToString)
 
-  def partition(p: ToBool[A]): Split[A] = Split(xs withFilter p, xs withFilter !p)
-  def span(p: ToBool[A]): Split[A]      = Split(xs takeWhile p, xs dropWhile p)
-  def splitAround(idx: Vdex): Split[A]  = splitAt(idx) mapRight (_ tail)
-  def splitAt(idx: Vdex): Split[A]      = Split(xs take idx.excluding, xs drop idx.excluding)
-  def zipTail: Zip[A, A]                = zipViews(xs, xs.tail)
-  def zipIndex: Zip[A, Index]           = zipViews(xs, openIndices)
-  def zip[B](ys: View[B]): Zip[A, B]    = zipViews[A, B](xs, ys)
+  def partition(p: ToBool[A]): Split[A]   = Split(xs withFilter p, xs withFilter !p)
+  def span(p: ToBool[A]): Split[A]        = Split(xs takeWhile p, xs dropWhile p)
+  def splitAround(idx: Vdex): Split[A]    = splitAt(idx) mapRight (_ tail)
+  def splitAt(idx: Vdex): Split[A]        = splitAtTake(idx.excluding)
+  def splitAtTake(len: Precise): Split[A] = Split(xs take len, xs drop len)
+  def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail)
+  def zipIndex: Zip[A, Index]             = zipViews(xs, openIndices)
+  def zip[B](ys: View[B]): Zip[A, B]      = zipViews[A, B](xs, ys)
 
   def +:(head: A): View[A]                             = view(head) ++ xs
   def :+(last: A): View[A]                             = xs ++ view(last)

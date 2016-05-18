@@ -110,7 +110,7 @@ trait ShowInstances extends ShowEach {
   implicit def showFunGrid[A, B](implicit z: Show[B]): Show[View2D.FunGrid[A, B]] = showBy(_.lines.joinLines)
 
   implicit def showSize: Show[Size] = Show[Size] {
-    case Finite(size)          => pp"$size"
+    case Precise(size)         => pp"$size"
     case Bounded(lo, Infinite) => pp"$lo+"
     case Bounded(lo, hi)       => pp"[$lo,$hi]"
     case Infinite              => "<inf>"

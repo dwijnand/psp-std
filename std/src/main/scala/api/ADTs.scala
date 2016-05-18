@@ -21,31 +21,31 @@ import Api._
   *  Invariants:
   *  - Precise is non-negative
   */
-sealed trait Size   extends Any
-sealed trait Atomic extends Any with Size
+sealed trait Size
+sealed trait Atomic extends Size
 final case object Infinite extends Atomic
-final class Precise private[api](val get: Long) extends AnyVal with Atomic {
-  def *(n: Long): Precise = Size(get * n)
-  def +(n: Long): Precise = Size(get + n)
-  def -(n: Long): Precise = Size(get - n)
-  def getLong: Long       = get.toLong
-  override def toString   = s"$get"
+final class Precise private[api](val getLong: Long) extends Atomic {
+  def /(n: Long): Precise = Precise(getLong / n)
+  def *(n: Long): Precise = Precise(getLong * n)
+  def +(n: Long): Precise = Precise(getLong + n)
+  def -(n: Long): Precise = Precise(getLong - n)
+  override def toString   = s"$getLong"
 }
 final case class Bounded private[api](lo: Precise, hi: Atomic) extends Size
 
-object Finite extends (Long => Precise) {
+object Precise extends (Long => Precise) {
   final class Extractor(val get: Long) extends AnyVal { def isEmpty = get < 0 }
 
-  def apply(n: Long): Precise        = new Precise(cond(n < 0, 0, n))
+  def apply(n: Long): Precise        = new Precise(cond(n < 0, 0L, n))
   def unapply(n: Precise): Extractor = new Extractor(n.getLong)
 
   object Range {
-    def apply(lo: Long, hi: Long): Bounded = Bounded(Finite(lo), Finite(hi))
+    def apply(lo: Long, hi: Long): Bounded = Bounded(Precise(lo), Precise(hi))
     // Return (lo, hi) as sizes unless arg is or contains Infinite.
     def unapply(x: Size): Option[(Long, Long)] = x match {
-      case Finite(n)                       => some((n, n))
-      case Bounded(Finite(lo), Finite(hi)) => some((lo, hi))
-      case _                               => none()
+      case Precise(n)                        => some((n, n))
+      case Bounded(Precise(lo), Precise(hi)) => some((lo, hi))
+      case _                                 => none()
     }
   }
 }
@@ -56,14 +56,20 @@ object Size {
   val Unknown  = Bounded(Zero, Infinite)
   val NonEmpty = Bounded(One, Infinite)
 
+  def equiv(lhs: Size, rhs: Size): Bool = (lhs, rhs) match {
+    case (Precise(l), Precise(r))           => l == r
+    case (Infinite, Infinite)               => true
+    case (Bounded(l1, h1), Bounded(l2, h2)) => equiv(l1, l2) && equiv(h1, h2)
+    case _                                  => false
+  }
   def min(lhs: Size, rhs: Size): Size = (lhs, rhs) match {
-    case (Finite(x), Finite(y))                   => if (x <= y) lhs else rhs
+    case (Precise(x), Precise(y))                 => if (x <= y) lhs else rhs
     case (_, Infinite)                            => lhs
     case (Infinite, _)                            => rhs
     case (Size.Range(l1, h1), Size.Range(l2, h2)) => Range(min(l1, l2), min(h1, h2))
   }
   def max(lhs: Size, rhs: Size): Size = (lhs, rhs) match {
-    case (Finite(x), Finite(y))                   => if (x >= y) lhs else rhs
+    case (Precise(x), Precise(y))                   => if (x >= y) lhs else rhs
     case (Infinite, _) | (_, Infinite)            => Infinite
     case (Size.Range(l1, h1), Size.Range(l2, h2)) => Range(max(l1, l2), max(h1, h2))
   }
@@ -74,13 +80,11 @@ object Size {
     /** Preserving associativity/commutativity of Size prevents us from
       *  modifying values to enforce any invariants on Bounded.
       */
-    def apply(lo: Size, hi: Size): Size =
-      if (lo == hi) lo
-      else
-        (lo, hi) match {
-          case (lo: Precise, hi: Atomic)      => Bounded(lo, hi)
-          case (Range(l1, h1), Range(l2, h2)) => apply(min(l1, l2), max(h1, h2))
-        }
+    def apply(lo: Size, hi: Size): Size = (lo, hi) match {
+      case _ if equiv(lo, hi)             => lo
+      case (lo: Precise, hi: Atomic)      => Bounded(lo, hi)
+      case (Range(l1, h1), Range(l2, h2)) => apply(min(l1, l2), max(h1, h2))
+    }
     def unapply(x: Size): Some[(Atomic, Atomic)] = x match {
       case Bounded(lo, hi) => scala.Some((lo, hi))
       case x: Atomic       => scala.Some((x, x))

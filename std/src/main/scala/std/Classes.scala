@@ -26,7 +26,9 @@ final class Utf8(val bytes: Array[Byte]) extends AnyVal with ShowSelf {
 }
 
 trait StdEq0 {
-  implicit def sizeEq: Hash[Size] = byEquals
+  implicit def sizeHashEq: Hash[Size] =
+    Eq.hash(Size.equiv)(_.##)
+
   implicit def comparableOrder[A](implicit ev: A <:< Comparable[A]): Order[A] =
     Order(((x: A, y: A) => x compareTo y) andThen (x => longCmp(x)))
 }

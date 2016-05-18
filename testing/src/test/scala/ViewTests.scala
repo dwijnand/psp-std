@@ -3,6 +3,27 @@ package tests
 
 import api._, std._, all._, StdShow._
 
+class StringViewTests {
+  val ad: String    = 'a' to 'd' mk_s ""
+  val da: String    = ad.reverseChars
+  val adda1: String = ad ~ da
+  val adda2: String = ad ~ "c" ~ da
+  val adda3: String = ad ~ "pa" ~ da
+
+  def split(s: String)            = s splitAtTake s.length / 2 mapRight (_.reverse)
+  def isPalindrome(s: String)     = split(s).zip forall (_ === _)
+  def isEvenPalindrome(s: String) = split(s) app (_ === _)
+
+  @Test
+  def stringTests(): Unit = {
+    same(ad, ad.reverseChars.reverseChars)
+    assert(isPalindrome(adda1), adda1)
+    assert(isPalindrome(adda2), adda2)
+    assert(!isEvenPalindrome(adda2), adda2)
+    assert(!isPalindrome(adda3), adda3)
+  }
+}
+
 class IntViewTests {
   val ints: IntRange = 1 to 10
   val ints3          = ints take 3
