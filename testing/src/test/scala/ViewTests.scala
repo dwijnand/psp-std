@@ -35,6 +35,8 @@ class IntViewTests {
   val zip3  = splt.zip
   val cro9  = splt.cross
 
+  def reverseInt = ?[Order[Int]].flip
+
   @Test
   def noTypeClassNeededTests(): Unit = {
     same(ints count (_ < 3), 2)
@@ -57,7 +59,7 @@ class IntViewTests {
     same(ints3.foldl(0)(_ - _), -6)
     same(ints3.foldr(0)(_ - _), 2)
     same(ints.max, 10)
-    same(ints max order[Int].flip, 1)
+    same(ints max reverseInt, 1)
     same(ints filter (_ > 5) head, 6)
     same(ints filterNot (_ > 5) last, 5)
     same(ints grep "^[47]$".r head, 4)
@@ -72,7 +74,7 @@ class IntViewTests {
     same(ints sliceIndex Nth(2), view(2))
     same(ints sliceIndex Nth(20), view())
     same(ints sliceWhile (_ < 4, _ < 6), view(4, 5))
-    same(ints sort order[Int].flip head, 10)
+    same(ints sort reverseInt head, 10)
     same(ints mapIf { case 1 => -1 } size, Size(10))
     same(ints mapIf { case 1 => -1 } head, -1)
     same[View[Int]](ints.slice(Index(2), Size(2)), view(3, 4))
@@ -128,7 +130,7 @@ class IntViewTests {
 
     sameDoc(xs, "Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])")
     sameDoc(xs mapLeft (_ dropRight 8) join, "[ 1, 2, 11, ... ]")
-    sameDoc(xs.zip filterRight (_ % 3 == 0), "[ 2 -> 12, 5 -> 15, 8 -> 18 ]")
+    sameDoc(xs.zip filterRight (_ % 3 === 0), "[ 2 -> 12, 5 -> 15, 8 -> 18 ]")
     sameDoc(ys, "[ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]")
     sameDoc(zs, "[ 1 -> a, 2 -> bb, 3 -> ccc ]")
     sameDoc(zs.rights mk_s '/', "a/bb/ccc")

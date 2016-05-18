@@ -99,4 +99,11 @@ object Builds {
   def scalaMap[K, V]: Builds[K -> V, sciMap[K, V]] = forScalaMap
   def scalaSet[A]: Builds[A, sciSet[A]]            = forScala
   def scalaVector[A]: Builds[A, sciVector[A]]      = forScala
+
+  class RemakeHelper[R](xs: R) {
+    def apply[A](f: R => View[A])(implicit z: Builds[A, R]): R = z build f(xs)
+  }
+  class MakeHelper[R] {
+    def apply[A](expr: => View[A])(implicit z: Builds[A, R]): R = z build expr
+  }
 }

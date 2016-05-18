@@ -5,7 +5,7 @@ import psp.api._
 import scala.{ collection => sc }
 import sc.{ mutable => scm, immutable => sci }
 
-abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
+abstract class AllExplicit extends ApiValues with StdRelation with StdTypeClasses {
   final val ->        = Pair
   final val Array     = scala.Array
   final val Failure   = scala.util.Failure
@@ -45,11 +45,9 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   type HashFun[+A]          = Fun[Long, View[A]]
 
   // Helpers for inference when calling 'on' on contravariant type classes.
-  def orderBy[A] = new OrderBy[A]
-  def showBy[A]  = new ShowBy[A]
-  def hashBy[A]  = new HashBy[A]
-
-  def order[A](implicit z: Order[A]): Order[A] = z
+  def orderBy[A] = new Relation.OrderBy[A]
+  def showBy[A]  = new Relation.ShowBy[A]
+  def hashBy[A]  = new Relation.HashBy[A]
 
   /** Unfortunately we need the overloads for function type
     *  inference.
@@ -66,8 +64,8 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x
 
-  def make[R]: MakeHelper[R]            = new MakeHelper[R]
-  def remake[R](xs: R): RemakeHelper[R] = new RemakeHelper[R](xs)
+  def make[R]: Builds.MakeHelper[R]            = new Builds.MakeHelper[R]
+  def remake[R](xs: R): Builds.RemakeHelper[R] = new Builds.RemakeHelper[R](xs)
 
   def bufferMap[A, B: Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
 

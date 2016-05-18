@@ -30,11 +30,11 @@ sealed abstract class Interval extends (Vdex => Long) with ShowSelf {
      else if (e <= 0 || e <= s) Interval.empty
      else this drop s take e - s)
 
-  override def hashCode = startLong.## + size.##
-  override def equals(that: Any): Bool = that match {
-    case that: Interval => startLong === that.startLong && size === that.size
-    case _              => false
-  }
+  // override def hashCode = startLong.## + size.##
+  // override def equals(that: Any): Bool = that match {
+  //   case that: Interval => startLong === that.startLong && size === that.size
+  //   case _              => false
+  // }
 }
 object Interval {
   val Empty = new Closed(0L, Size.Zero)
@@ -61,7 +61,7 @@ object Interval {
     def dropRight(n: Precise): Closed        = closed(startLong, size - n)
     def foreach(f: Long => Unit): Unit       = ll.foreachLong(startLong, lastLong, f)
     def isEmpty: Bool                        = size.isZero
-    def isPoint: Bool                        = size.getLong == 1L
+    def isPoint: Bool                        = size.getLong === 1L
     def map[A](f: Long => A): ClosedRange[A] = Consecutive(this, f)
     def take(n: Precise): Closed             = closed(startLong, size min n)
     def takeRight(n: Precise): Closed        = (size min n) |> (s => closed(exclusiveEnd - s.getLong, s))

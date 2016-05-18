@@ -48,7 +48,15 @@ object all extends AllExplicit with AllImplicit {
       case Bounded(lo, _) => lo
       case x: Atomic      => x
     }
+    def hiBound: Atomic = lhs match {
+      case Bounded(_, hi) => hi
+      case x: Atomic      => x
+    }
 
+    def preciseOrMaxLong: Precise = hiBound match {
+      case n: Precise => n
+      case Infinite   => Precise(MaxLong)
+    }
     /** For instance taking the union of two sets. The new size is
       *  at least the size of the larger operand, but at most the sum
       *  of the two sizes.
@@ -174,8 +182,8 @@ object all extends AllExplicit with AllImplicit {
       case _            => hashWith(_ => 0)
     }
   }
-  implicit class RelationsClassOps[A](private val r: HashEqOrd[A]) {
-    def on[B](f: B => A): HashEqOrd[B] = Relation.all(r.cmp _ on f, f andThen r.hash)
+  implicit class HashOrderClassOps[A](private val r: HashOrder[A]) {
+    def on[B](f: B => A): HashOrder[B] = Relation.all(r.cmp _ on f, f andThen r.hash)
   }
   implicit class HashClassOps[A](private val r: Hash[A]) {
     def on[B](f: B => A): Hash[B] = Relation.hash(r.eqv _ on f, f andThen r.hash)
@@ -183,12 +191,11 @@ object all extends AllExplicit with AllImplicit {
   implicit class ShowClassOps[A](private val r: Show[A]) {
     def on[B](f: B => A): Show[B] = Show(f andThen r.show)
   }
-
   implicit class OrderClassOps[A](private val r: Order[A]) {
     import r._
 
     def flip: Order[A]                                  = Relation.order(cmp _ andThen (_.flip))
-    def hashWith(f: ToLong[A]): HashEqOrd[A]            = Relation.all(cmp, f)
+    def hashWith(f: ToLong[A]): HashOrder[A]            = Relation.all(cmp, f)
     def on[B](f: B => A): Order[B]                      = Relation.order[B](cmp _ on f)
     def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Relation.order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
 
@@ -214,7 +221,7 @@ object all extends AllExplicit with AllImplicit {
       case GT => LT
       case EQ => EQ
     }
-    def |(that: => Cmp): Cmp = if (cmp == EQ) that else cmp
+    def |(that: => Cmp): Cmp = if (cmp eq EQ) that else cmp
   }
   implicit class ViewOpOps[A, B](private val op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)

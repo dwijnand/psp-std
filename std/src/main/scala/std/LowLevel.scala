@@ -14,7 +14,7 @@ object ll {
     *  @param f        the function to apply
     */
   @inline def foreachIntNonEmpty(start: Int, last: Int, f: Int => Unit): Unit = {
-    var elem = start - 1
+    var elem: Int = start - 1
     while (true) {
       elem += 1
       f(elem)
@@ -22,7 +22,7 @@ object ll {
     }
   }
   @inline def foreachLongNonEmpty(start: Long, last: Long, f: Long => Unit): Unit = {
-    var elem = start - 1
+    var elem: Long = start - 1
     while (true) {
       elem += 1
       f(elem)
