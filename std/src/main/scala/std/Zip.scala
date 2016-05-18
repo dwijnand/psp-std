@@ -112,3 +112,18 @@ object Zip {
     def rights = lefts map f
   }
 }
+
+trait StdSplitZip {
+  /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
+    *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
+    *  "to adhere firmly and closely as though evenly and securely glued" as well
+    *  as "to divide into two parts by a cutting blow".
+    */
+  def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
+  def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R    = f(x._1, x._2) }
+
+  def cleaver[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] = new Cleaver[R, A, B] {
+    def split(x: R): A -> B = l(x) -> r(x)
+    def join(x: A -> B): R  = x app f
+  }
+}

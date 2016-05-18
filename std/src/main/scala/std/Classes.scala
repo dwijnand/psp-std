@@ -10,7 +10,7 @@ class FormatFun(val fmt: String) extends (Any => String) with ShowSelf {
   def to_s                  = fmt
 }
 final class JvmName(val raw: String) extends ShowSelf {
-  def segments: Vec[String] = raw splitChar '.'
+  def segments: Vec[String] = raw splitChar '.' toVec
   def short: String         = segments.last
   def to_s: String          = raw
 }

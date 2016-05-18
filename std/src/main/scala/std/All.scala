@@ -11,7 +11,9 @@ import java.io.BufferedInputStream
   */
 object exp extends AllExplicit
 object all extends AllExplicit with AllImplicit {
-
+  implicit class HasViewsAs[A, R](val repr: R)(implicit z: ViewsAs[A, R]) {
+    def m: IdView[A, R] = z viewAs repr
+  }
   /** The type of args forces all the interpolation variables to
     * be of a type which is implicitly convertible to Doc.
     */
