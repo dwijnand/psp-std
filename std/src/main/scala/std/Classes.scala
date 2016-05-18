@@ -39,7 +39,7 @@ trait StdEq1 extends StdEq0 {
   implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] =
     orderBy[A](_.ordinal)
 
-  implicit def optionEq[A: Eq] : Eq[Opt[A]] = Eq {
+  implicit def optionEq[A: Eq]: Eq[Opt[A]] = Eq {
     case (None, None)       => true
     case (Some(x), Some(y)) => x === y
     case _                  => false

@@ -4,24 +4,23 @@ package std
 import api._, all._, Fun._
 
 /** When you come down to it,
- *
- *  A function is an unrestricted K => V.
- *  A partial function is K => V augmented with a predicate.
- *  A predicate is a function which requires V=Bool.
- *
- *  An intensional set is a predicate.
- *  An extensional set is a view augmented with an equality relation.
- *  An extensional set is also a map which requires V=Bool.
- *
- *  A map is a function augmented with an extensional set of keys.
- */
-
+  *
+  *  A function is an unrestricted K => V.
+  *  A partial function is K => V augmented with a predicate.
+  *  A predicate is a function which requires V=Bool.
+  *
+  *  An intensional set is a predicate.
+  *  An extensional set is a view augmented with an equality relation.
+  *  An extensional set is also a map which requires V=Bool.
+  *
+  *  A map is a function augmented with an extensional set of keys.
+  */
 final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
   def apply(key: A): B              = lookup(key)
   def contains(x: A): Bool          = keySet contains x
   def keys: View[A]                 = keySet.basis
   def map[C](f: B => C): Pmap[A, C] = Pmap(keySet, lookup andThen f)
-  def pairs: View[A->B]             = zipped.pairs
+  def pairs: View[A -> B]           = zipped.pairs
   def values: View[B]               = keys map lookup
   def zipped: Zip[A, B]             = zipMap(keys, lookup)
 }

@@ -17,8 +17,8 @@ object HashEqOrd {
 
   def by[A] = new HashEqOrdBy[A]
 
-  def shown[A](implicit z: Show[A]): HashEqOrd[A]  = by[A](z.show)
-  def inherited[A <: Comparable[A]] : HashEqOrd[A] = apply[A](_ == _, (x, y) => longCmp(x compareTo y), _.##)
+  def shown[A](implicit z: Show[A]): HashEqOrd[A] = by[A](z.show)
+  def inherited[A <: Comparable[A]]: HashEqOrd[A] = apply[A](_ == _, (x, y) => longCmp(x compareTo y), _.##)
 }
 object Eq {
   val Inherited = hash[Any](_ == _)(_.##)
@@ -34,11 +34,11 @@ object Eq {
   sealed class EqImpl[A](val e: Relation[A]) extends Eq[A] {
     def eqv(x: A, y: A): Bool = e(x, y)
   }
-  class EqComparator[A : Eq]() extends Comparator[A] {
+  class EqComparator[A: Eq]() extends Comparator[A] {
     def compare(x: A, y: A): Int = if (x === y) 0 else x.id_## - y.id_##
   }
 
-  def eqComparator[A : Eq](): Comparator[A] = new EqComparator[A]
+  def eqComparator[A: Eq](): Comparator[A] = new EqComparator[A]
 }
 object Order {
   def apply[A](f: OrderRelation[A]): Order[A] = new Impl[A](f)

@@ -35,7 +35,7 @@ object Cont {
 
     def resume(f: ToUnit[A]): Unit = c match {
       case Opaque(mf)     => mf(f)
-      case Join(c1, c2)   => c1 resume f ; c2 resume f
+      case Join(c1, c2)   => c1 resume f; c2 resume f
       case Filter(c, p)   => c resume (x => if (p(x)) f(x))
       case Mapped(c, g)   => c resume (x => g andThen f)
       case FlatMap(c, g)  => c resume (x => g(x) resume f)
@@ -60,7 +60,7 @@ object Each {
   def suspend[A](c: Cont[A]): Each[A] = new Suspend(c)
 
   class Suspend[A](c: Cont[A]) extends Each[A] {
-    def head: A                     = { c resume (x => return x) ; ??? }
+    def head: A                     = { c resume (x => return x); ??? }
     def size: Size                  = c.size
     def foreach(f: A => Unit): Unit = c resume f
   }
@@ -93,7 +93,7 @@ object Each {
   def construct[A](size: Size, mf: Suspended[A]): Each[A] = new Suspend(Cont(mf) sized size)
   def each[A](xs: Foreach[A]): Each[A]                    = new Suspend(Cont[A](xs foreach _) sized xs.size)
   def join[A](xs: Foreach[A], ys: Foreach[A]): Each[A]    = new Suspend(Cont[A](xs foreach _) join Cont[A](ys foreach _))
-  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]         = new Suspend(Cont[A->B](xs.entrySet map (_.toPair) foreach _) sized xs.size)
+  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]         = new Suspend(Cont[A -> B](xs.entrySet map (_.toPair) foreach _) sized xs.size)
   def java[A](xs: jIterable[A]): Each[A]                  = new Suspend(Cont[A](xs.iterator foreach _))
 
   def scala[A](xs: sCollection[A]): Each[A] = xs match {

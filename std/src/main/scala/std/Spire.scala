@@ -55,7 +55,7 @@ trait BoundedMeetSemilattice[A] extends Any with MeetSemilattice[A] {
   def one: A
   def isOne(a: A)(implicit ev: Eq[A]): Boolean = ev.eqv(a, one)
 }
-class MinMaxLattice[A : Order] extends Lattice[A] {
+class MinMaxLattice[A: Order] extends Lattice[A] {
   def meet(lhs: A, rhs: A): A = min(lhs, rhs)
   def join(lhs: A, rhs: A): A = max(lhs, rhs)
 }

@@ -4,7 +4,7 @@ package std
 import api._, all._, Interval._
 
 /** TODO: deal with Vdex potentially having -1 for a value.
- */
+  */
 sealed abstract class Interval extends (Vdex => Long) with ShowSelf {
   type This <: Interval
 

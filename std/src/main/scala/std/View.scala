@@ -66,8 +66,8 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def foldr[B](zero: B)(f: (A, B) => B): B           = ll.foldRight(xs, zero, f)
   def reducel(f: BinOp[A]): A                        = xs.tail.foldl(xs.head)(f)
   def reducer(f: BinOp[A]): A                        = xs.init.foldr(last)(f)
-  def zfoldl[B : Empty](f: (B, A) => B): B           = ll.foldLeft(xs, emptyValue[B], f)
-  def zfoldr[B : Empty](f: (A, B) => B): B           = ll.foldRight(xs, emptyValue[B], f)
+  def zfoldl[B: Empty](f: (B, A) => B): B            = ll.foldLeft(xs, emptyValue[B], f)
+  def zfoldr[B: Empty](f: (A, B) => B): B            = ll.foldRight(xs, emptyValue[B], f)
   def zreducel(f: BinOp[A])(implicit z: Empty[A]): A = zcond(!isEmpty, reducel(f))
   def zreducer(f: BinOp[A])(implicit z: Empty[A]): A = zcond(!isEmpty, reducer(f))
 
