@@ -166,24 +166,34 @@ object all extends AllExplicit with AllImplicit {
   }
 
   implicit class EqClassOps[A](private val z: Eq[A]) {
+    def on[B](f: B => A): Eq[B]         = Relation.equiv(z.eqv _ on f)
+    def hashWith(f: ToLong[A]): Hash[A] = Relation.hash(z.eqv, f)
+
     def toHash: Hash[A] = z match {
       case heq: Hash[A] => heq
-      case _            => Eq.hash(z.eqv)(_ => 0)
+      case _            => hashWith(_ => 0)
     }
   }
-  implicit class HashEqOrdOps[A](private val z: HashEqOrd[A]) {
-    def on[B](f: B => A): HashEqOrd[B] = HashEqOrd(z.eqv _ on f, z.cmp _ on f, f andThen z.hash)
+  implicit class RelationsClassOps[A](private val r: HashEqOrd[A]) {
+    def on[B](f: B => A): HashEqOrd[B] = Relation.all(r.cmp _ on f, f andThen r.hash)
+  }
+  implicit class HashClassOps[A](private val r: Hash[A]) {
+    def on[B](f: B => A): Hash[B] = Relation.hash(r.eqv _ on f, f andThen r.hash)
+  }
+  implicit class ShowClassOps[A](private val r: Show[A]) {
+    def on[B](f: B => A): Show[B] = Show(f andThen r.show)
   }
 
-  implicit class ApiOrderOps[A](private val ord: Order[A]) {
-    import ord._
+  implicit class OrderClassOps[A](private val r: Order[A]) {
+    import r._
 
-    def flip: Order[A] = Order((x, y) => ord.cmp(x, y).flip)
+    def flip: Order[A]                                  = Relation.order(cmp _ andThen (_.flip))
+    def hashWith(f: ToLong[A]): HashEqOrd[A]            = Relation.all(cmp, f)
+    def on[B](f: B => A): Order[B]                      = Relation.order[B](cmp _ on f)
+    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Relation.order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
 
-    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
-
-    def comparator[A](implicit z: Order[A]): Comparator[A] = new scala.math.Ordering[A] {
-      def compare(x: A, y: A): Int = z.cmp(x, y).intValue
+    def comparator: Comparator[A] = new scala.math.Ordering[A] {
+      def compare(x: A, y: A): Int = cmp(x, y).intValue
     }
   }
 

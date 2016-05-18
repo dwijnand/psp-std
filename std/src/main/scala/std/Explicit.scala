@@ -45,7 +45,6 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   type HashFun[+A]          = Fun[Long, View[A]]
 
   // Helpers for inference when calling 'on' on contravariant type classes.
-  def eqBy[A]    = new EqBy[A]
   def orderBy[A] = new OrderBy[A]
   def showBy[A]  = new ShowBy[A]
   def hashBy[A]  = new HashBy[A]
@@ -59,10 +58,6 @@ abstract class AllExplicit extends ApiValues with StdEq with StdTypeClasses {
   def nth(n: Long): Nth     = Nth(n)
   def index(n: Int): Index  = Index(n)
   def index(n: Long): Index = Index(n)
-
-  def byEquals[A]: Hash[A]    = Eq.Inherited
-  def byReference[A]: Hash[A] = Eq.Reference
-  def byToString[A]: Hash[A]  = Eq.ToString
 
   def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short

@@ -24,7 +24,7 @@ package object tests {
   type Choose[A]          = org.scalacheck.Gen.Choose[A]
   type Failed             = org.scalacheck.Test.Failed
   type Forall1[-A]        = ToBool[A]
-  type Forall2[-A]        = Relation[A]
+  type Forall2[-A]        = EqRelation[A]
   type Forall3[-A]        = (A, A, A) => Boolean
   type GenParams          = Gen.Parameters
   type Gen[A]             = org.scalacheck.Gen[A]
@@ -61,7 +61,7 @@ package object tests {
   // When testing e.g. associativity and the sum overflows, we
   // need to do more than compare values for equality.
   def sameBehavior[T: Eq](p1: => T, p2: => T): Boolean = {
-    implicit def t: Eq[Throwable] = eqBy[Throwable](_.getClass)
+    implicit def t: Hash[Throwable] = hashBy[Throwable](_.getClass)
     Try(p1) === Try(p2)
   }
 
@@ -192,11 +192,11 @@ package object tests {
   /** How to check for function equivalence? In the absence of mathematical breakthroughs,
    *  recursively throw scalacheck at it again, verifying arbitrary inputs have the same result.
    */
-  def observationalEq[M[X], A : Arb, B : Eq](f: (M[A], A) => B): Eq[M[A]] = Eq[M[A]] { (xs, ys) =>
+  def observationalEq[M[X], A : Arb, B : Eq](f: (M[A], A) => B): Eq[M[A]] = Relation.equiv[M[A]] { (xs, ys) =>
     val prop = forAll((elem: A) => f(xs, elem) === f(ys, elem))
     (Test check prop)(identity).passed
   }
-  implicit def pintEq: Hash[Pint]                                     = byEquals
+  implicit def pintEq: Hash[Pint]                                     = Relation.Inherited
   implicit def pintShow: Show[Pint]                                   = inheritShow
   implicit def predicateEq[A : Arb] : Eq[InvariantPredicate[A]] = observationalEq[InvariantPredicate, A, Boolean](_ apply _)
 

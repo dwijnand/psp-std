@@ -5,9 +5,9 @@ import api._, all._
 
 class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
-  def byEquals: EqViewOps[A]         = by(Eq.Inherited)
-  def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Eq.Reference)
-  def byToString: EqViewOps[A]       = by(Eq.ToString)
+  def byEquals: EqViewOps[A]         = by(Relation.Inherited)
+  def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)
+  def byToString: EqViewOps[A]       = by(Relation.ToString)
 
   def partition(p: ToBool[A]): Split[A]   = Split(xs withFilter p, xs withFilter !p)
   def span(p: ToBool[A]): Split[A]        = Split(xs takeWhile p, xs dropWhile p)
@@ -31,7 +31,7 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
   def sort(implicit z: Order[A]): View[A]              = xs.toRefArray.inPlace.sort
   def sortBy[B: Order](f: A => B): View[A]             = sort(orderBy[A](f))
-  def sortWith(cmp: OrderRelation[A]): View[A]         = sort(Order(cmp))
+  def sortWith(cmp: OrderRelation[A]): View[A]         = sort(Relation order cmp)
   def takeToFirst(p: ToBool[A]): View[A]               = xs span !p app ((x, y) => x ++ (y take 1))
   def tee(f: ToUnit[A]): View[A]                       = xs map (x => doto(x)(f))
 
