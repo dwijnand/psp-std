@@ -27,7 +27,9 @@ trait StdEmpty {
   implicit def emptyPair[A: Empty, B: Empty]: Empty[(A, B)]                = Empty(pair(emptyValue[A], emptyValue[B]))
   implicit def emptyTriple[A: Empty, B: Empty, C: Empty]: Empty[(A, B, C)] = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
   implicit def emptyIdView[A, R]: Empty[IdView[A, R]]                      = Empty(new IdView(Pnil))
+  implicit def emptyHeyting[A: Heyting]: Empty[A]                          = Empty(?[Heyting[A]].zero)
 
+  implicit lazy val emptyPredicate: Empty[Any => Bool]          = Empty const ConstantFalse
   implicit lazy val emptyOption: Empty.Const[Option[Nothing]]   = Empty const None
   implicit lazy val emptyFile: Empty.Const[jFile]               = Empty const NoFile
   implicit lazy val emptyIndex: Empty.Const[Index]              = Empty const Index.invalid

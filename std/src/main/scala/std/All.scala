@@ -266,6 +266,13 @@ class NonValueImplicitClasses extends AllExplicit {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Each[A]              = Each pair x
   }
+  implicit class ProductProductOps[A, B](private val xy: (A->B)->(A->B)) {
+    def transpose: (A->A)->(B->B) = {
+      val (l1 -> r1) -> (l2 -> r2) = xy
+      (l1 -> l2) -> (r1 -> r2)
+    }
+  }
+
   implicit class SplittableValueOps[R, A, B](private val x: R)(implicit z: Splitter[R, A, B]) {
     def _1: A                                    = fst(z split x)
     def _2: B                                    = snd(z split x)
@@ -301,11 +308,13 @@ class NonValueImplicitClasses extends AllExplicit {
     def doc: Doc     = Doc(lhs)
     def show: String = shows show lhs
   }
-  implicit class BooleanAlgebraOps[A](private val lhs: A)(implicit z: BooleanAlgebra[A]) {
-    def implies(rhs: A): A = !(lhs && !rhs)
-    def &&(rhs: A): A      = z.and(lhs, rhs)
-    def ||(rhs: A): A      = z.or(lhs, rhs)
-    def unary_! : A        = z complement lhs
+  implicit class HeytingAlgebraOps[A](private val lhs: A)(implicit z: Heyting[A]) {
+    def unary_! : A     = z complement lhs
+    def &&(rhs: A): A   = z.and(lhs, rhs)
+    def ||(rhs: A): A   = z.or(lhs, rhs)
+    def ==>(rhs: A): A  = !(lhs && !rhs)
+    def meet(rhs: A): A = this && rhs
+    def join(rhs: A): A = this || rhs
   }
   implicit class EqOps[A](private val lhs: A)(implicit z: Eq[A]) {
     def ===(rhs: A): Boolean = z.eqv(lhs, rhs)
@@ -325,6 +334,7 @@ class NonValueImplicitClasses extends AllExplicit {
     def toPair: A -> B = z split lhs
   }
   implicit class Function2Ops[A1, A2, R](private val f: (A1, A2) => R) {
+    def toFun1: (A1 -> A2) => R = _ app f
     def andThen[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
   }
   implicit class Function2SameOps[A, R](private val f: BinTo[A, R]) {

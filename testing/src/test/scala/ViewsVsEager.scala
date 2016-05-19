@@ -23,7 +23,7 @@ class OperationCounts extends ScalacheckBundle {
   def chooseSmall = gen.genLong(1, max / 20)
   def chooseRange = gen.indexRangeFrom(max / 2, max)
 
-  private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, label)
+  private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, () => label)
 
   private def divides(n: Long)  = lop(s"/$n", (_: Long) % n === 0)
   private def less(n: Long)     = lop(s"<$n", (_: Long) < n)

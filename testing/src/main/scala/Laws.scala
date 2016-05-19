@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import std._, all._, api._
+import api._, std._, all._
 
 abstract class Laws[A : Eq] {
   def associative(f: BinOp[A]): Forall3[A]               = (a, b, c) => f(a, f(b, c)) === f(f(a, b), c)
@@ -13,7 +13,7 @@ abstract class Laws[A : Eq] {
 }
 abstract class RelationLaws[A] {
   def reflexive(f: EqRelation[A]): Forall1[A]     = a => f(a, a)
-  def transitive(f: EqRelation[A]): Forall3[A]    = (a, b, c) => f(a, b) && f(b, c) implies f(a, c)
+  def transitive(f: EqRelation[A]): Forall3[A]    = (a, b, c) => (f(a, b) && f(b, c)) ==> f(a, c)
   def symmetric(f: EqRelation[A]): Forall2[A]     = (a, b) => f(a, b) === f(b, a)
   def antisymmetric(f: EqRelation[A]): Forall2[A] = (a, b) => f(a, b) =!= f(b, a)
 }

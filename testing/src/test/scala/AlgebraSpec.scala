@@ -5,20 +5,15 @@ import org.scalacheck._
 import org.scalacheck.Prop.forAll
 import psp.std._, api._, all._
 
-class BooleanAlgebraSpec extends AlgebraSpec[Boolean]("Boolean") with ScalacheckBundle {
-  override def join = "||"
-  override def meet = "&&"
-}
-class PredicateAlgebraSpec extends AlgebraSpec[InvariantPredicate[Pint]]("InvariantPredicate[Pint]") with ScalacheckBundle {
-  override def join = "||"
-  override def meet = "&&"
-}
+class BooleanAlgebraSpec extends AlgebraSpec[Bool]("Bool") with ScalacheckBundle
+class Pred1AlgebraSpec extends AlgebraSpec[Pint => Bool]("Pint => Bool")( ?, ?, function1Eq[Pint, Bool] ) with ScalacheckBundle
+class Pred2AlgebraSpec extends AlgebraSpec[(Nth->Index) => Bool]("(Nth, Index) => Bool")( ?, ?, function1Eq[Nth->Index, Bool] ) with ScalacheckBundle
 
-abstract class AlgebraSpec[A](name: String)(implicit algebra: BooleanAlgebra[A], arb: Arbitrary[A], equiv: Eq[A]) extends AlgebraLaws[A] with Bundle {
+abstract class AlgebraSpec[A](name: String)(implicit ba: BooleanAlgebra[A], arb: Arbitrary[A], equiv: Eq[A]) extends AlgebraLaws[A] with Bundle {
   self: ScalacheckBundle =>
 
   def bundle = s"Boolean Algebra laws for type $name"
-  import algebra._
+  import ba._
 
   def join = "∨"
   def meet = "∧"

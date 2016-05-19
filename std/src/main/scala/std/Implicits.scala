@@ -3,7 +3,7 @@ package std
 
 import api._, exp._
 
-trait AllImplicit extends StdEmpty with StdViewers with StdConverters with StdOps {
+trait AllImplicit extends StdEmpty with StdViewers with StdConverters with StdOps with StdAlgebra {
   import java.util.AbstractMap.SimpleImmutableEntry
 
   // Values.
@@ -13,15 +13,12 @@ trait AllImplicit extends StdEmpty with StdViewers with StdConverters with StdOp
   implicit def cleaversciList[A]: Cleaver[sciList[A], A, sciList[A]]        = cleaver(_ :: _, _.head, _.tail)
   implicit def conforms[A]: (A <:< A)                                       = new conformance[A]
   implicit def defaultRenderer: FullRenderer                                = new FullRenderer(minElements = Size(3), maxElements = Size(10))
-  implicit def predicate1Algebra[A]: BooleanAlgebra[ToBool[A]]              = new Algebras.Predicate1Algebra[A]
-  implicit def predicate2Algebra[A, B]: BooleanAlgebra[ToBool2[A, B]]       = new Algebras.Predicate2Algebra[A, B]
-  implicit def promoteApiView[A](xs: View[A]): IdView[A, View[A]]           = new IdView(xs)
-  implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc             = Doc(x)
 
   // Conversions.
   implicit def longToPrecise(x: Long): Precise                    = Size(x)
-  implicit def boolToConstPredicate[A](value: Boolean): ToBool[A] = cond(value, ConstantTrue, ConstantFalse)
   implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B  = f.toPartial
+  implicit def promoteApiView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
+  implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc   = Doc(x)
 }
 
 trait StdOps0 {

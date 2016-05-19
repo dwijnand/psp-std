@@ -57,7 +57,7 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def find(p: ToBool[A]): Option[A]                   = foldl(none[A])((res, x) => cond(p(x), return some(x), res))
   def forall(p: ToBool[A]): Boolean                   = !exists(!p)
   def indexWhere(p: ToBool[A]): Index                 = xs.zipIndex first { case (x, i) if p(x) => i }
-  def isEmpty: Boolean                                = xs.size.isZero || !exists(true)
+  def isEmpty: Boolean                                = xs.size.isZero || !exists(ConstantTrue)
   def last: A                                         = xs takeRight 1 head
   def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
   def zhead(implicit z: Empty[A]): A                  = zcond(!isEmpty, xs.head)

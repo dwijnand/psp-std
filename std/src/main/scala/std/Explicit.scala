@@ -46,6 +46,8 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
   type Renderer             = Show[Doc]
   type VdexRange            = ClosedRange[Vdex]
   type View2D[+A]           = View[View[A]]
+  type BooleanAlgebra[A]    = spire.Bool[A]
+  type Heyting[A]           = spire.Heyting[A]
 
   // Helpers for inference when calling 'on' on contravariant type classes.
   def orderBy[A] = new Relation.OrderBy[A]
