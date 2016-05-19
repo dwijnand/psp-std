@@ -1,7 +1,7 @@
 package psp
 package bench
 
-import std._, all._, Unsafe._
+import std._, all._, Unsafe.promoteIndex
 import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations._
 

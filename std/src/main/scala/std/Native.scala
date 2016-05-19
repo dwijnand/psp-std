@@ -58,9 +58,6 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def viewLongs: View[Long]  = Each.construct[Long](in.size, in foreach _).m
   def zipLongs: Zip[Long, A] = zipMap(viewLongs, applyLong)
   def startLong: Long        = in.startLong
-
-  import StdShow._
-  override def toString = showView[Any](inheritShow, ?) show this
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](Interval.empty, indexOutOfBoundsException)
@@ -68,6 +65,12 @@ object Consecutive {
   def empty[A]: Closed[A]                                    = Empty
   def apply[A](in: Interval.Closed, f: Long => A): Closed[A] = new Closed(in, f)
   def apply[A](in: Interval.Open, f: Long => A): Open[A]     = new Open(in, f)
+
+  def unapply[A](r: Consecutive[A]): Opt[A -> Opt[A]] = r match {
+    case r: Closed[A] if r.size.isZero => none()
+    case r: Closed[A]                  => some(r.head -> some(r.last))
+    case r: Open[A]                    => some(r.head -> none())
+  }
 
   final class Open[+A](val in: Interval.Open, f: Long => A) extends Consecutive[A] with Indexed[A] {
     type CC[X] = Open[X]

@@ -2,7 +2,31 @@ package psp
 package tests
 
 import api._, std._, all._, StdShow._
-import org.scalacheck.Prop._
+import org.scalacheck.Prop._, Color._
+
+object Color {
+  import scala.Console.{ println => _, _ }
+
+  val Reset = Color(RESET)
+  val Green = Color(GREEN)
+  val Red   = Color(RED)
+  val Cyan  = Color(CYAN)
+
+  implicit def showColor: Show[Color] = Show(_.code)
+}
+
+final case class Color(code: String) {
+  import scala.Console.{ BOLD }
+  def bold(x: Doc): Doc  = doc"$code$BOLD$x$Reset"
+  def apply(x: Doc): Doc = doc"$code$x$Reset"
+}
+final class LabeledFunction[-T, +R](f: T => R, val to_s: String) extends (T ?=> R) with ShowSelf {
+  def isDefinedAt(x: T) = f match {
+    case f: scala.PartialFunction[_, _] => f isDefinedAt x
+    case _                              => true
+  }
+  def apply(x: T): R    = f(x)
+}
 
 trait Explicit {
   /** Scala, so aggravating.
@@ -44,7 +68,7 @@ trait Explicit {
   def expectType[A: CTag](result: A): NamedProp                        = expectType(classOf[A], result.getClass)
   def expectTypes(expected: jClass, found: Each[jClass]): NamedProp    = fpp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
   def expectTypes[A: CTag](results: A*): NamedProp                     = expectTypes(classOf[A], results.toVec map (_.getClass) force)
-  def expectValue[A: Eq](expected: A)(x: A): NamedProp                 = x.any_s -> (expected =? x)
+  def expectValue[A: Eq: Show](expected: A)(x: A): NamedProp           = x.show -> (expected =? x)
   def junitAssert(body: => Boolean): Unit                              = org.junit.Assert assertTrue body
   def preNewline(s: String): String                                    = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
@@ -75,15 +99,21 @@ trait Explicit {
 
 trait Implicit extends Explicit {
   import org.scalacheck.Prop._
+  import org.scalacheck.util.Pretty.{ pretty, Params }
 
-  implicit def arbIndex: Arb[Index]     = Arb(gen.index)
-  implicit def arbNth: Arb[Nth]         = Arb(gen.index ^^ (_.toNth))
-  implicit def arbSize: Arb[Size]       = Arb(gen.size)
-  implicit def arbWord: Arb[String]     = Arb(gen.text.word)
-  implicit def arbitraryPint: Arb[Pint] = Arb(gen.int ^^ Pint)
-  implicit def assertions: Assertions   = ImmediateTraceAssertions
-  implicit def pintEq: Hash[Pint]       = Relation.Inherited
-  implicit def pintShow: Show[Pint]     = inheritShow
+  implicit class ColorDocOps(val doc: Doc) {
+    def in(c: Color): Doc = c(doc)
+  }
+
+  implicit def arbIndex: Arb[Index]               = Arb(gen.index)
+  implicit def arbNth: Arb[Nth]                   = Arb(gen.index ^^ (_.toNth))
+  implicit def arbSize: Arb[Size]                 = Arb(gen.size)
+  implicit def arbWord: Arb[String]               = Arb(gen.text.word)
+  implicit def arbitraryPint: Arb[Pint]           = Arb(gen.int ^^ Pint)
+  implicit def assertions: Assertions             = ImmediateTraceAssertions
+  implicit def hashPint: Hash[Pint]               = Relation.Inherited
+  implicit def showPint: Show[Pint]               = inheritShow
+  implicit def showScalacheckResult: Show[Result] = Show(r => pretty(r, Params(0)))
 
   implicit def arbProduct[A1: Arb, A2: Arb](implicit z: Arb[(A1, A2)]): Arb[A1->A2] = Arb(z.arbitrary ^^ (x => x))
   implicit def predicateEq[A : Arb] : Eq[InvariantPredicate[A]]                     = observationalEq[InvariantPredicate, A, Boolean](_ apply _)
@@ -129,9 +159,9 @@ trait Implicit extends Explicit {
     }
   }
   implicit class TestOnlyAnyOps[A](private val lhs: A) {
-    def =?(rhs: A)(implicit eqv: Eq[A], pp: A => Pretty): Prop = {
-      def label = s"Expected ${ pp(rhs) } but got ${ pp(lhs) }"
-      cond(lhs === rhs, proved, falsified :| label)
+    def =?(rhs: A)(implicit eqv: Eq[A], z: Show[A]): Prop = {
+      def label = doc"Expected $rhs but got $lhs"
+      cond(lhs === rhs, proved, falsified :| label.render)
     }
   }
   implicit def identityAlgebra: BooleanAlgebra[Bool] = Algebras.Identity

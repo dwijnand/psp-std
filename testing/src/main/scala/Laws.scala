@@ -59,4 +59,4 @@ object ImmediateTraceAssertions extends Assertions {
     new AssertionError(msg) |> (t => sideEffect(t.printStackTrace, throw t))
 }
 
-final case class Pint(x: Int) { override def toString = s"$x" }
+final case class Pint(x: Int)

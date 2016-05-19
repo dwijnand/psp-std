@@ -45,7 +45,7 @@ object RunView {
       case Dropped(xs, n: Precise)           => ll.foreachSlice(xs, indexRange(n.getLong, MaxLong), f)
       case Taken(xs, n: Precise)             => ll.foreachSlice(xs, n.indices, f)
       case xs: View[_]                       => xs foreach f
-      case _                                 => abort(pp"Unexpected view class ${ classNameOf(xs) }")
+      case _                                 => abort(doc"Unexpected view class ${ classNameOf(xs) }")
     }
   }
 

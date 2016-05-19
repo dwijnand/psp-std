@@ -5,7 +5,7 @@ import api._, all._, Interval._
 
 /** TODO: deal with Vdex potentially having -1 for a value.
   */
-sealed abstract class Interval extends (Vdex => Long) with ShowSelf {
+sealed abstract class Interval extends (Vdex => Long) {
   type This <: Interval
 
   def contains(n: Long): Bool
@@ -57,8 +57,6 @@ object Interval {
     def map[A](f: Long => A): ClosedRange[A] = Consecutive(this, f)
     def take(n: Precise): Closed             = closed(startLong, size min n)
     def takeRight(n: Precise): Closed        = (size min n) |> (s => closed(exclusiveEnd - s.getLong, s))
-
-    def to_s: String = if (isEmpty) "[0,0)" else if (isPoint) s"[$startLong]" else s"[$startLong..$lastLong]"
   }
 
   final case class Open private[Interval](startLong: Long) extends Interval {
@@ -76,6 +74,5 @@ object Interval {
     def isEmpty: Bool                      = false
     def size                               = Infinite
     def take(n: Precise): Closed           = closed(startLong, n)
-    def to_s: String                       = s"[$startLong..)"
   }
 }

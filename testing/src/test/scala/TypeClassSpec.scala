@@ -2,7 +2,7 @@ package psp
 package tests
 
 import std._, api._, all._, StdShow._
-import Unsafe._
+import Unsafe.promoteIndex
 
 class EmptySpec extends ScalacheckBundle {
   def bundle = "Empty"
@@ -48,11 +48,11 @@ class EmptySpec extends ScalacheckBundle {
 class ViewBasic extends ScalacheckBundle {
   def bundle = "Views, Basic"
 
-  def plist: Plist[Int]     = elems(1, 2, 3)
-  def pvector: Vec[Int]     = elems(1, 2, 3)
-  def parray: Array[Int]    = arr(1, 2, 3)
-  def pseq: Each[Int]       = elems(1, 2, 3)
-  def punfold: Indexed[Int] = openRange(1)(_.toInt)
+  def plist: Plist[Int]  = elems(1, 2, 3)
+  def pvector: Vec[Int]  = elems(1, 2, 3)
+  def parray: Array[Int] = arr(1, 2, 3)
+  def pseq: Each[Int]    = elems(1, 2, 3)
+  def punfold: Interval  = Interval open 1
 
   case class Bippy(s: String, i: Int) {
     override def toString = s

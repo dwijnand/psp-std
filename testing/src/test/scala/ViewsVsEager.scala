@@ -51,21 +51,23 @@ class OperationCounts extends ScalacheckBundle {
 
   case class CompositeOp(op: LongOp) {
     lazy val (maybeRes, views, eager) = counter(op ~ Take(3))
-    lazy val countsPass = views.accesses <= eager.accesses && views.allocations <= eager.allocations
-    lazy val isPass = maybeRes.isRight && countsPass
-    lazy val passed = sideEffect(isPass, maybeShow())
+    lazy val countsPass               = views.accesses <= eager.accesses && views.allocations <= eager.allocations
+    lazy val isPass                   = maybeRes.isRight && countsPass
+    lazy val passed                   = sideEffect(isPass, maybeShow())
 
-    def compare(lhs: Long, rhs: Long): String = "%3s %-2s %-3s".format(lhs, if (lhs <= rhs) "<=" else ">", rhs)
+    def compare(lhs: Long, rhs: Long): Doc =
+      cond(lhs <= rhs, "<=", ">") |> (op => fpp"$lhs%3s $op%-2s $rhs%-3s")
 
     def counts1 = compare(views.accesses, eager.accesses)
     def counts2 = compare(views.allocations, eager.allocations)
 
-    def res_s = maybeRes match {
-      case scala.Right(res) => res.to_s
+    def res_s: Doc = maybeRes match {
+      case scala.Right(res) => res
       case scala.Left(err)  => err
     }
-    def pass_s = "|%s  %s  %s  // %s".format("%-70s".format(op.doc.render), counts1, counts2, res_s)
-    def fail_s = s"Inconsistent results for $op: $res_s"
+    def op_s   = fpp"$op%-70s"
+    def pass_s = doc"|$op_s  $counts1  $counts2  // $res_s"
+    def fail_s = doc"Inconsistent results for $op: $res_s"
 
     private def maybeShow(): Unit = {
       if (!isPass)
@@ -79,7 +81,7 @@ class OperationCounts extends ScalacheckBundle {
 
   def compositeProp: Prop = forAll((_: CompositeOp).passed) minSuccessful minSuccessful
   def props() = vec[NamedProp](
-    s"Showing $maxDisplay/$minSuccessful ops, compares accesses/allocations views v. eager" -> Prop(true),
+    doc"Showing $maxDisplay/$minSuccessful ops, compares accesses/allocations views v. eager".render -> Prop(true),
     "views never performs more accesses or allocations than eager" -> compositeProp
   )
 }
@@ -88,18 +90,11 @@ object OperableCounter {
   import Operable._
   import Op._
 
-  class CountXs[A](xs: Direct[A], val counter: OpCount) extends StdDirect[A](xs.size) with ShowSelf {
-    import Unsafe.inheritedShow
+  // show-related accesses not to be counted
+  implicit def showCountXs[A: Show] : Show[CountXs[A]] = showBy(_.xs)
 
+  class CountXs[A](val xs: Direct[A], val counter: OpCount) extends StdDirect[A](xs.size) {
     def apply(idx: Vdex): A = sideEffect(xs(idx), counter access idx)
-
-    // toString accesses not to be counted
-    def to_s = (
-      if (size > 3)
-        "[ " + (xs take 3 mk_s ", ") + ", ...]"
-      else
-        "[ " + (xs mk_s ", ") + " ]"
-    )
   }
 
   case class ViewOpCount(label: String, accesses: Long, allocations: Long)

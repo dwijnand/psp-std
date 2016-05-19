@@ -69,24 +69,20 @@ object Operable {
       case Compose(o1, o2) => apply(apply(in)(o1))(o2)
     }
   }
-
-  implicit object OperableString extends Operable[ConstString] {
-    def str(in: String, name: String, arg: Any): String = {
-      val arg_s = arg match {
-        case x: ShowDirect            => x.to_s
-        case x: scala.Function1[_, _] => "<f>"
-        case _                        => "" + arg
-      }
-      "%s %7s %-8s".format(in, name, arg_s)
+  implicit object OperableDoc extends Operable[ConstDoc] {
+    private implicit def fundoc[A, B](f: A => B): Doc = f match {
+      case x: ShowDirect => x.to_s
+      case _             => "<f>"
     }
+    def str(in: Doc, name: Doc, arg: Doc): Doc = fpp"$in%s $name%7s $arg%-8s"
 
-    def apply[A, B](in: String)(op: Op[A, B]): String = op match {
+    def apply[A, B](in: Doc)(op: Op[A, B]): Doc = op match {
       case Identity(label) => label
       case Take(n)         => str(in, "take", n)
       case Drop(n)         => str(in, "drop", n)
       case TakeRight(n)    => str(in, "takeR", n)
       case DropRight(n)    => str(in, "dropR", n)
-      case Slice(range)    => str(in, "slice", render(range))
+      case Slice(r)        => str(in, "slice", r)
       case TakeWhile(p)    => str(in, "takeW", p)
       case DropWhile(p)    => str(in, "dropW", p)
       case Filter(p)       => str(in, "filter", p)

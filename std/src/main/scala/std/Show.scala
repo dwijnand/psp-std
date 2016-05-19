@@ -1,12 +1,18 @@
 package psp
 package std
 
-import api._, all._, StdShow._
+import api._, all._
+
+object StdShow extends StdShow
+
+import StdShow._
 
 /** A not very impressive attempt to improve on string
   *  representations.
   */
-sealed abstract class Doc
+sealed abstract class Doc {
+  override def toString = abort("Doc.toString")
+}
 
 object Doc {
   final case object NoDoc extends Doc
@@ -25,6 +31,18 @@ object Doc {
   }
 }
 
+object Show {
+
+  /** This of course is not implicit as that would defeat the purpose of the endeavor.
+    *  There is however an implicit universal instance in the Unsafe object.
+    */
+  val Inherited: Show[Any] = apply[Any](s => zcond(s != null, s.toString))
+
+  def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
+
+  final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] { def show(x: A) = f(x) }
+}
+
 class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
 
   def showEach[A: Show](xs: Each[A]): String = xs match {
@@ -33,11 +51,13 @@ class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer 
     case _                        => showView(xs.m map (_.doc))
   }
 
-  def showView(xs: View[Doc]): String =
-    "[ " + (xs splitAt maxElements.lastIndex match {
-          case Split(xs, ys) if ys.isEmpty => xs map show mk_s ", "
-          case Split(xs, _)                => (xs take minElements map show mk_s ", ") + ", ..."
-        }) + " ]"
+  def showView(xs: View[Doc]): String = {
+    val elems: Doc = xs splitAt maxElements.lastIndex match {
+      case Split(xs, ys) if ys.isEmpty => xs mkDoc ", "
+      case Split(xs, _)                => (xs take minElements mkDoc ", ") ~ ", ..."
+    }
+    doc"[ $elems ]".render
+  }
 
   def show(x: Doc): String = x match {
     case Doc.NoDoc           => ""
@@ -51,6 +71,11 @@ class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer 
 case class ShowInterpolator(val stringContext: StringContext) {
   def escapedParts    = stringContext.parts.toList map (_.processEscapes)
   def escaped: String = escapedParts.join_s
+
+  /** There's one more escaped part than argument, so
+   *  to collate them we tack an empty Doc onto the arg list.
+   */
+  def doc(args: Doc*): Doc = Split[Doc](escapedParts.m map (x => Doc(x)), args.m :+ Doc.empty).collate reducel (_ ~ _)
 
   /** The type of args forces all the interpolation variables to
     *  be of a type which is implicitly convertible to Doc.
@@ -73,22 +98,10 @@ case class ShowInterpolator(val stringContext: StringContext) {
   }
 }
 
-object Show {
-
-  /** This of course is not implicit as that would defeat the purpose of the endeavor.
-    *  There is however an implicit universal instance in the Unsafe object.
-    */
-  val Inherited: Show[Any] = apply[Any](s => if (s == null) "" else "" + s)
-
-  def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
-
-  final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] { def show(x: A) = f(x) }
-}
-
 /** An incomplete selection of show compositors.
   *  Not printing the way scala does.
   */
-trait ShowInstances extends ShowEach {
+trait StdShow extends StdShow1 {
   implicit def showBoolean: Show[Boolean]     = inheritShow
   implicit def showChar: Show[Char]           = inheritShow
   implicit def showDouble: Show[Double]       = inheritShow
@@ -102,7 +115,7 @@ trait ShowInstances extends ShowEach {
   implicit def showVdex: Show[Vdex]                     = showBy(_.indexValue)
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.doc.render))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show { case a -> b => a.doc ~ " -> " ~ b render }
-  implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstString](""))
+  implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc](Doc.empty).render)
 
   implicit def showFunGrid[A, B](implicit z: Show[B]): Show[View2D.FunGrid[A, B]] = showBy(_.lines.joinLines)
 
@@ -112,14 +125,27 @@ trait ShowInstances extends ShowEach {
     case Bounded(lo, hi)       => pp"[$lo,$hi]"
     case Infinite              => "<inf>"
   }
+
+  implicit def showInterval: Show[Interval] = Show {
+    case Interval(start, Infinite) => s"[$start..)"
+    case Interval(_, Size.Zero)    => "[0,0)"
+    case Interval(start, Size.One) => s"[$start]"
+    case Interval(start, end)      => s"[$start..${ end - 1 }]"
+  }
+
+  implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
+    case Consecutive(hd, None)      => hd.show
+    case Consecutive(hd, Some(lst)) => doc"[$hd..$lst]".render
+    case _                          => "[]"
+  }
 }
-trait ShowEach0 {
+trait StdShow0 {
   implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
 }
-trait ShowEach extends ShowEach0 {
+trait StdShow1 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] = showBy[Pmap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
 
-  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(z showEach _)
+  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(xs => z showView xs.m.map(_.doc))
   implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]]          = showBy[Zip[A1, A2]](_.pairs)
   implicit def showArray[A: Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
   implicit def showSplit[A: Show]: Show[Split[A]]                         = showBy[Split[A]](x => "Split(".doc ~ x.leftView ~ ", " ~ x.rightView ~ ")")
