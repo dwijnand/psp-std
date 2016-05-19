@@ -29,7 +29,6 @@ final class Precise private[api](val getLong: Long) extends Atomic {
   def *(n: Long): Precise = Precise(getLong * n)
   def +(n: Long): Precise = Precise(getLong + n)
   def -(n: Long): Precise = Precise(getLong - n)
-  override def toString   = s"$getLong"
 }
 final case class Bounded private[api](lo: Precise, hi: Atomic) extends Size
 

@@ -43,9 +43,10 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def joinLines(implicit z: Show[A]): String         = mk_s(EOL)(z)
   def joinWords(implicit z: Show[A]): String         = mk_s(" ")(z)
   def join_s(implicit z: Show[A]): String            = mk_s("")(z)
-  def mk_s(sep: Char)(implicit z: Show[A]): String   = this mk_s sep.to_s
-  def mk_s(sep: String)(implicit z: Show[A]): String = xs map z.show zreducel ((l, r) => zcond(l =!= "", l ~ sep) ~ r)
-  def to_s(implicit z: Show[A]): String              = "[ " + (xs mk_s ", ") + " ]"
+  def mk_s(sep: Char)(implicit z: Show[A]): String   = mk_s(sep.to_s)
+  def mk_s(sep: String)(implicit z: Show[A]): String = mkDoc(Doc(sep)).render
+
+  def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = xs map (x => Doc(z show x)) mkDoc sep
 
   def max(implicit z: Order[A]): A = reducel(all.max)
   def min(implicit z: Order[A]): A = reducel(all.min)

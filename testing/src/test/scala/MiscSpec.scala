@@ -3,7 +3,6 @@ package tests
 
 import std._, api._, all._, StdShow._
 import Prop.forAll
-import Unsafe._
 
 class MiscTests {
   @Test(expected = Predef.classOf[AssertionError])

@@ -36,4 +36,5 @@ trait StdEmpty {
   implicit lazy val emptyString: Empty.Const[String]            = Empty const ""
   implicit lazy val emptyVdexRange: Empty.Const[VdexRange]      = Empty const indexRange(0, 0)
   implicit lazy val emptyInterval: Empty.Const[Interval.Closed] = Empty const Interval.empty
+  implicit lazy val emptyDoc: Empty.Const[Doc]                  = Empty const Doc.empty
 }

@@ -6,26 +6,16 @@ import java.{ lang => jl }
 import scala.Tuple2
 import java.io.BufferedInputStream
 
+object Unsafe {
+  implicit def promoteIndex(x: scala.Long) = Index(x)
+  implicit def inheritedShow[A]: Show[A]   = Show.Inherited
+}
+
 /** One import which includes the implicits, one which doesn't.
   *  This choice is mutually exclusive: everything which is in exp is in all.
   */
 object exp extends AllExplicit
-object all extends AllExplicit with AllImplicit {
-  implicit class HasViewsAs[A, R](val repr: R)(implicit z: ViewsAs[A, R]) {
-    def m: IdView[A, R] = z viewAs repr
-  }
-  /** The type of args forces all the interpolation variables to
-    * be of a type which is implicitly convertible to Doc.
-    */
-  implicit class DocInterpolators(private val sc: StringContext) {
-    def pp(args: Doc*): String  = ShowInterpolator(sc).pp(args: _*)
-    def fpp(args: Doc*): String = ShowInterpolator(sc).fpp(args: _*)
-    def sm(args: Doc*): String  = ShowInterpolator(sc).sm(args: _*)
-  }
-
-  implicit class VindexOps(private val vdex: Vdex) {
-    def getInt: Int = vdex.indexValue.safeToInt
-  }
+object all extends NonValueImplicitClasses with AllImplicit  {
   implicit class AnyOps[A](private val x: A) extends AnyVal {
     def any_s: String                     = s"$x"
     def id_## : Int                       = java.lang.System.identityHashCode(x)
@@ -34,7 +24,80 @@ object all extends AllExplicit with AllImplicit {
 
     @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
   }
-  implicit class SizeOps(private val lhs: Size) extends AnyVal {
+  implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
+    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
+  }
+  implicit class OptionOps[A](private val x: Option[A]) extends AnyVal {
+    def or(alt: => A): A              = x getOrElse alt
+    def toVec: Vec[A]                 = this zfold (x => vec(x))
+    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
+    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
+    def |(alt: => A): A               = x getOrElse alt
+  }
+  implicit class TryOps[A](private val x: Try[A]) extends AnyVal {
+    def |(expr: => A): A = x.toOption | expr
+    def fold[B](f: Throwable => B, g: A => B): B = x match {
+      case Success(x) => g(x)
+      case Failure(t) => f(t)
+    }
+  }
+  implicit class InputStreamOps(private val in: InputStream) extends AnyVal {
+    def buffered: BufferedInputStream = in match {
+      case in: BufferedInputStream => in
+      case _                       => new BufferedInputStream(in)
+    }
+    def slurp(): Array[Byte]             = ll.Streams slurp buffered
+    def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
+  }
+  implicit class FunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
+    type This = Fun[A, B]
+
+    import Fun._
+
+    def andThen[C](g: B => C): Fun[A, C]      = AndThen(f, Opaque(g))
+    def applyOrElse(x: A, g: A => B): B       = cond(f contains x, f(x), g(x))
+    def compose[C](g: C => A): Fun[C, B]      = AndThen(Opaque(g), f)
+    def get(x: A): Option[B]                  = zfold(x)(some)
+    def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
+    def zfold[C: Empty](x: A)(g: B => C): C   = cond(f contains x, g(f(x)), emptyValue)
+
+    def defaulted(g: A => B): Defaulted[A, B] = f match {
+      case Defaulted(_, u) => Defaulted(g, u)
+      case _               => Defaulted(g, f)
+    }
+    def filterIn(p: ToBool[A]): Filtered[A, B] = f match {
+      case Filtered(q, u) => Filtered(q && p, u)
+      case _              => Filtered(p, f)
+    }
+
+    def teeIn(g: ToUnit[A]): This                   = compose[A](x => doto(x)(g))
+    def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
+    def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
+  }
+}
+
+class NonValueImplicitClasses extends AllExplicit {
+  self: all.type =>
+
+  implicit class ViewDocOps(private val xs: View[Doc]) {
+    def mkDoc(sep: Doc): Doc = xs zreducel (_ ~ sep ~ _)
+  }
+  implicit class HasViewsAs[A, R](val repr: R)(implicit z: ViewsAs[A, R]) {
+    def m: IdView[A, R] = z viewAs repr
+  }
+  /** The type of args forces all the interpolation variables to
+    * be of a type which is implicitly convertible to Doc.
+    */
+  implicit class DocInterpolators(private val sc: StringContext) {
+    def doc(args: Doc*): Doc    = ShowInterpolator(sc).doc(args: _*)
+    def pp(args: Doc*): String  = ShowInterpolator(sc).pp(args: _*)
+    def fpp(args: Doc*): String = ShowInterpolator(sc).fpp(args: _*)
+    def sm(args: Doc*): String  = ShowInterpolator(sc).sm(args: _*)
+  }
+  implicit class VindexOps(private val vdex: Vdex) {
+    def getInt: Int = vdex.indexValue.safeToInt
+  }
+  implicit class SizeOps(private val lhs: Size)  {
     import Size._
 
     def getInt: Int = lhs match {
@@ -85,7 +148,7 @@ object all extends AllExplicit with AllImplicit {
     def max(rhs: Size): Size = Size.max(lhs, rhs)
   }
 
-  implicit class CharOps(private val ch: Char) extends AnyVal {
+  implicit class CharOps(private val ch: Char) {
     def isControl = jl.Character isISOControl ch
     def toUpper   = jl.Character toUpperCase ch
     def to_s      = ch.toString
@@ -94,11 +157,11 @@ object all extends AllExplicit with AllImplicit {
     def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
     def until(end: Char): CharRange       = ch.toLong until end.toLong map (_.toChar)
   }
-  implicit class IntOps(private val self: Int) extends AnyVal {
+  implicit class IntOps(private val self: Int) {
     def to(end: Int): IntRange    = self.toLong to end.toLong map (_.toInt)
     def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
   }
-  implicit class LongOps(private val self: Long) extends AnyVal {
+  implicit class LongOps(private val self: Long) {
 
     /** Safe in the senses that it won't silently truncate values,
       *  and will translate MaxLong to MaxInt instead of -1.
@@ -129,32 +192,6 @@ object all extends AllExplicit with AllImplicit {
   implicit class PartialOps[A, B](pf: A ?=> B) {
     def applyOr(x: A, alt: => B): B           = if (pf isDefinedAt x) pf(x) else alt
     def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
-  }
-
-  implicit class FunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
-    type This = Fun[A, B]
-
-    import Fun._
-
-    def andThen[C](g: B => C): Fun[A, C]      = AndThen(f, Opaque(g))
-    def applyOrElse(x: A, g: A => B): B       = cond(f contains x, f(x), g(x))
-    def compose[C](g: C => A): Fun[C, B]      = AndThen(Opaque(g), f)
-    def get(x: A): Option[B]                  = zfold(x)(some)
-    def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
-    def zfold[C: Empty](x: A)(g: B => C): C   = cond(f contains x, g(f(x)), emptyValue)
-
-    def defaulted(g: A => B): Defaulted[A, B] = f match {
-      case Defaulted(_, u) => Defaulted(g, u)
-      case _               => Defaulted(g, f)
-    }
-    def filterIn(p: ToBool[A]): Filtered[A, B] = f match {
-      case Filtered(q, u) => Filtered(q && p, u)
-      case _              => Filtered(p, f)
-    }
-
-    def teeIn(g: ToUnit[A]): This                   = compose[A](x => doto(x)(g))
-    def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
-    def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
 
   implicit class ByteArrayOps(private val xs: Array[Byte]) {
@@ -205,10 +242,6 @@ object all extends AllExplicit with AllImplicit {
       def compare(x: A, y: A): Int = cmp(x, y).intValue
     }
   }
-
-  implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
-    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
-  }
   implicit class JavaIteratorOps[A](private val it: jIterator[A]) {
     def toScala: scIterator[A] = new scIterator[A] {
       def hasNext: Bool = it.hasNext
@@ -228,33 +261,6 @@ object all extends AllExplicit with AllImplicit {
   implicit class ViewOpOps[A, B](private val op: Op[A, B]) {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
-  }
-
-  /** Extension methods for scala library classes.
-    *  We'd like to get away from all such classes,
-    *  but scala doesn't allow it.
-    */
-  implicit class OptionOps[A](private val x: Option[A]) extends AnyVal {
-    def or(alt: => A): A              = x getOrElse alt
-    def toVec: Vec[A]                 = this zfold (x => vec(x))
-    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
-    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
-    def |(alt: => A): A               = x getOrElse alt
-  }
-  implicit class TryOps[A](private val x: Try[A]) extends AnyVal {
-    def |(expr: => A): A = x.toOption | expr
-    def fold[B](f: Throwable => B, g: A => B): B = x match {
-      case Success(x) => g(x)
-      case Failure(t) => f(t)
-    }
-  }
-  implicit class InputStreamOps(private val in: InputStream) extends AnyVal {
-    def buffered: BufferedInputStream = in match {
-      case in: BufferedInputStream => in
-      case _                       => new BufferedInputStream(in)
-    }
-    def slurp(): Array[Byte]             = ll.Streams slurp buffered
-    def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
   implicit class SplittableValueSameTypeOps[R, A](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)

@@ -35,7 +35,7 @@ class Typecheck extends ScalacheckBundle {
     val good -> bad = xs partition (_.typechecks) mapBoth (_.force)
 
     NamedProp(
-      s"$expectedTypecheck/${xs.size} expressions from $what should typecheck",
+      doc"$expectedTypecheck/${xs.size} expressions from $what should typecheck".render,
       (Prop(expectedTypecheck === good.size) :|
         ("good:\n  " + (good mk_s "\n  ") + "\n\nbad:\n  " + (bad mk_s "\n  ") + "\n")
       )

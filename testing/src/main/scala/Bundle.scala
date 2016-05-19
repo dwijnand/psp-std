@@ -2,38 +2,10 @@ package psp
 package tests
 
 import psp._, std._, all._, api._, StdShow._
-import scala.Console.{ println => _, _ }
-import org.scalacheck.util.Pretty.{ pretty, Params }
+import Color._
 
 trait Bundle extends ShowSelf {
-  def bundle: String
-  def run(): Boolean
-
-  private var count = 0
-  private var passed = 0
-
-  def assert(body: => Boolean, msg: => Any): Unit = {
-    count += 1
-    Try(body).toOption match {
-      case Some(true) => passed += 1
-      case _          => println(s"Failed: $msg")
-    }
-  }
-  def assert(body: => Boolean): Unit = {
-    count += 1
-    Try(body).fold(_ => (), res => if (res) passed += 1)
-  }
-
-  def finish(msg: String): Boolean = {
-    val ok = count === passed
-    val color = if (ok) GREEN else RED
-    val str = color + "%3s/%-3s".format(passed, count) + RESET
-    println(s"$str passed: $msg")
-    ok
-  }
-  def finish(): Boolean = finish(classNameOf(this) stripSuffix "$")
-
-  def to_s = bundle
+  def run(): Bool
 }
 
 /** Needed because scalacheck doesn't expose the label if you add
@@ -58,25 +30,27 @@ object NamedProp {
 }
 
 trait ScalacheckBundle extends Bundle {
+  def bundle: String
   def props: Direct[NamedProp]
 
-  def pass = PassGreen
-  def fail = FailRed
-  def start = "+ " + BOLD + CYAN + bundle + RESET
+  def pass  = Green("\u2713") // check mark
+  def fail  = Red("\u2717")   // cross mark
+  def start = Cyan bold bundle
 
-  def pp(r: Result) = pretty(r, Params(0))
-  def runOne(p: NamedProp): Boolean = p.check match {
-    case x if x.passed => sideEffect(true,  println("+ %s  %s".format(pass, p.label)))
-    case r             => sideEffect(false, println("- %s  %s\nFalsified after %s passed tests\n%s".format(fail, p.label, r.succeeded, pp(r))))
-  }
+  def runOne(p: NamedProp): Boolean = p.check |> (r =>
+    doto(r.passed) {
+      case true  => println(doc"+ $pass  ${p.label}")
+      case false => println(doc"- $fail  ${p.label}\nFalsified after ${r.succeeded} passed tests\n$r")
+    }
+  )
 
   def run(): Boolean = {
-    println("\n" + start)
+    println(doc"\n+ $start")
     props map runOne forall (x => x)
   }
 
   @Test
   def runBundle(): Unit = junitAssert(run())
 
-  override def toString = bundle
+  def to_s: String = bundle
 }
