@@ -8,7 +8,7 @@ class OperationCounts extends ScalacheckBundle {
   import Op._
 
   type LongOp = Op[Long, Long]
-  def numComposite = intUpTo(2, 4)
+  def numComposite = gen.genInt(2, 4)
 
   private[this] var displaysRemaining = maxDisplay
 
@@ -17,10 +17,10 @@ class OperationCounts extends ScalacheckBundle {
   def minSuccessful: Precise = 1000
 
   def maxDisplay: Precise    = 20
-  def chooseMax   = 0 upTo max
-  def lowHalf     = 0 upTo max / 2
-  def highHalf    = max / 2 upTo max
-  def chooseSmall = 1 upTo max / 20
+  def chooseMax   = gen.genLong(0, max)
+  def lowHalf     = gen.genLong(0, max / 2)
+  def highHalf    = gen.genLong(max / 2, max)
+  def chooseSmall = gen.genLong(1, max / 20)
   def chooseRange = gen.indexRangeFrom(max / 2, max)
 
   private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, label)

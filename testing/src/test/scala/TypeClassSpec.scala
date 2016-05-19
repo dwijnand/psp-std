@@ -82,8 +82,8 @@ class ViewBasic extends ScalacheckBundle {
     val half = len / 2
 
     def pair(r: LongRange): Gen[Index -> Precise] = for {
-      i <- 0 upTo half
-      s <- 0 upTo half
+      i <- gen.genLong(0, half)
+      s <- gen.genLong(0, half)
     } yield Index(i) -> Size(s)
 
     implicit val arbRange = Arb[LongRange](Gen const (0L until len))
