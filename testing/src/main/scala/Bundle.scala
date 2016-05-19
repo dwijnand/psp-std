@@ -3,6 +3,7 @@ package tests
 
 import psp._, std._, all._, api._, StdShow._
 import scala.Console.{ println => _, _ }
+import org.scalacheck.util.Pretty.{ pretty, Params }
 
 trait Bundle extends ShowSelf {
   def bundle: String
@@ -63,7 +64,7 @@ trait ScalacheckBundle extends Bundle {
   def fail = FailRed
   def start = "+ " + BOLD + CYAN + bundle + RESET
 
-  def pp(r: Result) = Pretty.pretty(r, Pretty.Params(0))
+  def pp(r: Result) = pretty(r, Params(0))
   def runOne(p: NamedProp): Boolean = p.check match {
     case x if x.passed => sideEffect(true,  println("+ %s  %s".format(pass, p.label)))
     case r             => sideEffect(false, println("- %s  %s\nFalsified after %s passed tests\n%s".format(fail, p.label, r.succeeded, pp(r))))

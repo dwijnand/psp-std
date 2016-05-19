@@ -6,6 +6,14 @@ import api._, exp._
 trait BooleanAlgebra[A] extends Any with spire.Bool[A]
 
 object Algebras {
+  object Identity extends BooleanAlgebra[Bool] {
+    def and(x: Bool, y: Bool): Bool = x && y
+    def or(x: Bool, y: Bool): Bool  = x || y
+    def complement(x: Bool): Bool   = !x
+    def zero: Bool                  = false
+    def one: Bool                   = true
+  }
+
   final case class Not1[A](f: ToBool[A]) extends ToBool[A] with ShowSelf {
     def apply(x: A): Boolean = !f(x)
     def to_s                 = "!" + f
