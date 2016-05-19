@@ -57,7 +57,7 @@ package macros {
         case Literal(Constant(s: String)) => s.trim
         case _                            => fail("not a literal string")
       }
-      val lines = code.lines map (_.trim) filterNot (_.length == 0) map check seq;
+      val lines = code.lines map (_.trim) filterNot (_.isEmpty) map check seq;
       c.Expr(q"vec(..$lines)")
     }
 

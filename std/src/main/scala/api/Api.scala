@@ -72,8 +72,8 @@ abstract class ApiValues extends ApiTypes {
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
   def longCmp(diff: Long): Cmp                           = if (diff < 0) Cmp.LT else if (diff > 0) Cmp.GT else Cmp.EQ
-  def max[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, r, l)
-  def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) == Cmp.LT, l, r)
+  def max[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) eq Cmp.LT, r, l)
+  def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) eq Cmp.LT, l, r)
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = new Tuple2(x, y)

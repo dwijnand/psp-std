@@ -1,78 +1,17 @@
 package psp
 package std
 
-/** The organization of the implicit builders is a black art.
-  *  It might be better to generate StdBuilds[0-15] and put an implicit in
-  *  each one so the prioritization is as unambiguous as scala allows.
-  *
-  *  We adapt CanBuildFrom into our builder, since there are zillions of them lying
-  *  around and it lets us build scala collections at the end of a view with no more code.
-  *  Scala maps are built with Tuples even though Product2 should suffice; the types
-  *  are written out as Tuple2[K, V] and not (K, V) to emphasize I'm using Tuple on purpose.
-  *  The rest of the time one should write it K -> V.
-  */
-import api._, all._, scala.Tuple2
-import Builds._
+import api._, all._
 
-final class ViewsAs[A, R](val f: R => View[A]) extends AnyVal {
-  def viewAs(xs: R): IdView[A, R] = new IdView(f(xs))
-}
-final class HasViewsAs[A, R](repr: R)(implicit z: ViewsAs[A, R]) {
-  def m: IdView[A, R] = z viewAs repr
-}
 final class Builds[-A, +R](val f: View[A] => R) {
   def contraMap[B](g: B => A): Builds[B, R] = Builds(f compose (_ map g))
   def map[S](g: R => S): Builds[A, S]       = Builds(g compose f)
   def build(xs: View[A]): R                 = f(xs)
   def build(xs: Each[A]): R                 = build(new IdView(xs))
 }
-
-trait JavaBuilders0 {
-  implicit def buildJavaSet[A]: Builds[A, jSet[A]] = Builds.javaSet
+final class ViewsAs[A, R](val f: R => View[A]) extends AnyVal {
+  def viewAs(xs: R): IdView[A, R] = new IdView(f(xs))
 }
-trait JavaBuilders extends JavaBuilders0 {
-  implicit def buildJavaList[A]: Builds[A, jList[A]]          = Builds.javaList
-  implicit def buildJavaMap[K, V]: Builds[K -> V, jMap[K, V]] = Builds.javaMap
-}
-trait ScalaBuilders0 extends JavaBuilders {
-  implicit def forScala[A, That](implicit z: CanBuild[A, That]): Builds[A, That] = Builds.forScala
-}
-trait ScalaBuilders extends ScalaBuilders0 {
-  implicit def forScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Builds[K -> V, That] = Builds.forScalaMap
-}
-trait JvmBuilders0 extends ScalaBuilders {
-  implicit def buildJvmArray[A: CTag]: Builds[A, Array[A]] = jvmArray[A]
-}
-trait JvmBuilders extends JvmBuilders0 {
-  implicit def buildJvmString: Builds[Char, String] = jvmString
-}
-trait PspBuilders0 extends JvmBuilders {
-  // XXX higher priority :Hash variants.
-  implicit def buildPspSet[A: Eq]: Builds[A, Pset[A]]            = pspSet[A]
-  implicit def buildPspMap[K: Eq, V]: Builds[K -> V, Pmap[K, V]] = pspMap[K, V]
-}
-trait PspBuilders1 extends PspBuilders0 {
-  implicit def buildPspList[A]: Builds[A, Plist[A]] = pspList[A]
-}
-trait PspBuilders extends PspBuilders1 {
-  implicit def buildPspVec[A]: Builds[A, Vec[A]] = pspVec[A]
-}
-trait Builders extends PspBuilders
-object Builders extends Builders
-
-trait Converters0 {
-  implicit def convertJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): IdView[A, CC[A]]           = intoView(xs)
-  implicit def convertJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): IdView[K -> V, CC[K, V]] = intoView(xs)
-  implicit def convertMonoView[A, R](xs: R)(implicit z: ViewsAs[A, R]): IdView[A, R]                = intoView(xs)
-}
-trait Converters1 extends Converters0 {
-  implicit def convertScala[A, CC[X] <: sCollection[X]](xs: CC[A]): IdView[A, CC[A]] = intoView(xs)
-}
-trait Converters2 extends Converters1 {
-  implicit def convertJvmArray[A](xs: Array[A]): IdView[A, Array[A]]            = intoView(xs)
-  implicit def convertPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]] = intoView(xs)
-}
-trait ConvertersOf extends Converters2
 
 object Builds {
   def apply[A, R](f: View[A] => R): Builds[A, R] =
@@ -99,4 +38,11 @@ object Builds {
   def scalaMap[K, V]: Builds[K -> V, sciMap[K, V]] = forScalaMap
   def scalaSet[A]: Builds[A, sciSet[A]]            = forScala
   def scalaVector[A]: Builds[A, sciVector[A]]      = forScala
+
+  class RemakeHelper[R](xs: R) {
+    def apply[A](f: R => View[A])(implicit z: Builds[A, R]): R = z build f(xs)
+  }
+  class MakeHelper[R] {
+    def apply[A](expr: => View[A])(implicit z: Builds[A, R]): R = z build expr
+  }
 }

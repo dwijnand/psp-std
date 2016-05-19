@@ -24,7 +24,7 @@ trait Bundle extends ShowSelf {
   }
 
   def finish(msg: String): Boolean = {
-    val ok = count == passed
+    val ok = count === passed
     val color = if (ok) GREEN else RED
     val str = color + "%3s/%-3s".format(passed, count) + RESET
     println(s"$str passed: $msg")

@@ -70,7 +70,7 @@ trait Hash[-A] extends Any with MHash[Id, A] with Eq[A] {
 trait Order[-A] extends Any with MOrder[Id, A] with Eq[A] {
   def cmp(x: A, y: A): Cmp
 }
-trait HashEqOrd[-A] extends Any with Hash[A] with Order[A]
+trait HashOrder[-A] extends Any with Hash[A] with Order[A]
 
 trait Show[-A] extends Any with MShow[Id, A] {
   def show(x: A): String

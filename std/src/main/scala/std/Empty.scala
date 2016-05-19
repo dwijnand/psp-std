@@ -28,28 +28,12 @@ trait StdEmpty {
   implicit def emptyTriple[A: Empty, B: Empty, C: Empty]: Empty[(A, B, C)] = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
   implicit def emptyIdView[A, R]: Empty[IdView[A, R]]                      = Empty(new IdView(Pnil))
 
-  implicit lazy val emptyOption: Empty.Const[Option[Nothing]] = Empty const None
-  implicit lazy val emptyFile: Empty.Const[jFile]             = Empty const NoFile
-  implicit lazy val emptyIndex: Empty.Const[Index]            = Empty const Index.invalid
-  implicit lazy val emptyNth: Empty.Const[Nth]                = Empty const Nth.invalid
-  implicit lazy val emptyPath: Empty.Const[jPath]             = Empty const NoPath
-  implicit lazy val emptyString: Empty.Const[String]          = Empty const ""
-  implicit lazy val emptyVdexRange: Empty.Const[VdexRange]    = Empty const indexRange(0, 0)
-}
-
-trait StdTypeClasses {
-  import all._
-
-  /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
-    *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
-    *  "to adhere firmly and closely as though evenly and securely glued" as well
-    *  as "to divide into two parts by a cutting blow".
-    */
-  def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
-  def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R    = f(x._1, x._2) }
-
-  def cleaver[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] = new Cleaver[R, A, B] {
-    def split(x: R): A -> B = l(x) -> r(x)
-    def join(x: A -> B): R  = x app f
-  }
+  implicit lazy val emptyOption: Empty.Const[Option[Nothing]]   = Empty const None
+  implicit lazy val emptyFile: Empty.Const[jFile]               = Empty const NoFile
+  implicit lazy val emptyIndex: Empty.Const[Index]              = Empty const Index.invalid
+  implicit lazy val emptyNth: Empty.Const[Nth]                  = Empty const Nth.invalid
+  implicit lazy val emptyPath: Empty.Const[jPath]               = Empty const NoPath
+  implicit lazy val emptyString: Empty.Const[String]            = Empty const ""
+  implicit lazy val emptyVdexRange: Empty.Const[VdexRange]      = Empty const indexRange(0, 0)
+  implicit lazy val emptyInterval: Empty.Const[Interval.Closed] = Empty const Interval.empty
 }

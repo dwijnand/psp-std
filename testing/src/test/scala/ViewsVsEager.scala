@@ -25,7 +25,7 @@ class OperationCounts extends ScalacheckBundle {
 
   private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, label)
 
-  private def divides(n: Long)  = lop(s"/$n", (_: Long) % n == 0)
+  private def divides(n: Long)  = lop(s"/$n", (_: Long) % n === 0)
   private def less(n: Long)     = lop(s"<$n", (_: Long) < n)
   private def multiply(n: Long) = lop(s"*$n", (_: Long) * n)
   private def pairup            = lop("=>(x,x)", (x: Long) => view(x, x))

@@ -21,20 +21,12 @@ sealed abstract class Interval extends (Vdex => Long) with ShowSelf {
   def <<(n: Precise): This
   def >>(n: Precise): This
 
-  def apply(vdex: Vdex): Long                  = startLong + vdex.indexValue
-  def slice(start: Vdex, len: Precise): Closed = longSlice(start.indexValue, start.indexValue + len.getLong)
-  def slice(r: VdexRange): Closed              = if (r.isEmpty) Interval.empty else slice(r.head, r.size)
+  private def checkValid[A](vdex: Vdex)(f: Vdex => A): A =
+    cond(vdex.isInvalid, abort("Operation requires valid index"), f(vdex))
 
-  private def longSlice(s: Long, e: Long): Closed =
-    (if (s < 0) longSlice(0, e)
-     else if (e <= 0 || e <= s) Interval.empty
-     else this drop s take e - s)
-
-  override def hashCode = startLong.## + size.##
-  override def equals(that: Any): Bool = that match {
-    case that: Interval => startLong === that.startLong && size === that.size
-    case _              => false
-  }
+  def apply(vdex: Vdex): Long                  = checkValid(vdex)(startLong + _.indexValue)
+  def slice(start: Vdex, len: Precise): Closed = checkValid(start)(this drop _.excluding take len)
+  def slice(r: VdexRange): Closed              = zcond(!r.isEmpty, slice(r.head, r.size))
 }
 object Interval {
   val Empty = new Closed(0L, Size.Zero)
@@ -61,7 +53,7 @@ object Interval {
     def dropRight(n: Precise): Closed        = closed(startLong, size - n)
     def foreach(f: Long => Unit): Unit       = ll.foreachLong(startLong, lastLong, f)
     def isEmpty: Bool                        = size.isZero
-    def isPoint: Bool                        = size.getLong == 1L
+    def isPoint: Bool                        = size.getLong === 1L
     def map[A](f: Long => A): ClosedRange[A] = Consecutive(this, f)
     def take(n: Precise): Closed             = closed(startLong, size min n)
     def takeRight(n: Precise): Closed        = (size min n) |> (s => closed(exclusiveEnd - s.getLong, s))
