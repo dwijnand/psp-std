@@ -212,7 +212,10 @@ class NonValueImplicitClasses extends AllExplicit {
     def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs
     def utf8String: String     = new String(utf8Chars)
   }
-
+  implicit class CharArrayOps(private val xs: Array[Char]) {
+    def utf8Bytes: Array[Byte] = scala.io.Codec.toUTF8(xs, 0, xs.length)
+    def utf8String: String     = new String(xs)
+  }
   implicit class ArrayOps[A](private val xs: Array[A]) {
     private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
       java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
@@ -302,6 +305,12 @@ class NonValueImplicitClasses extends AllExplicit {
   implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
     def toPmap(implicit z: Hash[A]): Pmap[A, B]                         = toMap[Pmap]
     def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
+  }
+
+  implicit class ShowableViewOps[A](private val xs: View[A])(implicit z: Show[A]) {
+    def mkDoc(sep: Doc): Doc          = xs.asDocs zreducel (_ ~ sep ~ _)
+    def joinWith(sep: String): String = mkDoc(sep.lit).render
+    def joinString: String            = joinWith("")
   }
 
   implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {

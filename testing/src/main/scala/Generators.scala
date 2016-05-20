@@ -38,7 +38,7 @@ trait GenTransform[M[X], A] {
   def ?(p: ToBool[A]): M[A]       = transform(_ filter p)
   def >>[B](f: A => Gen[B]): M[B] = transform(_ flatMap f)
   def ^?[B](pf: A ?=> B): M[B]    = transform(_ collect pf)
-  def *(n: Int): M[View[A]]       = transform(_ container[View] n)
+  def *(n: Int): M[View[A]]       = transform(_.container[View](n))
   def *(r: Gen[Int]): M[View[A]]  = transform(r >> _.*)
 
   def zip[B](h: Gen[B]): M[A -> B]                   = zipWith(h)(_ -> _)

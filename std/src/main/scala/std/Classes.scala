@@ -17,10 +17,6 @@ object JvmName {
   def asJava(clazz: jClass): JvmName  = new JvmName(clazz.getName)
   def asScala(clazz: jClass): JvmName = new JvmName(clazz.getName.mapSplit('.')(decode))
 }
-final class Utf8(val bytes: Array[Byte]) extends ShowSelf {
-  def chars: Array[Char] = scala.io.Codec fromUTF8 bytes
-  def to_s: String       = new String(chars)
-}
 class LabeledFunction[-T, +R](f: T => R, str: () => String) extends (T ?=> R) with ShowSelf {
   def isDefinedAt(x: T) = f match {
     case f: scala.PartialFunction[_, _] => f isDefinedAt x

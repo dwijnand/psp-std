@@ -3,11 +3,6 @@ package std
 
 import api._, all._
 
-final case class VCons[A](head: A, tl: () => Foreach[A]) extends Each[A] {
-  def foreach(f: ToUnit[A]): Unit = sideEffect(f(head), tl() foreach f)
-  def size: Size                  = Size.NonEmpty
-}
-
 class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
   def byEquals: EqViewOps[A]         = by(Relation.Inherited)
@@ -23,7 +18,7 @@ class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def zipIndex: Zip[A, Index]             = zipViews(xs, openIndices)
   def zip[B](ys: View[B]): Zip[A, B]      = zipViews[A, B](xs, ys)
 
-  def +:(head: A): View[A]                            = VCons(head, () => xs) // view(head) ++ xs
+  def +:(head: A): View[A]                            = view(head) ++ xs
   def :+(last: A): View[A]                            = xs ++ view(last)
   def dropIndex(idx: Vdex): View[A]                   = splitAround(idx).join
   def filter(p: ToBool[A]): View[A]                   = xs withFilter p
@@ -44,9 +39,6 @@ class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def inits: View2D[A] = view(xs) ++ zcond(!isEmpty, init.inits)
   def tail: View[A]    = xs drop 1
   def tails: View2D[A] = view(xs) ++ zcond(!isEmpty, tail.tails)
-
-  def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = asDocs zreducel (_ ~ sep ~ _)
-  def joinString(implicit z: Show[A]): String   = mkDoc(Doc.empty).render
 
   def max(implicit z: Order[A]): A = reducel(all.max)
   def min(implicit z: Order[A]): A = reducel(all.min)
@@ -102,6 +94,6 @@ class View2DOps[A](private val xss: View2D[A]) extends AnyVal {
     val yss   = xss mmap (x => fmt(z show x))
     val lines = yss map (_ joinWith " ")
 
-    lines.joinLines.trimLines
+    lines.joinLines mapLines (_.trim)
   }
 }

@@ -4,23 +4,24 @@ package std
 import api._, all._, StdShow._
 import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
-import jl.Integer.parseInt
+import jl.Integer.parseInt, jl.Long.parseLong
 import Regex.WS
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
   import self.{ toCharArray => chars }
 
-  def *(n: Precise): String                         = Each const self take n show
+  def *(n: Precise): String                         = Each const self take n joinString
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
-  def capitalize: String                            = zcond(!isEmpty, (self charAt 0).toUpper.to_s append tail.force)
+  def capitalize: String                            = zcond(!self.isEmpty, head.toUpper.to_s append tail.force)
   def charSeq: scSeq[Char]                          = chars.m.seq
+  def collect(pf: Char ?=> Char): String            = chars collect pf force
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args: Any*): String                    = stringFormat(self, args: _*)
-  def isEmpty: Bool                                 = self === ""
+  def head: Char                                    = self charAt 0
   def lines: View[String]                           = splitChar('\n')
   def lit: Doc                                      = Doc(self)
-  def mapChars(pf: Char ?=> Char): String           = chars mapIf pf force
+  def mapChars(pf: Char ?=> Char): String           = collect(pf orElse { case x => x })
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f joinWith ch
   def processEscapes: String                        = StringContext processEscapes self
@@ -28,54 +29,37 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def removeAll(regex: Regex): String               = regex matcher self replaceAll ""
   def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
   def reverseBytes: Array[Byte]                     = bytes.inPlace.reverse
-  def reverseChars: String                          = new String(chars.inPlace.reverse)
+  def reverseChars: String                          = chars.inPlace.reverse.utf8String
   def sanitize: String                              = mapChars { case x if x.isControl => '?' }
   def splitChar(ch: Char): View[String]             = splitRegex(Regex quote ch.any_s)
   def splitRegex(r: Regex): View[String]            = r.pattern split self
   def stripMargin(ch: Char): String                 = mapLines(_ stripPrefix WS <> ch.r)
   def stripMargin: String                           = stripMargin('|')
-  def stripPrefix(prefix: String): String           = foldPrefix(prefix)(self)(identity)
-  def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
+  def stripPrefix(prefix: String): String           = stripPrefix(prefix.r.literal)
   def stripPrefix(r: Regex): String                 = removeAll(r.starts)
   def stripSuffix(r: Regex): String                 = removeAll(r.ends)
-  def tail: String                                  = zcond(!isEmpty, self substring 1)
+  def stripSuffix(suffix: String): String           = stripSuffix(suffix.r.literal)
+  def surround(s: String, e: String): String        = s append self append e
+  def tail: String                                  = zcond(!self.isEmpty, self substring 1)
   def to_s: String                                  = self
-  def trimLines: String                             = mapLines(_.trim).trim
 
-  // def toDouble: Double = parseDouble(self removeFirst "[dD]$".r)
-  // def toFloat: Float   = parseFloat(self removeFirst "[fF]$".r)
-  // def toLong: Long     = (self removeFirst "[lL]$".r) |> (s => foldPrefix("0x")(parseLong(s))(parseLong(_, 16)))
+  def ifPrefix[A](prefix: String)(f: String => A): Opt[A] =
+    zcond(self startsWith prefix, some(f(self substring prefix.length)))
 
   def toBigInt: BigInt = scala.math.BigInt(self)
-  def toInt: Int       = foldPrefix("0x")(parseInt(self))(parseInt(_, 16))
-
-  private def foldRemove[A](r: Regex)(none: => A)(some: String => A): A       = removeFirst(r) match { case `self` => none; case s => some(s) }
-  private def foldPrefix[A](prefix: String)(none: => A)(some: String => A): A = foldRemove(prefix.r.literal.starts)(none)(some)
-  private def foldSuffix[A](suffix: String)(none: => A)(some: String => A): A = foldRemove(suffix.r.literal.ends)(none)(some)
-}
-
-class MatcherIterator(m: Matcher) extends scIterator[String] {
-  private var nextSeen = false
-  def hasNext = {
-    if (!nextSeen) nextSeen = m.find
-    nextSeen
-  }
-  def next(): String = cond(
-    hasNext,
-    sideEffect(m.group, nextSeen = false),
-    noSuchElementException("empty.next()")
-  )
+  def toInt: Int       = ifPrefix("0x")(parseInt(_, 16)) or parseInt(self)
+  def toLong: Long     = ifPrefix("0x")(parseLong(_, 16)) or parseLong(self)
 }
 
 final class Regex(val pattern: Pattern) extends ShowSelf {
   def matcher(input: jCharSequence): Matcher = pattern matcher input
 
-  def iteratorAll(s: String): scIterator[String] = new MatcherIterator(matcher(s))
-  def findAll(s: String): Vec[String]            = iteratorAll(s).toVec
+  def findAll(s: String): Vec[String] = {
+    def loop(m: Matcher): Vec[String] = if (m.find) m.group +: loop(m) else vec()
+    loop(matcher(s))
+  }
 
   def append(e: String): Regex               = mapRegex(_ + e)
-  def capturingGroup: Regex                  = surround("(", ")")
-  def characterRange: Regex                  = surround("[", "]")
   def ends: Regex                            = cond(to_s endsWith "$", this, append("$"))
   def flags: Int                             = pattern.flags
   def isMatch(input: jCharSequence): Boolean = matcher(input).matches
@@ -84,7 +68,7 @@ final class Regex(val pattern: Pattern) extends ShowSelf {
   def mapRegex(f: ToSelf[String]): Regex     = Regex(f(to_s), flags)
   def prepend(s: String): Regex              = mapRegex(s + _)
   def starts: Regex                          = cond(to_s startsWith "^", this, prepend("^"))
-  def surround(s: String, e: String): Regex  = mapRegex(s + _ + e)
+  def surround(s: String, e: String): Regex  = mapRegex(_.surround(s, e))
   def to_s: String                           = s"$pattern"
 
   def <>(that: Regex): Regex = mapRegex(_ + that.pattern)

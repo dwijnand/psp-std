@@ -64,7 +64,7 @@ trait Explicit {
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
   def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
   def sameDoc[A](expr: Doc, expected: Doc): Unit                       = same(expr.show, expected.show)
-  def seqShows[A: Show](expected: String, xs: Each[A]): NamedProp      = preNewline(expected) -> (expected =? pp"${ xs mkDoc ", " }")
+  def seqShows[A: Show](expected: String, xs: View[A]): NamedProp      = preNewline(expected) -> (expected =? (xs joinWith ", "))
   def showsAs[A: Show](expected: String, x: A): NamedProp              = preNewline(expected) -> (expected =? pp"$x")
 
   def same[A : Eq : Show](expr: A, expected: A): Unit = {
@@ -107,8 +107,7 @@ trait Implicit extends Explicit {
     def toScalacheck: Buildable[A, CC] = new Buildable[A, CC] { def builder = z.scalaBuilder }
   }
   implicit class TestViewsOps[A, CC[X]](z: ViewsAs[A, CC[A]]) {
-    import scala.collection.Traversable
-    def toScalacheck: CC[A] => Traversable[A] = z viewAs _ trav
+    def toScalacheck: CC[A] => scTraversable[A] = z viewAs _ trav
   }
 
   implicit def buildsBuildable[A, CC[X]](implicit z: Builds[A, CC[A]]): Buildable[A, CC] =

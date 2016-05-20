@@ -4,7 +4,7 @@ package tests
 import api._, std._, all._, StdShow._
 
 class StringViewTests {
-  val ad: String    = pp"${ 'a' to 'd' mkDoc "" }"
+  val ad: String    = ('a' to 'd').m.joinString
   val da: String    = ad.reverseChars
   val adda1: String = view(ad, da).join
   val adda2: String = view(ad, "c", da).join
@@ -21,6 +21,9 @@ class StringViewTests {
     assert(isPalindrome(adda2), adda2)
     assert(!isEvenPalindrome(adda2), adda2)
     assert(!isPalindrome(adda3), adda3)
+    sameDoc("[a].".r findAll adda3, "[ ab, ad ]")
+    sameDoc("abcdefg" stripPrefix "a..", "abcdefg")
+    sameDoc("abcdefg" stripPrefix "a..".r, "defg")
   }
 }
 
