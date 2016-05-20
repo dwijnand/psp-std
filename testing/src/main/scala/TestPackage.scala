@@ -96,7 +96,7 @@ trait Implicit extends Explicit {
   implicit def arbitraryPint: Arb[Pint]           = Arb(gen.int ^^ Pint)
   implicit def assertions: Assertions             = ImmediateTraceAssertions
   implicit def hashPint: Hash[Pint]               = Relation.Inherited
-  implicit def showPint: Show[Pint]               = inheritShow
+  implicit def showPint: Show[Pint]               = Show.Inherited
   implicit def showScalacheckResult: Show[Result] = Show(r => pretty(r, Params(0)))
 
   implicit def arbProduct[A1: Arb, A2: Arb](implicit z: Arb[(A1, A2)]): Arb[A1->A2] = Arb(z.arbitrary ^^ (x => x))

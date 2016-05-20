@@ -3,7 +3,7 @@ package std
 
 import api._, all._
 
-class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
+class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
   def byEquals: EqViewOps[A]         = by(Relation.Inherited)
   def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)

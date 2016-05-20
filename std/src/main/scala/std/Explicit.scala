@@ -50,7 +50,6 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
 
   def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
-  def inheritShow[A]: Show[A]                      = Show.Inherited
   def lformat[A](n: Int): A => String              = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)
   def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x

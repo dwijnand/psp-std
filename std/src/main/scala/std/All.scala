@@ -266,7 +266,7 @@ class NonValueImplicitClasses extends AllExplicit {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
   }
-  implicit class SplittableValueSameTypeOps[R, A](private val x: R)(implicit z: Splitter[R, A, A]) {
+  implicit class SplittableValueSameTypeOps[A, R](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Each[A]              = Each pair x
   }

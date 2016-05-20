@@ -52,7 +52,7 @@ object INREPL {
   implicit final class ReplOpsWithShow[A, R](val xs: R)(implicit val z: ViewsAs[A, R]) {
     private def run(f: View[A] => View[String]): R = sideEffect(xs, f(z viewAs xs) foreach (x => println(x)))
 
-    def > (implicit z: Show[A] = inheritShow)        = run(_ map z.show)
+    def > (implicit z: Show[A] = Show.Inherited)     = run(_ map z.show)
     def >>(implicit z: Show[A])                      = run(_ map z.show)
     def !>(implicit ord: Order[A], z: Show[A]): Unit = run(_.sort map z.show)
   }

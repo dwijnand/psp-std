@@ -87,7 +87,7 @@ trait StdConstructors {
   def lazyView[A](expr: => View[A]): View[A]                         = inView(expr foreach _)
   def rview[A, R](xs: A*): IdView[A, R]                              = new IdView(elems(xs: _*))
   def view[A](xs: A*): View[A]                                       = new IdView(Each.elems(xs: _*))
-  def viewsAs[R, A](f: R => Each[A]): ViewsAs[A, R]                  = new ViewsAs(x => new IdView(f(x)))
+  def viewsAs[A, R](f: R => Each[A]): ViewsAs[A, R]                  = new ViewsAs(x => new IdView(f(x)))
 
   def arr[A: CTag](xs: A*): Array[A]      = xs.toArray[A]
   def vec[A](xs: A*): Vec[A]              = elems(xs: _*)

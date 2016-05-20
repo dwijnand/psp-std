@@ -25,11 +25,11 @@ trait StdOps0 {
   implicit def unconvertViewToRepr[A, R](xs: View[A])(implicit z: Builds[A, R]): R = z build xs
 }
 trait StdOps1 extends StdOps0 {
-  implicit def opsAlreadyView[A](x: View[A]): ViewOps[View[A], A]             = new ViewOps(x)
-  implicit def opsView[R, A](xs: R)(implicit z: ViewsAs[A, R]): ViewOps[R, A] = new ViewOps(z viewAs xs)
+  implicit def opsAlreadyView[A](x: View[A]): ViewOps[A, View[A]]             = new ViewOps(x)
+  implicit def opsView[A, R](xs: R)(implicit z: ViewsAs[A, R]): ViewOps[A, R] = new ViewOps(z viewAs xs)
   implicit def opsView2D[A](x: View2D[A]): View2DOps[A]                       = new View2DOps(x)
   implicit def opsWrapString(x: String): Pstring                              = new Pstring(x)
 }
 trait StdOps extends StdOps1 {
-  implicit def opsIdView[R, A](xs: R)(implicit ev: R <:< Each[A]): ViewOps[R, A] = new ViewOps(new IdView(ev(xs)))
+  implicit def opsIdView[A, R](xs: R)(implicit ev: R <:< Each[A]): ViewOps[A, R] = new ViewOps(new IdView(ev(xs)))
 }

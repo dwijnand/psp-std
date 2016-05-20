@@ -92,13 +92,13 @@ case class ShowInterpolator(val stringContext: StringContext) {
   *  Not printing the way scala does.
   */
 trait StdShow extends StdShow1 {
-  implicit def showBoolean: Show[Boolean]     = inheritShow
-  implicit def showChar: Show[Char]           = inheritShow
-  implicit def showDouble: Show[Double]       = inheritShow
-  implicit def showInt: Show[Int]             = inheritShow
-  implicit def showLong: Show[Long]           = inheritShow
-  implicit def showString: Show[String]       = inheritShow
-  implicit def showThrowable: Show[Throwable] = inheritShow
+  implicit def showBoolean: Show[Boolean]     = Show.Inherited
+  implicit def showChar: Show[Char]           = Show.Inherited
+  implicit def showDouble: Show[Double]       = Show.Inherited
+  implicit def showInt: Show[Int]             = Show.Inherited
+  implicit def showLong: Show[Long]           = Show.Inherited
+  implicit def showString: Show[String]       = Show.Inherited
+  implicit def showThrowable: Show[Throwable] = Show.Inherited
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
