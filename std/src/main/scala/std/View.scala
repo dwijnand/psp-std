@@ -40,13 +40,14 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def tail: View[A]    = xs drop 1
   def tails: View2D[A] = view(xs) ++ zcond(!isEmpty, tail.tails)
 
-  def joinLines(implicit z: Show[A]): String         = mk_s(EOL)(z)
-  def joinWords(implicit z: Show[A]): String         = mk_s(" ")(z)
-  def join_s(implicit z: Show[A]): String            = mk_s("")(z)
-  def mk_s(sep: Char)(implicit z: Show[A]): String   = mk_s(sep.to_s)
-  def mk_s(sep: String)(implicit z: Show[A]): String = mkDoc(Doc(sep)).render
+  def joinLines(implicit z: Show[A], r: Renderer): String         = mk_s(EOL)
+  def joinWords(implicit z: Show[A], r: Renderer): String         = mk_s(" ")
+  def join_s(implicit z: Show[A], r: Renderer): String            = mk_s("")
+  def mk_s(sep: Char)(implicit z: Show[A], r: Renderer): String   = mk_s(sep.to_s)
+  def mk_s(sep: String)(implicit z: Show[A], r: Renderer): String = r show mkDoc(Doc(sep))
 
-  def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = xs map (x => Doc(z show x)) mkDoc sep
+  def asDocs(implicit z: Show[A]): View[Doc]    = xs map (x => Doc(x))
+  def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = asDocs zreducel (_ ~ sep ~ _)
 
   def max(implicit z: Order[A]): A = reducel(all.max)
   def min(implicit z: Order[A]): A = reducel(all.min)
@@ -57,7 +58,7 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def find(p: ToBool[A]): Option[A]                   = foldl(none[A])((res, x) => cond(p(x), return some(x), res))
   def forall(p: ToBool[A]): Boolean                   = !exists(!p)
   def indexWhere(p: ToBool[A]): Index                 = xs.zipIndex first { case (x, i) if p(x) => i }
-  def isEmpty: Boolean                                = xs.size.isZero || !exists(true)
+  def isEmpty: Boolean                                = xs.size.isZero || !exists(ConstantTrue)
   def last: A                                         = xs takeRight 1 head
   def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
   def zhead(implicit z: Empty[A]): A                  = zcond(!isEmpty, xs.head)

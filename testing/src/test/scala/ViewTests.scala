@@ -48,7 +48,7 @@ class IntViewTests {
     same(ints forall (_ < 10), false)
     same(ints forall (_ < 11), true)
     same(ints head, 1)
-    same(ints indexWhere (_ < 1), NoIndex)
+    same(ints indexWhere (_ < 1), emptyValue[Index])
     same(ints indexWhere (_ > 1), Index(1))
     same(ints indexWhere (_ > 1), Nth(2))
     same(ints last, 10)

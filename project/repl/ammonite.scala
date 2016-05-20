@@ -20,7 +20,7 @@ object ReplMain {
 /** This sets up the ammonite repl with the correct compiler settings
  *  and desired namespace elements and aesthetics.
  */
-class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", Nil) {
+class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", elems()) {
   override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
   override val prompt   = Ref("psp> ")
 

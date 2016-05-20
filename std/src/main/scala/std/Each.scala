@@ -96,6 +96,7 @@ object Each {
   def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]         = new Suspend(Cont[A -> B](xs.entrySet map (_.toPair) foreach _) sized xs.size)
   def java[A](xs: jIterable[A]): Each[A]                  = new Suspend(Cont[A](xs.iterator foreach _))
 
+  def scalaOnce[A](xs: GTOnce[A]): Each[A] = scala(xs.toTraversable)
   def scala[A](xs: sCollection[A]): Each[A] = xs match {
     case xs: sciIndexedSeq[_] => intIndexed(xs.apply, 0, xs.length)
     case _                    => construct(xs.size, xs.foreach)

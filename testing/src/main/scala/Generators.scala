@@ -19,7 +19,7 @@ package object gen {
   def eachOfN[A](n: Int, g: Gen[A]): Gen[Each[A]]  = containerOfN[Each, A](n, g)(?, _.trav)
   def eachOf[A](g: Gen[A]): Gen[Each[A]]           = containerOf[Each, A](g)(?, _.trav)
 
-  def index: Gen[Index]         = frequency(10 -> zeroPlusIndex, 1 -> NoIndex)
+  def index: Gen[Index]         = frequency(10 -> zeroPlusIndex, 1 -> emptyValue[Index])
   def int: Gen[Int]             = genInt(MinInt, MaxInt)
   def zeroPlusIndex: Gen[Index] = genIndex(0, MaxLong)
 

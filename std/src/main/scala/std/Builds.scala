@@ -8,6 +8,9 @@ final class Builds[-A, +R](val f: View[A] => R) {
   def map[S](g: R => S): Builds[A, S]       = Builds(g compose f)
   def build(xs: View[A]): R                 = f(xs)
   def build(xs: Each[A]): R                 = build(new IdView(xs))
+
+  def scalaBuilder() = scala.Vector.newBuilder[A] mapResult (xs => build(xs.m))
+
 }
 final class ViewsAs[A, R](val f: R => View[A]) extends AnyVal {
   def viewAs(xs: R): IdView[A, R] = new IdView(f(xs))

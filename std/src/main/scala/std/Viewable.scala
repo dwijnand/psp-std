@@ -74,7 +74,7 @@ object Operable {
       case x: ShowDirect => x.to_s
       case _             => "<f>"
     }
-    def str(in: Doc, name: Doc, arg: Doc): Doc = fpp"$in%s $name%7s $arg%-8s"
+    def str(in: Doc, name: Doc, arg: Doc): Doc = fdoc"$in%s $name%7s $arg%-8s"
 
     def apply[A, B](in: Doc)(op: Op[A, B]): Doc = op match {
       case Identity(label) => label

@@ -23,12 +23,12 @@ class OperationCounts extends ScalacheckBundle {
   def chooseSmall = gen.genLong(1, max / 20)
   def chooseRange = gen.indexRangeFrom(max / 2, max)
 
-  private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, label)
+  private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, () => label)
 
-  private def divides(n: Long)  = lop(s"/$n", (_: Long) % n === 0)
-  private def less(n: Long)     = lop(s"<$n", (_: Long) < n)
-  private def multiply(n: Long) = lop(s"*$n", (_: Long) * n)
-  private def pairup            = lop("=>(x,x)", (x: Long) => view(x, x))
+  private def divides(n: Long)  = lop(pp"/$n", (_: Long) % n === 0)
+  private def less(n: Long)     = lop(pp"<$n", (_: Long) < n)
+  private def multiply(n: Long) = lop(pp"*$n", (_: Long) * n)
+  private def pairup            = lop(pp"=>(x,x)", (x: Long) => view(x, x))
 
   def genOneOp: Gen[LongOp] = oneOf(
     lowHalf     ^^ (n => Drop[Long](n)),
@@ -56,7 +56,7 @@ class OperationCounts extends ScalacheckBundle {
     lazy val passed                   = sideEffect(isPass, maybeShow())
 
     def compare(lhs: Long, rhs: Long): Doc =
-      cond(lhs <= rhs, "<=", ">") |> (op => fpp"$lhs%3s $op%-2s $rhs%-3s")
+      cond(lhs <= rhs, "<=", ">") |> (op => fdoc"$lhs%3s $op%-2s $rhs%-3s")
 
     def counts1 = compare(views.accesses, eager.accesses)
     def counts2 = compare(views.allocations, eager.allocations)
@@ -65,9 +65,8 @@ class OperationCounts extends ScalacheckBundle {
       case scala.Right(res) => res
       case scala.Left(err)  => err
     }
-    def op_s   = fpp"$op%-70s"
-    def pass_s = doc"|$op_s  $counts1  $counts2  // $res_s"
-    def fail_s = doc"Inconsistent results for $op: $res_s"
+    def pass_s = fp"|$op%-70s  $counts1%s  $counts2%s  // $res_s%s"
+    def fail_s = pp"Inconsistent results for $op: $res_s"
 
     private def maybeShow(): Unit = {
       if (!isPass)
@@ -81,8 +80,8 @@ class OperationCounts extends ScalacheckBundle {
 
   def compositeProp: Prop = forAll((_: CompositeOp).passed) minSuccessful minSuccessful
   def props() = vec[NamedProp](
-    doc"Showing $maxDisplay/$minSuccessful ops, compares accesses/allocations views v. eager".render -> Prop(true),
-    "views never performs more accesses or allocations than eager" -> compositeProp
+    pp"Showing $maxDisplay/$minSuccessful ops, compares accesses/allocations views v. eager" -> Prop(true),
+    pp"views never performs more accesses or allocations than eager" -> compositeProp
   )
 }
 
@@ -99,15 +98,13 @@ object OperableCounter {
 
   case class ViewOpCount(label: String, accesses: Long, allocations: Long)
 
-  class OpCount(label: String) extends ShowSelf {
+  class OpCount(label: String) {
     private var _access, _alloc    = 0L
 
     def reset(): Unit              = sideEffect(_access = 0, _alloc = 0)
     def access(vdex: Vdex): Unit   = _access += 1
     def alloc(size: Precise): Unit = _alloc += size.getLong
     def result(): ViewOpCount      = ViewOpCount(label, _access, _alloc)
-
-    def to_s = s"$label: $result"
   }
 
   implicit object OperableCountXs extends Operable[CountXs] {

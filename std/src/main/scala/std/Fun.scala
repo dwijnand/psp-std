@@ -60,7 +60,7 @@ sealed abstract class Fun[-A, +B] { self =>
 object Fun {
   final case class Opaque[-A, +B](f: A => B)                      extends Fun[A, B]
   final case class Defaulted[-A, +B](g: A => B, u: Fun[A, B])     extends Fun[A, B]
-  final case class Filtered[-A, +B](p: A => Bool, u: Fun[A, B])   extends Fun[A, B]
+  final case class Filtered[-A, +B](p: ToBool[A], u: Fun[A, B])   extends Fun[A, B]
   final case class OrElse[-A, +B](f: Fun[A, B], g: Fun[A, B])     extends Fun[A, B]
   final case class AndThen[-A, B, +C](f: Fun[A, B], g: Fun[B, C]) extends Fun[A, C]
   final case class FiniteMap[A, +B](pm: Pmap[A, B])               extends Fun[A, B]

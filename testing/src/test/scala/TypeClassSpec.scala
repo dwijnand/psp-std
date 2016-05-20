@@ -3,6 +3,7 @@ package tests
 
 import std._, api._, all._, StdShow._
 import Unsafe.promoteIndex
+import scala.collection.immutable.{ List => sciList, Vector => sciVector }
 
 class EmptySpec extends ScalacheckBundle {
   def bundle = "Empty"
