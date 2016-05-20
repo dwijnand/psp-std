@@ -117,10 +117,7 @@ class NonValueImplicitClasses extends AllExplicit {
       case Precise(n) => n.toInt
       case s          => illegalArgumentException(s)
     }
-    def isNonZero     = loBound =!= Zero
-    def isZero        = lhs === Zero
-    def atLeast: Size = Size.Range(lhs, Infinite)
-    def atMost: Size  = Size.Range(Zero, lhs)
+    def isZero        = lhs === _0
 
     def loBound: Atomic = lhs match {
       case Bounded(lo, _) => lo
@@ -140,7 +137,7 @@ class NonValueImplicitClasses extends AllExplicit {
       *  of the two sizes.
       */
     def union(rhs: Size): Size     = Size.Range(lhs max rhs, lhs + rhs)
-    def intersect(rhs: Size): Size = Size.Range(Size.Zero, lhs min rhs)
+    def intersect(rhs: Size): Size = Size.Range(Size._0, lhs min rhs)
     def diff(rhs: Size): Size      = Size.Range(lhs - rhs, lhs)
 
     def +(rhs: Size): Size = (lhs, rhs) match {
@@ -152,7 +149,7 @@ class NonValueImplicitClasses extends AllExplicit {
     }
     def -(rhs: Size): Size = (lhs, rhs) match {
       case (Precise(l), Precise(r))                 => Precise(l - r)
-      case (Precise(_), Infinite)                   => Zero
+      case (Precise(_), Infinite)                   => _0
       case (Infinite, Precise(_))                   => Infinite
       case (Infinite, Infinite)                     => Unknown
       case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
@@ -203,8 +200,10 @@ class NonValueImplicitClasses extends AllExplicit {
     def min(rhs: Precise): Precise = all.min(size, rhs)
   }
   implicit class PartialOps[A, B](pf: A ?=> B) {
-    def applyOr(x: A, alt: => B): B           = if (pf isDefinedAt x) pf(x) else alt
+    def contains(x: A): Bool                  = pf isDefinedAt x
+    def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
     def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
+    def toPartial: Fun.Partial[A, B]          = Fun partial pf
   }
 
   implicit class ByteArrayOps(private val xs: Array[Byte]) {

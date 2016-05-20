@@ -27,7 +27,7 @@ class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def mapIf(pf: A ?=> A): View[A]                      = xs map (x => pf.applyOr(x, x))
   def slice(r: VdexRange): View[A]                     = zcond(!r.isEmpty, slice(r.head, r.size))
   def slice(start: Vdex, len: Precise): View[A]        = xs drop start.excluding take len
-  def sliceIndex(start: Vdex): View[A]                 = slice(start, Size.One)
+  def sliceIndex(start: Vdex): View[A]                 = slice(start, Size._1)
   def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
   def sort(implicit z: Order[A]): View[A]              = xs.toRefArray.inPlace.sort
   def sortBy[B: Order](f: A => B): View[A]             = sort(orderBy[A](f))

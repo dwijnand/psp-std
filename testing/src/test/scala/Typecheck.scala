@@ -34,12 +34,13 @@ class Typecheck extends ScalacheckBundle {
   def divide(what: String, xs: Vec[Typechecked], expectedTypecheck: Precise): NamedProp = {
     val good -> bad = xs partition (_.typechecks) mapBoth (_.force)
 
-    def failLabel = pp"good:\n  ${ good mkDoc "\n  " }\n\nbad:\n  ${ bad mkDoc "\n  " }\n"
+    def good_s = "good:".lit +: good.asDocs mkDoc "\n  "
+    def bad_s  = "bad:".lit +: bad.asDocs mkDoc "\n  "
+    def label  = pp"$good_s\n\n$bad_s\n"
 
-    // ("good:\n  " + (good mk_s "\n  ") + "\n\nbad:\n  " + (bad mk_s "\n  ") + "\n")
     NamedProp(
       pp"$expectedTypecheck/${xs.size} expressions from $what should typecheck",
-      Prop(expectedTypecheck === good.size) :| failLabel
+      Prop(expectedTypecheck === good.size) :| label
     )
   }
 

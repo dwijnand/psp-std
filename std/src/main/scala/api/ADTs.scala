@@ -3,7 +3,7 @@ package api
 
 /** Sealed ADTs embedded in the API bedrock.
   */
-import Api._
+import Api._, Size._
 
 /** The Size hierarchy is:
   *                     Size
@@ -21,7 +21,10 @@ import Api._
   *  Invariants:
   *  - Precise is non-negative
   */
-sealed trait Size
+sealed trait Size {
+  def atLeast: Size = Range(this, Infinite)
+  def atMost: Size  = Range(_0, this)
+}
 sealed trait Atomic extends Size
 final case object Infinite extends Atomic
 final class Precise private[api](val getLong: Long) extends Atomic {
@@ -50,10 +53,10 @@ object Precise extends (Long => Precise) {
 }
 
 object Size {
-  val Zero     = new Precise(0)
-  val One      = new Precise(1)
-  val Unknown  = Bounded(Zero, Infinite)
-  val NonEmpty = Bounded(One, Infinite)
+  val _0       = new Precise(0)
+  val _1       = new Precise(1)
+  val Unknown  = _0.atLeast
+  val NonEmpty = _1.atLeast
 
   def equiv(lhs: Size, rhs: Size): Bool = (lhs, rhs) match {
     case (Precise(l), Precise(r))           => l == r
@@ -76,7 +79,6 @@ object Size {
   def apply(size: Long): Precise = new Precise(if (size < 0L) 0L else size)
 
   object Range {
-
     /** Preserving associativity/commutativity of Size prevents us from
       *  modifying values to enforce any invariants on Bounded.
       */

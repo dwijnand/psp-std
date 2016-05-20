@@ -82,10 +82,16 @@ class ViewBasic extends ScalacheckBundle {
     val len  = 100
     val half = len / 2
 
-    def pair(r: LongRange): Gen[Index -> Precise] = for {
-      i <- gen.genLong(0, half)
-      s <- gen.genLong(0, half)
-    } yield Index(i) -> Size(s)
+    def pair(r: LongRange): Gen[Index -> Precise] =
+      (gen.range(0, half) zipWith gen.range(0, half))((i, s) => Index(i) -> Size(s))
+
+
+    // (i, s) => Index(i) -
+
+    // for {
+    //   i <- gen.range(0, half)
+    //   s <- gen.range(0, half)
+    // } yield Index(i) -> Size(s)
 
     implicit val arbRange = Arb[LongRange](Gen const (0L until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))

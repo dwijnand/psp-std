@@ -29,7 +29,7 @@ sealed abstract class Interval extends (Vdex => Long) {
   def slice(r: VdexRange): Closed              = zcond(!r.isEmpty, slice(r.head, r.size))
 }
 object Interval {
-  val Empty = new Closed(0L, Size.Zero)
+  val Empty = new Closed(0L, Size._0)
 
   def unapply(r: Interval): Some[Long -> Atomic] = Some(r.startLong -> r.size)
 

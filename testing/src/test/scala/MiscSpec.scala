@@ -80,7 +80,7 @@ class StringExtensions extends ScalacheckBundle {
 
   // dropRight and takeRight have the domain limited because of a scala bug with
   // take/dropRight with values around MinInt.
-  def mostInts = arb[Int] filter (_ > MinInt + 5000)
+  def mostInts = ?[Arb[Int]] filter (_ > MinInt + 5000)
 
   def props: Direct[NamedProp] = vec(
     "stripSuffix" -> newProp2[String](_ stripSuffix _)(_ stripSuffix _),

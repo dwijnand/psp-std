@@ -33,6 +33,9 @@ class LabeledFunction[-T, +R](f: T => R, str: () => String) extends (T ?=> R) wi
 sealed abstract class <:<[-From, +To] extends (From => To) { }
 final class conformance[A] extends <:<[A, A] { def apply(x: A): A = x }
 
+object IsClass {
+  def unapply[A: CTag](x: Any): Option[A] = classFilter[A] lift x
+}
 object +: {
   def unapply[A](xs: View[A]): Opt[A -> View[A]] = zcond(!xs.isEmpty, some(xs.head -> xs.tail))
 }

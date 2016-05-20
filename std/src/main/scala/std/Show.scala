@@ -118,15 +118,15 @@ trait StdShow extends StdShow1 {
 
   implicit def showInterval: Show[Interval] = Show {
     case Interval(start, Infinite) => pp"[$start..)"
-    case Interval(_, Size.Zero)    =>   "[0,0)"
-    case Interval(start, Size.One) => pp"[$start]"
+    case Interval(_, Size._0)      => "[0,0)"
+    case Interval(start, Size._1)  => pp"[$start]"
     case Interval(start, end)      => pp"[$start..${ end - 1 }]"
   }
 
   implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
-    case Consecutive(hd, None)      => pp"[$hd..)"
-    case Consecutive(hd, Some(lst)) => pp"[$hd..$lst]"
-    case _                          =>   "[]"
+    case Consecutive(s, None)    => pp"[$s..)"
+    case Consecutive(s, Some(e)) => pp"[$s..$e]"
+    case _                       => "[]"
   }
 }
 trait StdShow0 {

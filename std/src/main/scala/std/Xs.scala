@@ -31,7 +31,7 @@ object Xs {
 
   implicit def sciListRepOf[A]: RepOf[sciList[A], sciList, A] =
     new RepInfoTyped[sciList[A], sciList, A] {
-      def sizeOf(xs: Repr): Size                                     = cond(xs.isEmpty, Size.Zero, Size.NonEmpty)
+      def sizeOf(xs: Repr): Size                                     = cond(xs.isEmpty, Size._0, Size.NonEmpty)
       def foreachView[B](xs: Repr, op: Op[A, B], f: B => Unit): Unit = op(xs.m) foreach f
     }
 

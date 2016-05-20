@@ -70,6 +70,7 @@ object Fun {
   class Partial[-A, +B](p: ToBool[A], f: A => B) extends (A ?=> B) {
     def isDefinedAt(x: A): Bool = p(x)
     def apply(x: A): B          = f(x)
+    def unapply(x: A): Opt[B]   = cond(p(x), some(f(x)), none())
   }
 
   def apply[A, B](f: A => B): Opaque[A, B] = Opaque(f)
