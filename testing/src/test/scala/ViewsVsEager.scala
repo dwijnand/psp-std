@@ -8,20 +8,19 @@ class OperationCounts extends ScalacheckBundle {
   import Op._
 
   type LongOp = Op[Long, Long]
-  def numComposite = gen.range(2, 4)
 
   private[this] var displaysRemaining = maxDisplay
 
   def bundle                 = "Operation Counts"
   def max: Long              = 100L
   def minSuccessful: Precise = 1000
-
   def maxDisplay: Precise    = 20
-  def chooseMax   = gen.range(0L, max)
-  def lowHalf     = gen.range(0L, max / 2)
-  def highHalf    = gen.range(max / 2, max)
-  def chooseSmall = gen.range(1L, max / 20)
-  def chooseRange = gen.indexRangeFrom(max / 2, max)
+
+  def fullRange = 0L upTo max
+  def lowHalf   = 0L upTo max / 2
+  def highHalf  = max / 2 upTo max
+  def genSmall  = 1L upTo max / 20
+  def genRange  = (genSmall zipWith fullRange)(indexRange)
 
   private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, () => label)
 
@@ -31,19 +30,19 @@ class OperationCounts extends ScalacheckBundle {
   private def pairup            = lop(pp"=>(x,x)", (x: Long) => view(x, x))
 
   def genOneOp: Gen[LongOp] = oneOf(
-    lowHalf     ^^ (n => Drop[Long](n)),
-    highHalf    ^^ (n => Take[Long](n)),
-    chooseMax   ^^ (n => DropRight[Long](n)),
-    chooseMax   ^^ (n => TakeRight[Long](n)),
-    lowHalf     ^^ (n => DropWhile(less(n))),
-    lowHalf     ^^ (n => TakeWhile(less(n))),
-    chooseSmall ^^ (n => Maps(multiply(n))),
-    chooseSmall ^^ (n => Filter(divides(n))),
-    chooseSmall ^^ (n => Collect(Fun.partial(divides(n), (_: Long) / n))),
-    chooseSmall ^^ (n => FlatMap(pairup)),
-    chooseRange ^^ (r => Slice[Long](r))
+    lowHalf   ^^ (n => Drop[Long](n)),
+    highHalf  ^^ (n => Take[Long](n)),
+    fullRange ^^ (n => DropRight[Long](n)),
+    fullRange ^^ (n => TakeRight[Long](n)),
+    lowHalf   ^^ (n => DropWhile(less(n))),
+    lowHalf   ^^ (n => TakeWhile(less(n))),
+    genSmall  ^^ (n => Maps(multiply(n))),
+    genSmall  ^^ (n => Filter(divides(n))),
+    genSmall  ^^ (n => Collect(Fun.partial(divides(n), (_: Long) / n))),
+    genSmall  ^^ (n => FlatMap(pairup)),
+    genRange  ^^ (r => Slice[Long](r))
   )
-  def genCompositeOp: Gen[LongOp] = genOneOp * numComposite ^^ (_ reducel (_ ~ _))
+  def genCompositeOp: Gen[LongOp] = genOneOp * (2 upTo 4) ^^ (_ reducel (_ ~ _))
 
   def composite: Gen[CompositeOp] = genCompositeOp ^^ CompositeOp
 
@@ -129,7 +128,7 @@ object OperableCounter {
 
       val res = r1 === r2 match {
         case true  => scala.Right(r1)
-        case false => scala.Left(s"$r1 != $r2")
+        case false => scala.Left(pp"$r1 != $r2")
       }
       ((res, c1.result, c2.result))
     }

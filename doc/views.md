@@ -59,7 +59,7 @@ Elapsed: 307.322 ms
 res0: String = 4, 5, 6
 
 // Now with psp. Typically about 3ms to complete.
-scala> timed(xs map (_ + 1) map (_ + 1) map (_ + 1) take 3 mk_s ", ")
+scala> timed(xs map (_ + 1) map (_ + 1) map (_ + 1) take 3 joinWith ", ")
 Elapsed: 3.529 ms
 res1: String = 4, 5, 6
 ```
@@ -76,7 +76,7 @@ java.lang.ArithmeticException: / by zero
   at $anonfun$1.apply$mcII$sp(<console>:23)
 
 // In psp, success
-scala> xs map (5 / _) takeRight 1 mk_s ""
+scala> xs map (5 / _) takeRight 1 joinString
 res0: String = 5
 ```
 
@@ -87,7 +87,7 @@ scala> val xs = Each.unfold(BigInt(1))(_ + 1)
 xs: psp.std.Each.Unfold[scala.math.BigInt] = Unfold(1)
 
 // We drop 1000 elements off the right side of infinity, then take the first three.
-scala> xs dropRight 1000 take 3 mk_s ", "
+scala> xs dropRight 1000 take 3 joinWith ", "
 res0: String = 1, 2, 3
 
 // Try it with a Stream view (it does terminate with Stream.)

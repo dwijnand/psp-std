@@ -99,7 +99,7 @@ class StringExtensions extends ScalacheckBundle {
     expectValue("Bob")("bob".capitalize),
     expectValue("Bob johnson")("bob johnson".capitalize),
     expectValue("zbc")("abc" mapIf pf force),
-    expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines mk_s ' '),
+    expectValue("Bob Johnson")("bob\njohnson".mapLines(_.capitalize).lines.joinWords),
     expectValue("\u0001\u0002b\u0020b\u0003".sanitize)("??b b?")
   )
 }

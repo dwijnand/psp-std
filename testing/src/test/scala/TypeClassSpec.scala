@@ -66,8 +66,6 @@ class ViewBasic extends ScalacheckBundle {
   val s4 = new Bippy("def", 3)
   val strs = sciVector(s1, s2, s3, s4)
 
-  // def closure              = transitiveClosure(parray)(x => view(x.init.force, x.tail.force))
-  // def closureBag           = closure flatMap (x => x) toBag // That's my closure bag, baby
   def xxNumbers: View[Int] = openRange(0)(_.toInt).m grep """^(.*)\1""".r
 
   def props = miscProps ++ vecProps ++ rangeProps
@@ -82,16 +80,7 @@ class ViewBasic extends ScalacheckBundle {
     val len  = 100
     val half = len / 2
 
-    def pair(r: LongRange): Gen[Index -> Precise] =
-      (gen.range(0, half) zipWith gen.range(0, half))((i, s) => Index(i) -> Size(s))
-
-
-    // (i, s) => Index(i) -
-
-    // for {
-    //   i <- gen.range(0, half)
-    //   s <- gen.range(0, half)
-    // } yield Index(i) -> Size(s)
+    def pair(r: LongRange) = (0 upTo half map index) zip (0 upTo half map precise)
 
     implicit val arbRange = Arb[LongRange](Gen const (0L until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))
@@ -134,8 +123,6 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray.m ++ parray.m),
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", pvector ++ pvector),
     showsAs("[1..)", punfold),
-    // showsAs("[ 1, 2, 3 ], [ 1, 2 ], [ 1 ], [  ], [ 2 ], [ 2, 3 ], [ 3 ]", closure mk_s ", "),
-    // showsAs("1 -> 3, 2 -> 4, 3 -> 3", closureBag.entries.to[Vec[Int -> Precise]] mk_s ", "),
     seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),
     seqShows("11, 22, 33, 44", indexRange(1, 50) grep """(.)\1""".r),
     seqShows("99, 1010, 1111", xxNumbers.slice(8, Size(3))),

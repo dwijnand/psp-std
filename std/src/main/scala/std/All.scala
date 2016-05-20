@@ -75,6 +75,7 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
   implicit class StringViewOps(private val xs: View[String]) extends AnyVal {
+    def joinWith(ch: Char): String    = joinWith(ch.to_s)
     def joinWith(sep: String): String = xs zreducel (_ + sep + _)
     def join: String                  = xs joinWith ""
     def joinWords: String             = xs map (_.trim) joinWith " "
@@ -163,6 +164,7 @@ class NonValueImplicitClasses extends AllExplicit {
     def toUpper   = jl.Character toUpperCase ch
     def to_s      = ch.toString
 
+    def r: Regex                          = Regex(ch)
     def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
     def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
     def until(end: Char): CharRange       = ch.toLong until end.toLong map (_.toChar)

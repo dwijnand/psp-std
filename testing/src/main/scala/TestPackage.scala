@@ -139,6 +139,12 @@ trait Implicit extends Explicit {
     def stream: Each[A]                           = Each continually self.sample flatMap (_.toVec)
     def take(n: Int): Vec[A]                      = stream take n toVec
   }
+  implicit class TestLongOps(val self: Long) {
+    def upTo(hi: Long): Gen[Long] = Gen.choose(self, hi)
+  }
+  implicit class TestIntOps(val self: Int) {
+    def upTo(hi: Int): Gen[Int] = Gen.choose(self, hi)
+  }
   implicit class PropOps(p: Prop) {
     def mapParams(f: ToSelf[TestParams]): Prop = new NamedProp.MapParams(p, f)
     def minSuccessful(size: Precise): Prop     = mapParams(_ withMinSuccessfulTests size.getLong.toInt)

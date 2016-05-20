@@ -2,7 +2,7 @@ package psp
 package tests
 
 import Gen._
-import psp._, std._, all._, api._
+import psp._, std._, all._, api._, Size._
 
 object gen {
   class TextGenerator(val letter: Gen[Char], charsInWord: Gen[Int], wordsInLine: Gen[Int]) {
@@ -10,27 +10,17 @@ object gen {
     def line: Gen[String]                 = word * wordsInLine ^^ (_.m.joinWords)
     def nLines(n: Int): Gen[View[String]] = line * n
   }
-  object text extends TextGenerator(alphaNumChar, range(1, 8), range(3, 7))
+  object text extends TextGenerator(alphaNumChar, 1 upTo 8, 3 upTo 7)
 
-  def range(lo: Int, hi: Int): Gen[Int]    = Gen.choose(lo, hi)
-  def range(lo: Long, hi: Long): Gen[Long] = Gen.choose(lo, hi)
+  // def range(lo: Int, hi: Int): Gen[Int]    = Gen.choose(lo, hi)
+  // def range(lo: Long, hi: Long): Gen[Long] = Gen.choose(lo, hi)
 
+  def nats: Gen[Long]   = 0L upTo MaxLong
+  def ints: Gen[Int]    = MinInt upTo MaxInt
+  def index: Gen[Index] = frequency(10 -> (nats ^^ Index), 1 -> emptyValue[Index])
 
-  def index: Gen[Index]         = frequency(10 -> zeroPlusIndex, 1 -> emptyValue[Index])
-  def int: Gen[Int]             = range(MinInt, MaxInt)
-  def zeroPlusIndex: Gen[Index] = genIndex(0, MaxLong)
-
-  // def genInt(lo: Int, hi: Int): Gen[Int]                       = Gen.choose(lo, hi)
-  // def genLong(lo: Long, hi: Long): Gen[Long]                   = Gen.choose(lo, hi)
-  def genIndex(lo: Long, hi: Long): Gen[Index]                    = range(lo, hi) map Index
-  def longRange(start: Gen[Long], end: Gen[Long]): Gen[LongRange] = (start zipWith end)(_ to _)
-  def indexRangeFrom(s: Long, e: Long): Gen[VdexRange]            = (range(0, s) zipWith range(0, e))(indexRange)
-
-  // longRange(range(0, sMax), range(0, eMax)) ^^ (_ map Index)
-
-  import Size._
-  def precise: Gen[Precise] = chooseNum(1, MaxInt / 2) map (x => Size(x))
-  def atomic: Gen[Atomic]   = frequency(10 -> precise, 1 -> _0, 1 -> Infinite)
+  def precise: Gen[Precise] = frequency(1 -> _0, 1 -> _1, 1 -> Size(MaxInt.toLong * 2), 20 -> (1 upTo 1000 map exp.precise))
+  def atomic: Gen[Atomic]   = frequency(50 -> precise, 1 -> Infinite)
   def bounded: Gen[Size]    = ( for (lo <- precise ; hi <- atomic) yield Range(lo, hi) ) collect classFilter[Bounded]
   def size: Gen[Size]       = oneOf(atomic, bounded)
 }

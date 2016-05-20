@@ -3,51 +3,50 @@ package std
 
 import api._, all._
 
+final case class VCons[A](head: A, tl: () => Foreach[A]) extends Each[A] {
+  def foreach(f: ToUnit[A]): Unit = sideEffect(f(head), tl() foreach f)
+  def size: Size                  = Size.NonEmpty
+}
+
 class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
   def byEquals: EqViewOps[A]         = by(Relation.Inherited)
   def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)
   def byToString: EqViewOps[A]       = by(Relation.ToString)
 
-  def partition(p: ToBool[A]): Split[A]   = Split(xs withFilter p, xs withFilter !p)
+  def partition(p: ToBool[A]): Split[A]   = Split(xs filter p, xs filter !p)
   def span(p: ToBool[A]): Split[A]        = Split(xs takeWhile p, xs dropWhile p)
   def splitAround(idx: Vdex): Split[A]    = splitAt(idx) mapRight (_ tail)
   def splitAt(idx: Vdex): Split[A]        = splitAtTake(idx.excluding)
   def splitAtTake(len: Precise): Split[A] = Split(xs take len, xs drop len)
-  def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail)
+  def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail) // like "xs sliding 2" but better
   def zipIndex: Zip[A, Index]             = zipViews(xs, openIndices)
   def zip[B](ys: View[B]): Zip[A, B]      = zipViews[A, B](xs, ys)
 
-  def +:(head: A): View[A]                             = view(head) ++ xs
-  def :+(last: A): View[A]                             = xs ++ view(last)
-  def dropIndex(idx: Vdex): View[A]                    = splitAround(idx).join
-  def filter(p: ToBool[A]): View[A]                    = xs withFilter p
-  def filterNot(p: ToBool[A]): View[A]                 = xs withFilter !p
-  def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs withFilter (regex isMatch _)
-  def mapIf(pf: A ?=> A): View[A]                      = xs map (x => pf.applyOr(x, x))
-  def slice(r: VdexRange): View[A]                     = zcond(!r.isEmpty, slice(r.head, r.size))
-  def slice(start: Vdex, len: Precise): View[A]        = xs drop start.excluding take len
-  def sliceIndex(start: Vdex): View[A]                 = slice(start, Size._1)
-  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
-  def sort(implicit z: Order[A]): View[A]              = xs.toRefArray.inPlace.sort
-  def sortBy[B: Order](f: A => B): View[A]             = sort(orderBy[A](f))
-  def sortWith(cmp: OrderRelation[A]): View[A]         = sort(Relation order cmp)
-  def takeToFirst(p: ToBool[A]): View[A]               = xs span !p app ((x, y) => x ++ (y take 1))
-  def tee(f: ToUnit[A]): View[A]                       = xs map (x => doto(x)(f))
+  def +:(head: A): View[A]                            = VCons(head, () => xs) // view(head) ++ xs
+  def :+(last: A): View[A]                            = xs ++ view(last)
+  def dropIndex(idx: Vdex): View[A]                   = splitAround(idx).join
+  def filter(p: ToBool[A]): View[A]                   = xs withFilter p
+  def filterNot(p: ToBool[A]): View[A]                = xs filter !p
+  def grep(re: Regex)(implicit z: Show[A]): View[A]   = xs filter (re isMatch _)
+  def mapIf(pf: A ?=> A): View[A]                     = xs map (x => pf.applyOr(x, x))
+  def slice(r: VdexRange): View[A]                    = zcond(!r.isEmpty, slice(r.head, r.size))
+  def slice(start: Vdex, len: Precise): View[A]       = xs drop start.excluding take len
+  def sliceIndex(start: Vdex): View[A]                = slice(start, Size._1)
+  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A] = xs dropWhile p takeWhile q
+  def sort(implicit z: Order[A]): View[A]             = xs.toRefArray.inPlace.sort
+  def sortBy[B: Order](f: A => B): View[A]            = sort(orderBy[A](f))
+  def sortWith(cmp: OrderRelation[A]): View[A]        = sort(Relation order cmp)
+  def takeToFirst(p: ToBool[A]): View[A]              = xs span !p app ((x, y) => x ++ (y take 1))
+  def tee(f: ToUnit[A]): View[A]                      = xs map (x => doto(x)(f))
 
   def init: View[A]    = xs dropRight 1
   def inits: View2D[A] = view(xs) ++ zcond(!isEmpty, init.inits)
   def tail: View[A]    = xs drop 1
   def tails: View2D[A] = view(xs) ++ zcond(!isEmpty, tail.tails)
 
-  // def joinLines(implicit z: Show[A]): Doc = mkDoc(EOL.lit)
-  // def joinWords(implicit z: Show[A]): Doc = mkDoc(" ".lit)
-  // def join_s(implicit z: Show[A]): Doc    = mkDoc("".lit)
-
-  // def mk_s(sep: Char)(implicit z: Show[A]): String   = mk_s(sep.to_s)
-  // def mk_s(sep: String)(implicit z: Show[A]): String = r show mkDoc(Doc(sep))
-
   def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = asDocs zreducel (_ ~ sep ~ _)
+  def joinString(implicit z: Show[A]): String   = mkDoc(Doc.empty).render
 
   def max(implicit z: Order[A]): A = reducel(all.max)
   def min(implicit z: Order[A]): A = reducel(all.min)
