@@ -4,11 +4,11 @@ package tests
 import api._, std._, all._, StdShow._
 
 class StringViewTests {
-  val ad: String    = 'a' to 'd' mk_s ""
+  val ad: String    = ('a' to 'd').m.joinString
   val da: String    = ad.reverseChars
-  val adda1: String = ad ~ da
-  val adda2: String = ad ~ "c" ~ da
-  val adda3: String = ad ~ "pa" ~ da
+  val adda1: String = view(ad, da).join
+  val adda2: String = view(ad, "c", da).join
+  val adda3: String = view(ad, "pa", da).join
 
   def split(s: String)            = s splitAtTake s.length / 2 mapRight (_.reverse)
   def isPalindrome(s: String)     = split(s).zip forall (_ === _)
@@ -21,6 +21,9 @@ class StringViewTests {
     assert(isPalindrome(adda2), adda2)
     assert(!isEvenPalindrome(adda2), adda2)
     assert(!isPalindrome(adda3), adda3)
+    sameDoc("[a].".r findAll adda3, "[ ab, ad ]")
+    sameDoc("abcdefg" stripPrefix "a..", "abcdefg")
+    sameDoc("abcdefg" stripPrefix "a..".r, "defg")
   }
 }
 
@@ -36,6 +39,21 @@ class IntViewTests {
   val cro9  = splt.cross
 
   def reverseInt = ?[Order[Int]].flip
+
+  @Test
+  def zipTests(): Unit = {
+    sameDoc(ints take 3 zipTail, "[ 1 -> 2, 2 -> 3 ]")
+    sameDoc((1 to 100000).zipTail drop 100 take 2, "[ 101 -> 102, 102 -> 103 ]")
+    same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))
+    same(zip3 map (_ - _), view(1, 1, 1))
+    same(zip3 mapLeft (_ * 10) pairs, view(20 -> 1, 40 -> 3, 60 -> 5))
+    same(zip3 mapRight (_ => 0) pairs, view(2 -> 0, 4 -> 0, 6 -> 0))
+    same(splt.collate, view(2, 1, 4, 3, 6, 5))
+    same(splt.join, view(2, 4, 6, 1, 3, 5))
+    same(zip3 corresponds (_ > _), true)
+    same(zipViews(ints3, ints3) corresponds (_ >= _), true)
+    same(zipViews(ints3, ints3 :+ 8) corresponds (_ >= _), false)
+  }
 
   @Test
   def noTypeClassNeededTests(): Unit = {
@@ -85,7 +103,6 @@ class IntViewTests {
     same(1 to 3 map nth, 0 to 2 map index)
     same(nthInclusive(1, 3), indexRange(0, 3))
     same(ints takeToFirst (_ > 2), view(1, 2, 3))
-    same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))
     same(ints.span(_ < 4).collate, view(1, 4, 2, 5, 3, 6))
     same(cro9.force.size, Size(9))
     same(xints.sort, view(25, 106, 304))
@@ -95,14 +112,6 @@ class IntViewTests {
     same(ints3 splitAround nth(2) join, view(1, 3))
     same(ints3 dropIndex nth(2), view(1, 3))
     same(5 +: ints3 :+ 5, view(5, 1, 2, 3, 5))
-    same(zip3 map (_ - _), view(1, 1, 1))
-    same(zip3 mapLeft (_ * 10) pairs, view(20 -> 1, 40 -> 3, 60 -> 5))
-    same(zip3 mapRight (_ => 0) pairs, view(2 -> 0, 4 -> 0, 6 -> 0))
-    same(splt.collate, view(2, 1, 4, 3, 6, 5))
-    same(splt.join, view(2, 4, 6, 1, 3, 5))
-    same(zip3 corresponds (_ > _), true)
-    same(zipViews(ints3, ints3) corresponds (_ >= _), true)
-    same(zipViews(ints3, ints3 :+ 8) corresponds (_ >= _), false)
   }
 
   @Test
@@ -133,6 +142,6 @@ class IntViewTests {
     sameDoc(xs.zip filterRight (_ % 3 === 0), "[ 2 -> 12, 5 -> 15, 8 -> 18 ]")
     sameDoc(ys, "[ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]")
     sameDoc(zs, "[ 1 -> a, 2 -> bb, 3 -> ccc ]")
-    sameDoc(zs.rights mk_s '/', "a/bb/ccc")
+    sameDoc(zs.rights joinWith '/', "a/bb/ccc")
   }
 }

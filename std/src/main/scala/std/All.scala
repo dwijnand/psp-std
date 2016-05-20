@@ -74,6 +74,16 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
     def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
+  implicit class StringViewOps(private val xs: View[String]) extends AnyVal {
+    def joinWith(ch: Char): String    = joinWith(ch.to_s)
+    def joinWith(sep: String): String = xs zreducel (_ + sep + _)
+    def join: String                  = xs joinWith ""
+    def joinWords: String             = xs map (_.trim) joinWith " "
+    def joinLines: String             = xs map (_ stripSuffix "\\s+".r) joinWith "\n"
+
+    def mk_s(sep: Char): String   = joinWith(sep.to_s)
+    def mk_s(sep: String): String = joinWith(sep)
+  }
 }
 
 class NonValueImplicitClasses extends AllExplicit {
@@ -108,10 +118,7 @@ class NonValueImplicitClasses extends AllExplicit {
       case Precise(n) => n.toInt
       case s          => illegalArgumentException(s)
     }
-    def isNonZero     = loBound =!= Zero
-    def isZero        = lhs === Zero
-    def atLeast: Size = Size.Range(lhs, Infinite)
-    def atMost: Size  = Size.Range(Zero, lhs)
+    def isZero        = lhs === _0
 
     def loBound: Atomic = lhs match {
       case Bounded(lo, _) => lo
@@ -131,7 +138,7 @@ class NonValueImplicitClasses extends AllExplicit {
       *  of the two sizes.
       */
     def union(rhs: Size): Size     = Size.Range(lhs max rhs, lhs + rhs)
-    def intersect(rhs: Size): Size = Size.Range(Size.Zero, lhs min rhs)
+    def intersect(rhs: Size): Size = Size.Range(Size._0, lhs min rhs)
     def diff(rhs: Size): Size      = Size.Range(lhs - rhs, lhs)
 
     def +(rhs: Size): Size = (lhs, rhs) match {
@@ -143,7 +150,7 @@ class NonValueImplicitClasses extends AllExplicit {
     }
     def -(rhs: Size): Size = (lhs, rhs) match {
       case (Precise(l), Precise(r))                 => Precise(l - r)
-      case (Precise(_), Infinite)                   => Zero
+      case (Precise(_), Infinite)                   => _0
       case (Infinite, Precise(_))                   => Infinite
       case (Infinite, Infinite)                     => Unknown
       case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
@@ -157,6 +164,7 @@ class NonValueImplicitClasses extends AllExplicit {
     def toUpper   = jl.Character toUpperCase ch
     def to_s      = ch.toString
 
+    def r: Regex                          = Regex(ch)
     def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
     def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
     def until(end: Char): CharRange       = ch.toLong until end.toLong map (_.toChar)
@@ -194,15 +202,20 @@ class NonValueImplicitClasses extends AllExplicit {
     def min(rhs: Precise): Precise = all.min(size, rhs)
   }
   implicit class PartialOps[A, B](pf: A ?=> B) {
-    def applyOr(x: A, alt: => B): B           = if (pf isDefinedAt x) pf(x) else alt
+    def contains(x: A): Bool                  = pf isDefinedAt x
+    def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
     def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
+    def toPartial: Fun.Partial[A, B]          = Fun partial pf
   }
 
   implicit class ByteArrayOps(private val xs: Array[Byte]) {
     def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs
     def utf8String: String     = new String(utf8Chars)
   }
-
+  implicit class CharArrayOps(private val xs: Array[Char]) {
+    def utf8Bytes: Array[Byte] = scala.io.Codec.toUTF8(xs, 0, xs.length)
+    def utf8String: String     = new String(xs)
+  }
   implicit class ArrayOps[A](private val xs: Array[A]) {
     private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
       java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
@@ -266,7 +279,7 @@ class NonValueImplicitClasses extends AllExplicit {
     def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
     def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
   }
-  implicit class SplittableValueSameTypeOps[R, A](private val x: R)(implicit z: Splitter[R, A, A]) {
+  implicit class SplittableValueSameTypeOps[A, R](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Each[A]              = Each pair x
   }
@@ -292,6 +305,12 @@ class NonValueImplicitClasses extends AllExplicit {
   implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
     def toPmap(implicit z: Hash[A]): Pmap[A, B]                         = toMap[Pmap]
     def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
+  }
+
+  implicit class ShowableViewOps[A](private val xs: View[A])(implicit z: Show[A]) {
+    def mkDoc(sep: Doc): Doc          = xs.asDocs zreducel (_ ~ sep ~ _)
+    def joinWith(sep: String): String = mkDoc(sep.lit).render
+    def joinString: String            = joinWith("")
   }
 
   implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {

@@ -60,10 +60,10 @@ object RunView {
   object FlatSlice {
     def unapply[A, R](xs: RView[A, R]): Option[(RView[A, R], VdexRange)] = xs match {
       case Mapped(xs, f)           => unapply(xs) map { case (xs, range) => (xs map f, range) }
-      case Dropped(xs, Size.Zero)  => unapply(xs)
-      case DroppedR(xs, Size.Zero) => unapply(xs)
-      case Taken(xs, Size.Zero)    => Some(emptyValue)
-      case TakenR(xs, Size.Zero)   => Some(emptyValue)
+      case Dropped(xs, Size._0)  => unapply(xs)
+      case DroppedR(xs, Size._0) => unapply(xs)
+      case Taken(xs, Size._0)    => Some(emptyValue)
+      case TakenR(xs, Size._0)   => Some(emptyValue)
       case DroppedR(xs, n)         => unapply(xs) map { case (xs, range) => (xs, range dropRight n) }
       case TakenR(xs, n)           => unapply(xs) map { case (xs, range) => (xs, range takeRight n) }
       case Dropped(xs, n)          => unapply(xs) map { case (xs, range) => (xs, range drop n) }

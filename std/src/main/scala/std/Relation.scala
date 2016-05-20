@@ -49,30 +49,30 @@ object Relation {
 
 trait StdRelation0 {
   implicit def combineHash[A](implicit z: Order[A], h: Hash[A]): HashOrder[A] = z hashWith h.hash
-  implicit def sizeRel: Hash[Size]                                            = Relation.hash(Size.equiv, _.##)
-  implicit def comparableRel[A <: Comparable[A]]: HashOrder[A]                = Relation.all[A]((x, y) => longCmp(x compareTo y), _.##)
+  implicit def sizeRelation: Hash[Size]                                       = Relation.hash(Size.equiv, _.##)
+  implicit def comparableRelation[A <: Comparable[A]]: HashOrder[A]           = Relation.all[A]((x, y) => longCmp(x compareTo y), _.##)
+  implicit def viewsAsRelation[A, R](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =
+    Relation.equiv((xs, ys) => intoView(xs) zip intoView(ys) corresponds z.eqv)
 }
 trait StdRelation1 extends StdRelation0 {
-  implicit def eqViewsAs[R, A](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =
-    Relation.equiv((xs, ys) => intoView(xs) zip intoView(ys) corresponds z.eqv)
 
-  implicit def optionEq[A: Eq]: Eq[Opt[A]] = Relation equiv {
+  implicit def optionRelation[A: Eq]: Eq[Opt[A]] = Relation equiv {
     case (Some(x), Some(y)) => x === y
     case (x, y)             => x.isEmpty && y.isEmpty
   }
 
-  implicit def enumOrder[A](implicit ev: A <:< jEnum[_]): Order[A] = orderBy[A](_.ordinal)
-  implicit def longHashOrder: HashOrder[Long]       = Relation.Longs
-  implicit def boolHashOrder: HashOrder[Bool]       = Relation allBy (x => if (x) 1 else 0)
-  implicit def charHashOrder: HashOrder[Char]       = Relation allBy (x => x: Long)
-  implicit def intHashOrder: HashOrder[Int]         = Relation allBy (x => x: Long)
-  implicit def vindexHashOrder: HashOrder[Vdex]     = Relation allBy (_.indexValue)
-  implicit def preciseHashOrder: HashOrder[Precise] = Relation allBy (_.getLong)
-  implicit def stringHashOrder: HashOrder[String]   = Relation.Lexical
+  implicit def enumRelation[A <: jEnum[A]] : HashOrder[A] = Relation.byComparable[A]
 
-  implicit def classEq: Hash[Class[_]] = Relation.Inherited
+  implicit def longRelation: HashOrder[Long]       = Relation.Longs
+  implicit def boolRelation: HashOrder[Bool]       = Relation allBy (x => if (x) 1L else 0L)
+  implicit def charRelation: HashOrder[Char]       = Relation allBy (x => x: Long)
+  implicit def intRelation: HashOrder[Int]         = Relation allBy (x => x: Long)
+  implicit def vindexRelation: HashOrder[Vdex]     = Relation allBy (_.indexValue)
+  implicit def preciseRelation: HashOrder[Precise] = Relation allBy (_.getLong)
+  implicit def stringRelation: HashOrder[String]   = Relation.Lexical
+  implicit def classRelation: Hash[jClass]         = Relation.Inherited
 
-  implicit def tryEq[A](implicit z1: Eq[A], z2: Eq[Throwable]): Eq[Try[A]] = Relation equiv {
+  implicit def tryRelation[A: Eq](implicit z: Eq[Throwable]): Eq[Try[A]] = Relation equiv {
     case (Success(x), Success(y)) => x === y
     case (Failure(x), Failure(y)) => x === y
     case _                        => false
@@ -82,7 +82,7 @@ trait StdRelation extends StdRelation1 {
   implicit def intervalRelation: HashOrder[Interval] =
     Relation allBy (x => x.startLong -> x.size.preciseOrMaxLong)
 
-  implicit def product2HashOrder[A: HashOrder, B: HashOrder]: HashOrder[A -> B] =
+  implicit def pairRelation[A: HashOrder, B: HashOrder]: HashOrder[A -> B] =
     Relation.all[A -> B](
       orderBy[A -> B](fst) | snd cmp,
       xy => fst(xy).hash + snd(xy).hash

@@ -6,8 +6,8 @@ import org.scalacheck.Prop.forAll
 import psp.std._, api._, all._
 
 class BoolAlgebraSpec extends AlgebraSpec[Bool]("Bool") with ScalacheckBundle
-class Pred1AlgebraSpec extends AlgebraSpec[Pint => Bool]("Pint => Bool")( ?, ?, function1Eq[Pint, Bool] ) with ScalacheckBundle
-class Pred2AlgebraSpec extends AlgebraSpec[(Nth->Index) => Bool]("(Nth, Index) => Bool")( ?, ?, function1Eq[Nth->Index, Bool] ) with ScalacheckBundle
+class Pred1AlgebraSpec extends AlgebraSpec[Char => Bool]("Char => Bool")( ?, ?, functionRelation[Char, Bool] ) with ScalacheckBundle
+class Pred2AlgebraSpec extends AlgebraSpec[(Nth->Index) => Bool]("(Nth, Index) => Bool")( ?, ?, functionRelation[Nth->Index, Bool] ) with ScalacheckBundle
 
 abstract class AlgebraSpec[A](name: String)(implicit ba: BoolAlgebra[A], arb: Arbitrary[A], equiv: Eq[A]) extends AlgebraLaws[A] with Bundle {
   self: ScalacheckBundle =>

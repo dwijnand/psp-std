@@ -26,12 +26,14 @@ class CollectionsSpec extends ScalacheckBundle {
 
   def paired[A](x: A): A -> Int = x -> x.any_s.length
 
+  import StdShow._
+
   def jvmProps = vec[NamedProp](
     expectTypes[String](
       remake("abc")(_ map identity),
       remake("abc")(_ map (_.toInt.toChar)),
       remake("abc")(_ map (_.toInt) map (_.toChar)),
-      remake("abc")(_ flatMap (_.toString * 3)),
+      remake("abc")(_ flatMap (_.show * 3)),
       "abc" map identity build,
       "abc" map (_.toInt.toChar) build,
       "abc" map (_.toInt) map (_.toChar) build,

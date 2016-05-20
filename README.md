@@ -39,7 +39,7 @@ ys: Zip[Int, String] = [ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3
 psp> val same = ys filter (_ === _.length)
 same: Zip[Int, String] = [ 1 -> a, 2 -> bb, 3 -> ccc ]
 
-psp> same.rights mk_s '/'
+psp> same.rights joinWith '/'
 res2: String = a/bb/ccc
 ```
 

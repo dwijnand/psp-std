@@ -2,35 +2,46 @@ package psp
 package tests
 
 import Gen._
-import psp._, std._, all._, api._, StdShow._
+import psp._, std._, all._, api._, Size._
 
-package gen {
+object gen {
   class TextGenerator(val letter: Gen[Char], charsInWord: Gen[Int], wordsInLine: Gen[Int]) {
-    def word: Gen[String]                   = letter * charsInWord ^^ (_ join_s)
-    def line: Gen[String]                   = word * wordsInLine ^^ (_ mk_s ' ')
-    def nLines(n: Int): Gen[Direct[String]] = line * n
+    def word: Gen[String]                 = letter * charsInWord ^^ (x => new String(x.toArray))
+    def line: Gen[String]                 = word * wordsInLine ^^ (_.m.joinWords)
+    def nLines(n: Int): Gen[View[String]] = line * n
   }
-  object text extends TextGenerator(alphaNumChar, genInt(1, 8), genInt(3, 7))
+  object text extends TextGenerator(alphaNumChar, 1 upTo 8, 3 upTo 7)
+
+  // def range(lo: Int, hi: Int): Gen[Int]    = Gen.choose(lo, hi)
+  // def range(lo: Long, hi: Long): Gen[Long] = Gen.choose(lo, hi)
+
+  def nats: Gen[Long]   = 0L upTo MaxLong
+  def ints: Gen[Int]    = MinInt upTo MaxInt
+  def index: Gen[Index] = frequency(10 -> (nats ^^ Index), 1 -> emptyValue[Index])
+
+  def precise: Gen[Precise] = frequency(1 -> _0, 1 -> _1, 1 -> Size(MaxInt.toLong * 2), 20 -> (1 upTo 1000 map exp.precise))
+  def atomic: Gen[Atomic]   = frequency(50 -> precise, 1 -> Infinite)
+  def bounded: Gen[Size]    = ( for (lo <- precise ; hi <- atomic) yield Range(lo, hi) ) collect classFilter[Bounded]
+  def size: Gen[Size]       = oneOf(atomic, bounded)
 }
 
-package object gen {
-  def directOfN[A](n: Int, g: Gen[A]): Gen[Vec[A]] = containerOfN[Vec, A](n, g)(?, _.trav)
-  def directOf[A](g: Gen[A]): Gen[Vec[A]]          = containerOf[Vec, A](g)(?, _.trav)
-  def eachOfN[A](n: Int, g: Gen[A]): Gen[Each[A]]  = containerOfN[Each, A](n, g)(?, _.trav)
-  def eachOf[A](g: Gen[A]): Gen[Each[A]]           = containerOf[Each, A](g)(?, _.trav)
+/** Bridging the pointless existence of both Arb and Gen.
+ */
+trait GenTransform[M[X], A] {
+  type This = M[A]
 
-  def index: Gen[Index]         = frequency(10 -> zeroPlusIndex, 1 -> emptyValue[Index])
-  def int: Gen[Int]             = genInt(MinInt, MaxInt)
-  def zeroPlusIndex: Gen[Index] = genIndex(0, MaxLong)
+  def self: M[A]
+  def transform[B](f: Gen[A] => Gen[B]): M[B]
 
-  def genInt(lo: Int, hi: Int): Gen[Int]                          = Gen.choose(lo, hi)
-  def genLong(lo: Long, hi: Long): Gen[Long]                      = Gen.choose(lo, hi)
-  def genIndex(lo: Long, hi: Long): Gen[Index]                    = genLong(lo, hi) map Index
-  def longRange(start: Gen[Long], end: Gen[Long]): Gen[LongRange] = (start, end) >> (_ to _)
-  def indexRangeFrom(sMax: Long, eMax: Long): Gen[VdexRange]      = longRange(genLong(0, sMax), genLong(0, eMax)) ^^ (_ map Index)
+  def ^^^[B](x: B): M[B]          = transform(_ => Gen const x)
+  def ^^[B](f: A => B): M[B]      = transform(_ map f)
+  def ?(p: ToBool[A]): M[A]       = transform(_ filter p)
+  def >>[B](f: A => Gen[B]): M[B] = transform(_ flatMap f)
+  def ^?[B](pf: A ?=> B): M[B]    = transform(_ collect pf)
+  def *(n: Int): M[View[A]]       = transform(_.container[View](n))
+  def *(r: Gen[Int]): M[View[A]]  = transform(r >> _.*)
 
-  def precise: Gen[Precise] = chooseNum(1, MaxInt / 2) map (x => Size(x))
-  def atomic: Gen[Atomic]   = frequency(10 -> precise, 1 -> Size.Zero, 1 -> Infinite)
-  def bounded: Gen[Bounded] = precise.flatMap(lo => atomic map (hi => Size.Range(lo, hi))) collect classFilter[Bounded]
-  def size: Gen[Size]       = oneOf(atomic, bounded)
+  def zip[B](h: Gen[B]): M[A -> B]                   = zipWith(h)(_ -> _)
+  def zipWith[B, C](h: Gen[B])(f: (A, B) => C): M[C] = transform(_ -> h map f)
+  def collect[B](pf: A ?=> B): M[B]                  = transform(_ suchThat pf.contains map pf)
 }

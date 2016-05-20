@@ -46,7 +46,11 @@ trait Explicit {
 
   private implicit def hashThrowable: Hash[Throwable] = hashBy[Throwable](_.getClass)
 
-  def arb[A](implicit z: Arb[A]): Arb[A]                               = z
+  def arb[A](implicit z: Arb[A]): Arb[A] = z
+
+  implicit def genToArb[A](g: Gen[A]): Arb[A] = Arb(g)
+  implicit def arbToGen[A](g: Arb[A]): Gen[A] = g.arbitrary
+
   def assert(p: => Boolean, msg: => Any)(implicit z: Assertions): Unit = Assertions.using(z)(p, s"assertion failed: $msg")
   def associative[A: Arb : Eq](f: BinOp[A]): Prop                      = forAll((a: A, b: A, c: A) => sameBehavior(f(f(a, b), c), f(a, f(b, c))))
   def commutative[A: Arb : Eq](f: BinOp[A]): Prop                      = forAll((a: A, b: A) => sameBehavior(f(a, b), f(b, a)))
@@ -60,7 +64,7 @@ trait Explicit {
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
   def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
   def sameDoc[A](expr: Doc, expected: Doc): Unit                       = same(expr.show, expected.show)
-  def seqShows[A: Show](expected: String, xs: Each[A]): NamedProp      = preNewline(expected) -> (expected =? (xs mk_s ", "))
+  def seqShows[A: Show](expected: String, xs: View[A]): NamedProp      = preNewline(expected) -> (expected =? (xs joinWith ", "))
   def showsAs[A: Show](expected: String, x: A): NamedProp              = preNewline(expected) -> (expected =? pp"$x")
 
   def same[A : Eq : Show](expr: A, expected: A): Unit = {
@@ -77,7 +81,7 @@ trait Explicit {
   /** How to check for function equivalence? In the absence of mathematical breakthroughs,
    *  recursively throw scalacheck at it again, verifying arbitrary inputs have the same result.
    */
-  def function1Eq[A : Arb, B : Eq] : Eq[A => B] =
+  def functionRelation[A : Arb, B : Eq] : Eq[A => B] =
     Relation equiv ((f, g) => (Test check forAll((x: A) => f(x) === g(x)))(identity).passed)
 }
 
@@ -89,17 +93,22 @@ trait Implicit extends Explicit {
     def in(c: Color): Doc = c(doc)
   }
 
-  implicit def arbIndex: Arb[Index]               = Arb(gen.index)
-  implicit def arbNth: Arb[Nth]                   = Arb(gen.index ^^ (_.toNth))
-  implicit def arbSize: Arb[Size]                 = Arb(gen.size)
-  implicit def arbWord: Arb[String]               = Arb(gen.text.word)
-  implicit def arbitraryPint: Arb[Pint]           = Arb(gen.int ^^ Pint)
+  implicit def arbIndex: Arb[Index] = gen.index
+  implicit def arbNth: Arb[Nth]     = gen.index ^^ (_.toNth)
+  implicit def arbSize: Arb[Size]   = gen.size
+  implicit def arbWord: Arb[String] = gen.text.word
+
+  implicit def arbPair[A: Arb, B: Arb]: Arb[A->B] = arb[A] zip arb[B]
+
   implicit def assertions: Assertions             = ImmediateTraceAssertions
-  implicit def hashPint: Hash[Pint]               = Relation.Inherited
-  implicit def showPint: Show[Pint]               = inheritShow
   implicit def showScalacheckResult: Show[Result] = Show(r => pretty(r, Params(0)))
 
-  implicit def arbProduct[A1: Arb, A2: Arb](implicit z: Arb[(A1, A2)]): Arb[A1->A2] = Arb(z.arbitrary ^^ (x => x))
+  implicit class TestBuildsOps[A, CC[X]](z: Builds[A, CC[A]]) {
+    def toScalacheck: Buildable[A, CC] = new Buildable[A, CC] { def builder = z.scalaBuilder }
+  }
+  implicit class TestViewsOps[A, CC[X]](z: ViewsAs[A, CC[A]]) {
+    def toScalacheck: CC[A] => scTraversable[A] = z viewAs _ trav
+  }
 
   implicit def buildsBuildable[A, CC[X]](implicit z: Builds[A, CC[A]]): Buildable[A, CC] =
     new Buildable[A, CC] { def builder = z.scalaBuilder }
@@ -122,9 +131,18 @@ trait Implicit extends Explicit {
     def flatMap[B](f: A => Gen[B]): Arb[B]        = Arb(self.arbitrary flatMap f)
   }
   implicit class GenOps[A](val self: Gen[A]) extends GenTransform[Gen, A] {
+    def container[M[X]](n: Precise)(implicit z1: Builds[A, M[A]], z2: ViewsAs[A, M[A]]): Gen[M[A]] =
+      Gen.containerOfN[M, A](n.getInt, self)(z1.toScalacheck, z2.toScalacheck)
+
     def transform[B](f: Gen[A] => Gen[B]): Gen[B] = f(self)
     def stream: Each[A]                           = Each continually self.sample flatMap (_.toVec)
     def take(n: Int): Vec[A]                      = stream take n toVec
+  }
+  implicit class TestLongOps(val self: Long) {
+    def upTo(hi: Long): Gen[Long] = Gen.choose(self, hi)
+  }
+  implicit class TestIntOps(val self: Int) {
+    def upTo(hi: Int): Gen[Int] = Gen.choose(self, hi)
   }
   implicit class PropOps(p: Prop) {
     def mapParams(f: ToSelf[TestParams]): Prop = new NamedProp.MapParams(p, f)

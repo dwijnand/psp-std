@@ -3,51 +3,42 @@ package std
 
 import api._, all._
 
-class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
+class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
   def byEquals: EqViewOps[A]         = by(Relation.Inherited)
   def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)
   def byToString: EqViewOps[A]       = by(Relation.ToString)
 
-  def partition(p: ToBool[A]): Split[A]   = Split(xs withFilter p, xs withFilter !p)
+  def partition(p: ToBool[A]): Split[A]   = Split(xs filter p, xs filter !p)
   def span(p: ToBool[A]): Split[A]        = Split(xs takeWhile p, xs dropWhile p)
   def splitAround(idx: Vdex): Split[A]    = splitAt(idx) mapRight (_ tail)
   def splitAt(idx: Vdex): Split[A]        = splitAtTake(idx.excluding)
   def splitAtTake(len: Precise): Split[A] = Split(xs take len, xs drop len)
-  def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail)
+  def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail) // like "xs sliding 2" but better
   def zipIndex: Zip[A, Index]             = zipViews(xs, openIndices)
   def zip[B](ys: View[B]): Zip[A, B]      = zipViews[A, B](xs, ys)
 
-  def +:(head: A): View[A]                             = view(head) ++ xs
-  def :+(last: A): View[A]                             = xs ++ view(last)
-  def dropIndex(idx: Vdex): View[A]                    = splitAround(idx).join
-  def filter(p: ToBool[A]): View[A]                    = xs withFilter p
-  def filterNot(p: ToBool[A]): View[A]                 = xs withFilter !p
-  def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs withFilter (regex isMatch _)
-  def mapIf(pf: A ?=> A): View[A]                      = xs map (x => pf.applyOr(x, x))
-  def slice(r: VdexRange): View[A]                     = zcond(!r.isEmpty, slice(r.head, r.size))
-  def slice(start: Vdex, len: Precise): View[A]        = xs drop Size(start.indexValue) take len
-  def sliceIndex(idx: Vdex): View[A]                   = xs drop idx.excluding take 1
-  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
-  def sort(implicit z: Order[A]): View[A]              = xs.toRefArray.inPlace.sort
-  def sortBy[B: Order](f: A => B): View[A]             = sort(orderBy[A](f))
-  def sortWith(cmp: OrderRelation[A]): View[A]         = sort(Relation order cmp)
-  def takeToFirst(p: ToBool[A]): View[A]               = xs span !p app ((x, y) => x ++ (y take 1))
-  def tee(f: ToUnit[A]): View[A]                       = xs map (x => doto(x)(f))
+  def +:(head: A): View[A]                            = view(head) ++ xs
+  def :+(last: A): View[A]                            = xs ++ view(last)
+  def dropIndex(idx: Vdex): View[A]                   = splitAround(idx).join
+  def filter(p: ToBool[A]): View[A]                   = xs withFilter p
+  def filterNot(p: ToBool[A]): View[A]                = xs filter !p
+  def grep(re: Regex)(implicit z: Show[A]): View[A]   = xs filter (re isMatch _)
+  def mapIf(pf: A ?=> A): View[A]                     = xs map (x => pf.applyOr(x, x))
+  def slice(r: VdexRange): View[A]                    = zcond(!r.isEmpty, slice(r.head, r.size))
+  def slice(start: Vdex, len: Precise): View[A]       = xs drop start.excluding take len
+  def sliceIndex(start: Vdex): View[A]                = slice(start, Size._1)
+  def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A] = xs dropWhile p takeWhile q
+  def sort(implicit z: Order[A]): View[A]             = xs.toRefArray.inPlace.sort
+  def sortBy[B: Order](f: A => B): View[A]            = sort(orderBy[A](f))
+  def sortWith(cmp: OrderRelation[A]): View[A]        = sort(Relation order cmp)
+  def takeToFirst(p: ToBool[A]): View[A]              = xs span !p app ((x, y) => x ++ (y take 1))
+  def tee(f: ToUnit[A]): View[A]                      = xs map (x => doto(x)(f))
 
   def init: View[A]    = xs dropRight 1
   def inits: View2D[A] = view(xs) ++ zcond(!isEmpty, init.inits)
   def tail: View[A]    = xs drop 1
   def tails: View2D[A] = view(xs) ++ zcond(!isEmpty, tail.tails)
-
-  def joinLines(implicit z: Show[A], r: Renderer): String         = mk_s(EOL)
-  def joinWords(implicit z: Show[A], r: Renderer): String         = mk_s(" ")
-  def join_s(implicit z: Show[A], r: Renderer): String            = mk_s("")
-  def mk_s(sep: Char)(implicit z: Show[A], r: Renderer): String   = mk_s(sep.to_s)
-  def mk_s(sep: String)(implicit z: Show[A], r: Renderer): String = r show mkDoc(Doc(sep))
-
-  def asDocs(implicit z: Show[A]): View[Doc]    = xs map (x => Doc(x))
-  def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = asDocs zreducel (_ ~ sep ~ _)
 
   def max(implicit z: Order[A]): A = reducel(all.max)
   def min(implicit z: Order[A]): A = reducel(all.min)
@@ -81,20 +72,17 @@ class ViewOps[R, A](private val xs: View[A]) extends AnyVal {
   def iterator: scIterator[A]                = toScalaStream.iterator
   def toArray(implicit z: CTag[A]): Array[A] = to[Array]
   def toPset(implicit z: Eq[A]): Pset[A]     = to[Pset]
-  def toPlist: Plist[A]                      = to[Plist]
   def toRefArray(): Array[Ref[A]]            = asRefs.force
   def toScalaStream: sciStream[A]            = to[sciStream]
-  def toScalaVector: sciVector[A]            = to[sciVector]
   def toVec: Vec[A]                          = to[Vec]
 
-  def asRefs: View[Ref[A]]   = xs map castRef
-  def seq: scSeq[A]          = to[scSeq] // varargs or unapplySeq, usually
-  def trav: scTraversable[A] = to[scTraversable] // scala flatMap, usually
+  def asRefs: View[Ref[A]]                   = xs map castRef
+  def asDocs(implicit z: Show[A]): View[Doc] = xs map (x => Doc(x))
+  def seq: scSeq[A]                          = to[scSeq] // varargs or unapplySeq, usually
+  def trav: scTraversable[A]                 = to[scTraversable] // scala flatMap, usually
 }
 
 class View2DOps[A](private val xss: View2D[A]) extends AnyVal {
-  import StdShow.showString
-
   def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
   def transpose: View2D[A]          = openIndices map column
   def flatten: View[A]              = xss flatMap identity
@@ -104,7 +92,8 @@ class View2DOps[A](private val xss: View2D[A]) extends AnyVal {
     val width = xss.mmap(_.show.length).flatten.max
     val fmt   = lformat(width)
     val yss   = xss mmap (x => fmt(z show x))
+    val lines = yss map (_ joinWith " ")
 
-    (yss map (_.joinWords)).joinLines.trimLines
+    lines.joinLines mapLines (_.trim)
   }
 }

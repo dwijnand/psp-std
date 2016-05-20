@@ -84,7 +84,7 @@ object Each {
   def array[A](xs: Array[A]): Each[A]                                 = intIndexed(xs.apply, 0, xs.length)
   def elems[A](xs: A*): Each[A]                                       = intIndexed[A](xs.apply, 0, xs.length)
   def jvmString(s: String): Each[Char]                                = intIndexed(s charAt _, 0, s.length)
-  def pair[R, A](x: R)(implicit z: Splitter[R, A, A]): Each[A]        = intIndexed(i => cond(i == 0, x._1, x._2), 0, 2)
+  def pair[A, R](x: R)(implicit z: Splitter[R, A, A]): Each[A]        = intIndexed(i => cond(i == 0, x._1, x._2), 0, 2)
   def const[A](elem: A): Each[A]                                      = new Const(elem)
   def continually[A](expr: => A): Each[A]                             = new Continual(expr)
   def intIndexed[A](f: Int => A, start: Int, end: Int): IntIndexed[A] = new IntIndexed(f, start, end)
