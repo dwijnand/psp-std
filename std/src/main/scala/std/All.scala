@@ -79,9 +79,6 @@ object all extends NonValueImplicitClasses with AllImplicit  {
 class NonValueImplicitClasses extends AllExplicit {
   self: all.type =>
 
-  implicit class ViewDocOps(private val xs: View[Doc]) {
-    def mkDoc(sep: Doc): Doc = xs zreducel (_ ~ sep ~ _)
-  }
   implicit class HasViewsAs[A, R](val repr: R)(implicit z: ViewsAs[A, R]) {
     def m: IdView[A, R] = z viewAs repr
   }
@@ -89,10 +86,17 @@ class NonValueImplicitClasses extends AllExplicit {
     * be of a type which is implicitly convertible to Doc.
     */
   implicit class DocInterpolators(private val sc: StringContext) {
-    def doc(args: Doc*): Doc    = ShowInterpolator(sc).doc(args: _*)
-    def pp(args: Doc*): String  = ShowInterpolator(sc).pp(args: _*)
-    def fpp(args: Doc*): String = ShowInterpolator(sc).fpp(args: _*)
-    def sm(args: Doc*): String  = ShowInterpolator(sc).sm(args: _*)
+
+    /** The type of args forces all the interpolation variables to
+      *  be of a type which is implicitly convertible to Doc.
+      */
+    def doc(args: Doc*): Doc  = ShowInterpolator(sc).doc(args: _*)
+    def fdoc(args: Doc*): Doc = ShowInterpolator(sc).fdoc(args: _*)
+    def sdoc(args: Doc*): Doc = ShowInterpolator(sc).sdoc(args: _*)
+
+    def pp(args: Doc*)(implicit z: Renderer): String = z show doc(args: _*)
+    def fp(args: Doc*)(implicit z: Renderer): String = z show fdoc(args: _*)
+    def sm(args: Doc*)(implicit z: Renderer): String = z show sdoc(args: _*)
   }
   implicit class VindexOps(private val vdex: Vdex) {
     def getInt: Int = vdex.indexValue.safeToInt
@@ -304,9 +308,9 @@ class NonValueImplicitClasses extends AllExplicit {
         Fun const xs
     }
   }
-  implicit class ShowableDocOps[A](private val lhs: A)(implicit shows: Show[A]) {
+  implicit class ShowableDocOps[A](private val lhs: A)(implicit z: Show[A]) {
     def doc: Doc     = Doc(lhs)
-    def show: String = shows show lhs
+    def show: String = z show lhs
   }
   implicit class HeytingAlgebraOps[A](private val lhs: A)(implicit z: Heyting[A]) {
     def unary_! : A     = z complement lhs

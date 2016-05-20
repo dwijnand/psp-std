@@ -4,14 +4,14 @@ package std
 import all._
 
 object Algebra {
-  object Identity extends BooleanAlgebra[Bool] {
+  object Identity extends BoolAlgebra[Bool] {
     def and(x: Bool, y: Bool): Bool = x && y
     def or(x: Bool, y: Bool): Bool  = x || y
     def complement(x: Bool): Bool   = !x
     def zero: Bool                  = false
     def one: Bool                   = true
   }
-  class Fun1[A, B](implicit ba: BooleanAlgebra[B]) extends BooleanAlgebra[A => B] {
+  class Fun1[A, B](implicit ba: BoolAlgebra[B]) extends BoolAlgebra[A => B] {
     type R = A => B
 
     def and(f: R, g: R): R  = x => ba.and(f(x), g(x))
@@ -20,7 +20,7 @@ object Algebra {
     def one: R              = x => ba.one
     def complement(f: R): R = x => ba.complement(f(x))
   }
-  class Fun2[A, B, C](implicit ba: BooleanAlgebra[C]) extends BooleanAlgebra[(A, B) => C] {
+  class Fun2[A, B, C](implicit ba: BoolAlgebra[C]) extends BoolAlgebra[(A, B) => C] {
     type R = (A, B) => C
 
     def and(f: R, g: R): R  = (x, y) => ba.and(f(x, y), g(x, y))
@@ -32,14 +32,14 @@ object Algebra {
 
   /** TODO: These probably make no sense.
    */
-  class ProductAlgebra[A, B](implicit ab: BooleanAlgebra[A], bb: BooleanAlgebra[B]) extends BooleanAlgebra[A->B] {
+  class ProductAlgebra[A, B](implicit ab: BoolAlgebra[A], bb: BoolAlgebra[B]) extends BoolAlgebra[A->B] {
     def and(x: A->B, y: A->B): A->B = (fst(x) && fst(y)) -> (snd(x) && snd(y))
     def or(x: A->B, y: A->B): A->B  = (fst(x) || fst(y)) -> (snd(x) || snd(y))
     def complement(x: A->B): A->B   = !fst(x) -> !snd(x)
     def zero: A->B                  = ab.zero -> bb.zero
     def one: A->B                   = ab.one -> bb.one
   }
-  class OptionAlgebra[A](elem: A)(implicit ba: BooleanAlgebra[A]) extends BooleanAlgebra[Opt[A]] {
+  class OptionAlgebra[A](elem: A)(implicit ba: BoolAlgebra[A]) extends BoolAlgebra[Opt[A]] {
     val one: Some[A]    = Some(elem)
     val zero: None.type = None
 
@@ -83,13 +83,13 @@ object Algebra {
 }
 
 trait StdAlgebra0 {
-  implicit def identityBoolAlgebra: BooleanAlgebra[Bool] = Algebra.Identity
+  implicit def identityBoolAlgebra: BoolAlgebra[Bool] = Algebra.Identity
 }
 trait StdAlgebra1 extends StdAlgebra0 {
-  implicit def function1BoolAlgebra[A, B: BooleanAlgebra]: BooleanAlgebra[A => B]          = new Algebra.Fun1
-  implicit def function2BoolAlgebra[A, B, C : BooleanAlgebra]: BooleanAlgebra[(A, B) => C] = new Algebra.Fun2
+  implicit def function1BoolAlgebra[A, B: BoolAlgebra]: BoolAlgebra[A => B]          = new Algebra.Fun1
+  implicit def function2BoolAlgebra[A, B, C : BoolAlgebra]: BoolAlgebra[(A, B) => C] = new Algebra.Fun2
 }
 trait StdAlgebra extends StdAlgebra1 {
-  implicit def predicate1BoolAlgebra[A]: BooleanAlgebra[ToBool[A]]        = new Algebra.Predicate1[A]
-  implicit def predicate2BoolAlgebra[A, B]: BooleanAlgebra[ToBool2[A, B]] = new Algebra.Predicate2[A, B]
+  implicit def predicate1BoolAlgebra[A]: BoolAlgebra[ToBool[A]]        = new Algebra.Predicate1[A]
+  implicit def predicate2BoolAlgebra[A, B]: BoolAlgebra[ToBool2[A, B]] = new Algebra.Predicate2[A, B]
 }

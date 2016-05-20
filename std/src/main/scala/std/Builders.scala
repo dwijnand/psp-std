@@ -50,7 +50,7 @@ object StdBuilders extends StdBuilders
 trait StdViewers0 {
   implicit def viewsAsPspSet[A, CC[X] <: Pset[X]]: ViewsAs[A, CC[A]]            = viewsAs(Each each _.basis)
   implicit def viewsAsJavaIterable[A, CC[X] <: jIterable[X]]: ViewsAs[A, CC[A]] = viewsAs(Each java _)
-  implicit def viewsAsScala[A, CC[X] <: sCollection[X]]: ViewsAs[A, CC[A]]      = viewsAs(Each scala _)
+  implicit def viewsAsScala[A, CC[X] <: GTOnce[X]]: ViewsAs[A, CC[A]]           = viewsAs(Each scalaOnce _)
 }
 trait StdViewers extends StdViewers0 with StdBuilders {
   implicit def viewsAsJavaMap[K, V, CC[X, Y] <: jMap[X, Y]]: ViewsAs[K -> V, CC[K, V]]   = viewsAs(Each javaMap _)

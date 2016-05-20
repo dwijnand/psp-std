@@ -7,7 +7,7 @@ import org.openjdk.jmh.annotations._
 
 object Values {
   final val range      = 1 to 1000
-  final val scalaElems = range.to[sciVector]
+  final val scalaElems = range.to[scala.Vector]
   final val pspElems   = range.to[Vec]
 }
 
@@ -22,7 +22,7 @@ class ScalaVectorBenchmarker {
   def fold_sum(): Long = elems.foldLeft(0L)(_ + _)
 
   @Benchmark
-  def fold_reverse(): sciVector[Int] = elems.foldRight(sciVector[Int]())(_ +: _)
+  def fold_reverse(): sciVector[Int] = elems.foldRight(scala.Vector[Int]())(_ +: _)
 
   @Benchmark
   def apply_sum(): Long = {

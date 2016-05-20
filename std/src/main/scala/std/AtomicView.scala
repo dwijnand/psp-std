@@ -20,6 +20,9 @@ object View {
   final case class Collected[A, B, R](prev: RView[A, R], pf: A ?=> B)      extends CView[A, B, R](_.atMost)
   final case class Reversed[A, R](prev: RView[A, R])                       extends CView[A, A, R](x => x)
 
+  def unapplySeq[A](xs: View[A]): Some[scSeq[A]] = Some(xs.seq)
+}
+object CView {
   def unapply[A, B, R](xs: CView[A, B, R]): Some[RView[A, R] -> ToSelf[Size]] = Some(xs.prev -> xs.sizeEffect)
 }
 
@@ -77,8 +80,8 @@ sealed trait RView[A, R] extends View[A] {
   def xs: RView[A, R] = this
 
   def size: Size = this match {
-    case IdView(xs)         => xs.size
-    case View(prev, effect) => effect(prev.size)
+    case IdView(xs)          => xs.size
+    case CView(prev, effect) => effect(prev.size)
   }
   def foreach(f: ToUnit[A]): Unit = this match {
     case IdView(underlying) => underlying foreach f

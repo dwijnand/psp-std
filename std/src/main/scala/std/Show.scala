@@ -44,58 +44,48 @@ object Show {
 }
 
 class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
-
-  def showEach[A: Show](xs: Each[A]): String = xs match {
-    case x: Consecutive.Open[A]   => pp"[${ x.head }..)"
-    case x: Consecutive.Closed[A] => if (x.isEmpty) "[]" else pp"[${ x.head }..${ x.last }]"
-    case _                        => showView(xs.m map (_.doc))
-  }
-
-  def showView(xs: View[Doc]): String = {
-    val elems: Doc = xs splitAt maxElements.lastIndex match {
-      case Split(xs, ys) if ys.isEmpty => xs mkDoc ", "
-      case Split(xs, _)                => (xs take minElements mkDoc ", ") ~ ", ..."
+  private object UnderMax {
+    def unapply(xs: View[Doc]) = xs splitAt maxElements.lastIndex match {
+      case Split(xs, ys) if ys.isEmpty => Some(xs)
+      case _                           => None
     }
-    doc"[ $elems ]".render
   }
-
   def show(x: Doc): String = x match {
-    case Doc.NoDoc           => ""
-    case Doc.Cat(l, r)       => show(l) append show(r)
-    case Doc.Group(xs)       => showView(xs)
-    case Doc.Shown(value, z) => z show value
-    case Doc.Literal(s)      => s
+    case Doc.NoDoc               => ""
+    case Doc.Cat(l, r)           => show(l) append show(r)
+    case Doc.Group(UnderMax(xs)) => pp"[ ${ xs mkDoc ", " } ]"
+    case Doc.Group(xs)           => pp"[ ${ xs take minElements mkDoc ", " }, ... ]"
+    case Doc.Shown(value, z)     => z show value
+    case Doc.Literal(s)          => s
   }
 }
 
 case class ShowInterpolator(val stringContext: StringContext) {
-  def escapedParts    = stringContext.parts.toList map (_.processEscapes)
+  def escapedParts    = stringContext.parts.toVec map (_.processEscapes)
   def escaped: String = escapedParts.join_s
+
+  def strippedParts    = escapedParts map (_ mapLines (_.stripMargin))
+  def stripped: String = strippedParts.join_s
+
+  /** TODO. See
+   *  https://github.com/scala/scala/blob/2.12.x/src/compiler/scala/tools/reflect/FormatInterpolator.scala
+   */
+  val FormatSpec = """%(?:(\d+)\$)?([-#+ 0,(\<]+)?(\d+)?(\.\d+)?([tT]?[%a-zA-Z])?""".r
 
   /** There's one more escaped part than argument, so
    *  to collate them we tack an empty Doc onto the arg list.
    */
-  def doc(args: Doc*): Doc = Split[Doc](escapedParts.m map (x => Doc(x)), args.m :+ Doc.empty).collate reducel (_ ~ _)
+  def doc(args: Doc*): Doc = Split(escapedParts.asDocs, args :+ Doc.empty).collate reducel (_ ~ _)
 
-  /** The type of args forces all the interpolation variables to
-    *  be of a type which is implicitly convertible to Doc.
-    */
-  def pp(args: Doc*): String = StringContext(escapedParts: _*).raw(args.map(_.render): _*)
-
-  /** Can't see any way to reuse the standard (type-safe) f-interpolator, will
+  /** Can't see any way to call the standard (type-safe) f-interpolator, will
     *  apparently have to reimplement it entirely.
     */
-  def fpp(args: Doc*): String = escaped.format(args.map(_.render): _*)
-
-  final def sm(args: Doc*): String = {
-    def isLineBreak(c: Char) = c == '\n' || c == '\f' // compatible with StringLike#isLineBreak
-    def stripTrailingPart(s: String): String = (
-      s splitAround (s indexWhere isLineBreak) mapBoth (_.force[String]) app (_ append _.stripMargin)
-    )
-
-    val stripped = escapedParts.m matchIf { case hd +: tl => hd.stripMargin +: (tl map stripTrailingPart force) }
-    (new StringContext(stripped.seq: _*).raw(args: _*)).trim
+  def fdoc(args: Doc*): Doc = {
+    // val fms = FormatSpec findAll escaped
+    escaped.format(args.map(_.render): _*)
   }
+
+  def sdoc(args: Doc*): Doc = new StringContext(strippedParts.seq: _*).raw(args: _*).trim
 }
 
 /** An incomplete selection of show compositors.
@@ -123,29 +113,29 @@ trait StdShow extends StdShow1 {
     case Precise(size)         => pp"$size"
     case Bounded(lo, Infinite) => pp"$lo+"
     case Bounded(lo, hi)       => pp"[$lo,$hi]"
-    case Infinite              => "<inf>"
+    case Infinite              =>   "<inf>"
   }
 
   implicit def showInterval: Show[Interval] = Show {
-    case Interval(start, Infinite) => s"[$start..)"
-    case Interval(_, Size.Zero)    => "[0,0)"
-    case Interval(start, Size.One) => s"[$start]"
-    case Interval(start, end)      => s"[$start..${ end - 1 }]"
+    case Interval(start, Infinite) => pp"[$start..)"
+    case Interval(_, Size.Zero)    =>   "[0,0)"
+    case Interval(start, Size.One) => pp"[$start]"
+    case Interval(start, end)      => pp"[$start..${ end - 1 }]"
   }
 
   implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
-    case Consecutive(hd, None)      => hd.show
-    case Consecutive(hd, Some(lst)) => doc"[$hd..$lst]".render
-    case _                          => "[]"
+    case Consecutive(hd, None)      => pp"[$hd..)"
+    case Consecutive(hd, Some(lst)) => pp"[$hd..$lst]"
+    case _                          =>   "[]"
   }
 }
 trait StdShow0 {
-  implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z showView (xs map (_.doc)))
+  implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z show Doc.Group(xs.asDocs)) // Show(xs => z showView (xs map (_.doc)))
 }
 trait StdShow1 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] = showBy[Pmap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
 
-  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = Show(xs => z showView xs.m.map(_.doc))
+  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = showView[A](?, z) on (_.m)
   implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]]          = showBy[Zip[A1, A2]](_.pairs)
   implicit def showArray[A: Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
   implicit def showSplit[A: Show]: Show[Split[A]]                         = showBy[Split[A]](x => "Split(".doc ~ x.leftView ~ ", " ~ x.rightView ~ ")")

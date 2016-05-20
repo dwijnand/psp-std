@@ -17,7 +17,7 @@ abstract class RelationLaws[A] {
   def symmetric(f: EqRelation[A]): Forall2[A]     = (a, b) => f(a, b) === f(b, a)
   def antisymmetric(f: EqRelation[A]): Forall2[A] = (a, b) => f(a, b) =!= f(b, a)
 }
-abstract class AlgebraLaws[A : Eq : BooleanAlgebra] extends Laws[A] {
+abstract class AlgebraLaws[A : Eq : BoolAlgebra] extends Laws[A] {
   def complement(f: BinOp[A], id: A): Forall1[A] = a => f(a, !a) === id
 }
 

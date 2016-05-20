@@ -50,9 +50,9 @@ trait Explicit {
   def assert(p: => Boolean, msg: => Any)(implicit z: Assertions): Unit = Assertions.using(z)(p, s"assertion failed: $msg")
   def associative[A: Arb : Eq](f: BinOp[A]): Prop                      = forAll((a: A, b: A, c: A) => sameBehavior(f(f(a, b), c), f(a, f(b, c))))
   def commutative[A: Arb : Eq](f: BinOp[A]): Prop                      = forAll((a: A, b: A) => sameBehavior(f(a, b), f(b, a)))
-  def expectType(expected: jClass, found: jClass): NamedProp           = fpp"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
+  def expectType(expected: jClass, found: jClass): NamedProp           = fp"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
   def expectType[A: CTag](result: A): NamedProp                        = expectType(classOf[A], result.getClass)
-  def expectTypes(expected: jClass, found: Each[jClass]): NamedProp    = fpp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
+  def expectTypes(expected: jClass, found: Each[jClass]): NamedProp    = fp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
   def expectTypes[A: CTag](results: A*): NamedProp                     = expectTypes(classOf[A], results.toVec map (_.getClass) force)
   def expectValue[A: Eq: Show](expected: A)(x: A): NamedProp           = x.show -> (expected =? x)
   def junitAssert(body: => Boolean): Unit                              = org.junit.Assert assertTrue body
@@ -102,7 +102,7 @@ trait Implicit extends Explicit {
   implicit def arbProduct[A1: Arb, A2: Arb](implicit z: Arb[(A1, A2)]): Arb[A1->A2] = Arb(z.arbitrary ^^ (x => x))
 
   implicit def buildsBuildable[A, CC[X]](implicit z: Builds[A, CC[A]]): Buildable[A, CC] =
-    new Buildable[A, CC] { def builder: scmBuilder[A, CC[A]] = sciVector.newBuilder[A] mapResult (z build _.m) }
+    new Buildable[A, CC] { def builder = z.scalaBuilder }
 
   implicit class ArbitraryOps[A](x: Arb[A]) {
     def map[B](f: A => B): Arb[B]    = Arb(x.arbitrary map f)

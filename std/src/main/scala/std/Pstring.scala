@@ -52,8 +52,24 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   private def foldSuffix[A](suffix: String)(none: => A)(some: String => A): A = foldRemove(suffix.r.literal.ends)(none)(some)
 }
 
+class MatcherIterator(m: Matcher) extends scIterator[String] {
+  private var nextSeen = false
+  def hasNext = {
+    if (!nextSeen) nextSeen = m.find
+    nextSeen
+  }
+  def next(): String = cond(
+    hasNext,
+    sideEffect(m.group, nextSeen = false),
+    noSuchElementException("empty.next()")
+  )
+}
+
 final class Regex(val pattern: Pattern) extends AnyVal with ShowSelf {
   def matcher(input: jCharSequence): Matcher = pattern matcher input
+
+  def iteratorAll(s: String): scIterator[String] = new MatcherIterator(matcher(s))
+  def findAll(s: String): Vec[String]            = iteratorAll(s).toVec
 
   def append(e: String): Regex               = mapRegex(_ + e)
   def capturingGroup: Regex                  = surround("(", ")")
