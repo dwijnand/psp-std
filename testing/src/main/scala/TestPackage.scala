@@ -60,7 +60,7 @@ trait Explicit {
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
   def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
   def sameDoc[A](expr: Doc, expected: Doc): Unit                       = same(expr.show, expected.show)
-  def seqShows[A: Show](expected: String, xs: Each[A]): NamedProp      = preNewline(expected) -> (expected =? (xs mk_s ", "))
+  def seqShows[A: Show](expected: String, xs: Each[A]): NamedProp      = preNewline(expected) -> (expected =? pp"${ xs mkDoc ", " }")
   def showsAs[A: Show](expected: String, x: A): NamedProp              = preNewline(expected) -> (expected =? pp"$x")
 
   def same[A : Eq : Show](expr: A, expected: A): Unit = {

@@ -31,12 +31,12 @@ trait GenTransform[CC[X], A] {
   def >>[B](f: A => Gen[B]): CC[B]                                      = transform(_ flatMap f)
   def +^^[B](f: A => B): CC[A->B]                                       = transform(_ map (x => x -> f(x)))
   def ^?[B](pf: A ?=> B): CC[B]                                         = transform(_ collect pf)
-  def *(n: Int): CC[Vec[A]]                                             = transform(gen.directOfN(n, _))
-  def *(r: Gen[Int]): CC[Vec[A]]                                        = transform(g => r flatMap (g * _))
+  def *(n: Int): CC[View[A]]                                            = transform(gen.viewOfN(n, _))
+  def *(r: Gen[Int]): CC[View[A]]                                       = transform(g => r flatMap (g * _))
   def zip[B](h: Gen[B]): CC[A -> B]                                     = transform(_ flatMap (x => h map (x -> _)))
   def zipWith[B, C](h: Gen[B])(f: (A, B) => C): CC[C]                   = transform(g => (g, h) map f)
   def collect[B](pf: A ?=> B): CC[B]                                    = transform(_ suchThat pf.isDefinedAt map pf.apply)
-  def collectN[B](n: Int)(pf: Each[A] ?=> B)(implicit z: Arb[A]): CC[B] = transform(g => gen.eachOfN(n, g) collect pf)
+  def collectN[B](n: Int)(pf: View[A] ?=> B)(implicit z: Arb[A]): CC[B] = transform(g => gen.viewOfN(n, g) collect pf)
 }
 
 trait Assertions {

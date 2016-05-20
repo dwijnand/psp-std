@@ -2,13 +2,13 @@ package psp
 package tests
 
 import Gen._
-import psp._, std._, all._, api._, StdShow._
+import psp._, std._, all._, api._
 
 package gen {
   class TextGenerator(val letter: Gen[Char], charsInWord: Gen[Int], wordsInLine: Gen[Int]) {
-    def word: Gen[String]                   = letter * charsInWord ^^ (_ join_s)
-    def line: Gen[String]                   = word * wordsInLine ^^ (_ mk_s ' ')
-    def nLines(n: Int): Gen[Direct[String]] = line * n
+    def word: Gen[String]                 = letter * charsInWord ^^ (x => new String(x.toArray))
+    def line: Gen[String]                 = word * wordsInLine ^^ (_.m.joinWords)
+    def nLines(n: Int): Gen[View[String]] = line * n
   }
   object text extends TextGenerator(alphaNumChar, genInt(1, 8), genInt(3, 7))
 }
@@ -16,8 +16,7 @@ package gen {
 package object gen {
   def directOfN[A](n: Int, g: Gen[A]): Gen[Vec[A]] = containerOfN[Vec, A](n, g)(?, _.trav)
   def directOf[A](g: Gen[A]): Gen[Vec[A]]          = containerOf[Vec, A](g)(?, _.trav)
-  def eachOfN[A](n: Int, g: Gen[A]): Gen[Each[A]]  = containerOfN[Each, A](n, g)(?, _.trav)
-  def eachOf[A](g: Gen[A]): Gen[Each[A]]           = containerOf[Each, A](g)(?, _.trav)
+  def viewOfN[A](n: Int, g: Gen[A]): Gen[View[A]]  = containerOfN[View, A](n, g)(?, _.trav) // buildsBuildable[A, View], _.trav)
 
   def index: Gen[Index]         = frequency(10 -> zeroPlusIndex, 1 -> emptyValue[Index])
   def int: Gen[Int]             = genInt(MinInt, MaxInt)

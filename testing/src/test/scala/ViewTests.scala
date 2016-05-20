@@ -4,7 +4,7 @@ package tests
 import api._, std._, all._, StdShow._
 
 class StringViewTests {
-  val ad: String    = 'a' to 'd' mk_s ""
+  val ad: String    = pp"${ 'a' to 'd' mkDoc "" }"
   val da: String    = ad.reverseChars
   val adda1: String = ad ~ da
   val adda2: String = ad ~ "c" ~ da

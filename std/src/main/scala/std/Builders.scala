@@ -35,6 +35,7 @@ trait JvmBuilders extends JvmBuilders0 {
 }
 trait PspBuilders0 extends JvmBuilders {
   // XXX higher priority :Hash variants.
+  implicit def buildPspView[A] : Builds[A, View[A]]              = builds(identity)
   implicit def buildPspSet[A: Eq]: Builds[A, Pset[A]]            = pspSet[A]
   implicit def buildPspMap[K: Eq, V]: Builds[K -> V, Pmap[K, V]] = pspMap[K, V]
 }

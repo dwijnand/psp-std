@@ -61,11 +61,11 @@ class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer 
 }
 
 case class ShowInterpolator(val stringContext: StringContext) {
-  def escapedParts    = stringContext.parts.toVec map (_.processEscapes)
-  def escaped: String = escapedParts.join_s
+  def escapedParts: View[String] = stringContext.parts.toVec map (_.processEscapes)
+  def escaped: String            = escapedParts.join
 
-  def strippedParts    = escapedParts map (_ mapLines (_.stripMargin))
-  def stripped: String = strippedParts.join_s
+  def strippedParts: View[String] = escapedParts map (_ mapLines (_.stripMargin))
+  def stripped: String            = strippedParts.join
 
   /** TODO. See
    *  https://github.com/scala/scala/blob/2.12.x/src/compiler/scala/tools/reflect/FormatInterpolator.scala

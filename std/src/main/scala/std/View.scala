@@ -26,8 +26,8 @@ class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def grep(regex: Regex)(implicit z: Show[A]): View[A] = xs withFilter (regex isMatch _)
   def mapIf(pf: A ?=> A): View[A]                      = xs map (x => pf.applyOr(x, x))
   def slice(r: VdexRange): View[A]                     = zcond(!r.isEmpty, slice(r.head, r.size))
-  def slice(start: Vdex, len: Precise): View[A]        = xs drop Size(start.indexValue) take len
-  def sliceIndex(idx: Vdex): View[A]                   = xs drop idx.excluding take 1
+  def slice(start: Vdex, len: Precise): View[A]        = xs drop start.excluding take len
+  def sliceIndex(start: Vdex): View[A]                 = slice(start, Size.One)
   def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A]  = xs dropWhile p takeWhile q
   def sort(implicit z: Order[A]): View[A]              = xs.toRefArray.inPlace.sort
   def sortBy[B: Order](f: A => B): View[A]             = sort(orderBy[A](f))
@@ -40,13 +40,13 @@ class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def tail: View[A]    = xs drop 1
   def tails: View2D[A] = view(xs) ++ zcond(!isEmpty, tail.tails)
 
-  def joinLines(implicit z: Show[A], r: Renderer): String         = mk_s(EOL)
-  def joinWords(implicit z: Show[A], r: Renderer): String         = mk_s(" ")
-  def join_s(implicit z: Show[A], r: Renderer): String            = mk_s("")
-  def mk_s(sep: Char)(implicit z: Show[A], r: Renderer): String   = mk_s(sep.to_s)
-  def mk_s(sep: String)(implicit z: Show[A], r: Renderer): String = r show mkDoc(Doc(sep))
+  // def joinLines(implicit z: Show[A]): Doc = mkDoc(EOL.lit)
+  // def joinWords(implicit z: Show[A]): Doc = mkDoc(" ".lit)
+  // def join_s(implicit z: Show[A]): Doc    = mkDoc("".lit)
 
-  def asDocs(implicit z: Show[A]): View[Doc]    = xs map (x => Doc(x))
+  // def mk_s(sep: Char)(implicit z: Show[A]): String   = mk_s(sep.to_s)
+  // def mk_s(sep: String)(implicit z: Show[A]): String = r show mkDoc(Doc(sep))
+
   def mkDoc(sep: Doc)(implicit z: Show[A]): Doc = asDocs zreducel (_ ~ sep ~ _)
 
   def max(implicit z: Order[A]): A = reducel(all.max)
@@ -81,20 +81,17 @@ class ViewOps[A, R](private val xs: View[A]) extends AnyVal {
   def iterator: scIterator[A]                = toScalaStream.iterator
   def toArray(implicit z: CTag[A]): Array[A] = to[Array]
   def toPset(implicit z: Eq[A]): Pset[A]     = to[Pset]
-  def toPlist: Plist[A]                      = to[Plist]
   def toRefArray(): Array[Ref[A]]            = asRefs.force
   def toScalaStream: sciStream[A]            = to[sciStream]
-  def toScalaVector: sciVector[A]            = to[sciVector]
   def toVec: Vec[A]                          = to[Vec]
 
-  def asRefs: View[Ref[A]]   = xs map castRef
-  def seq: scSeq[A]          = to[scSeq] // varargs or unapplySeq, usually
-  def trav: scTraversable[A] = to[scTraversable] // scala flatMap, usually
+  def asRefs: View[Ref[A]]                   = xs map castRef
+  def asDocs(implicit z: Show[A]): View[Doc] = xs map (x => Doc(x))
+  def seq: scSeq[A]                          = to[scSeq] // varargs or unapplySeq, usually
+  def trav: scTraversable[A]                 = to[scTraversable] // scala flatMap, usually
 }
 
 class View2DOps[A](private val xss: View2D[A]) extends AnyVal {
-  import StdShow.showString
-
   def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
   def transpose: View2D[A]          = openIndices map column
   def flatten: View[A]              = xss flatMap identity
@@ -104,7 +101,8 @@ class View2DOps[A](private val xss: View2D[A]) extends AnyVal {
     val width = xss.mmap(_.show.length).flatten.max
     val fmt   = lformat(width)
     val yss   = xss mmap (x => fmt(z show x))
+    val lines = yss map (_ joinWith " ")
 
-    (yss map (_.joinWords)).joinLines.trimLines
+    lines.joinLines.trimLines
   }
 }

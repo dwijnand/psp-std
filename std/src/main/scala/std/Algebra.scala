@@ -90,6 +90,6 @@ trait StdAlgebra1 extends StdAlgebra0 {
   implicit def function2BoolAlgebra[A, B, C : BoolAlgebra]: BoolAlgebra[(A, B) => C] = new Algebra.Fun2
 }
 trait StdAlgebra extends StdAlgebra1 {
-  implicit def predicate1BoolAlgebra[A]: BoolAlgebra[ToBool[A]]        = new Algebra.Predicate1[A]
-  implicit def predicate2BoolAlgebra[A, B]: BoolAlgebra[ToBool2[A, B]] = new Algebra.Predicate2[A, B]
+  implicit def predicate1BoolAlgebra[A]: BoolAlgebra[ToBool[A]]         = new Algebra.Predicate1[A]
+  implicit def predicate2BoolAlgebra[A, B]: BoolAlgebra[(A, B) => Bool] = new Algebra.Predicate2[A, B]
 }

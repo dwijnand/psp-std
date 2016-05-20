@@ -9,7 +9,7 @@ import jl.Integer.parseInt
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
   import self.{ toCharArray => chars }
 
-  def *(n: Precise): String                         = Each const self take n join_s
+  def *(n: Precise): String                         = Each const self take n show
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
   def capitalize: String                            = zcond(!isEmpty, (self charAt 0).toUpper.to_s ~ tail.force)
@@ -18,6 +18,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def format(args: Any*): String                    = stringFormat(self, args: _*)
   def isEmpty: Bool                                 = self === ""
   def lines: View[String]                           = splitChar('\n')
+  def lit: Doc                                      = Doc(self)
   def mapChars(pf: Char ?=> Char): String           = chars mapIf pf force
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f mk_s ch
@@ -34,6 +35,8 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def stripMargin: String                           = stripMargin('|')
   def stripPrefix(prefix: String): String           = foldPrefix(prefix)(self)(identity)
   def stripSuffix(suffix: String): String           = foldSuffix(suffix)(self)(identity)
+  def stripPrefix(r: Regex): String                 = removeAll(r.starts)
+  def stripSuffix(r: Regex): String                 = removeAll(r.ends)
   def tail: String                                  = zcond(!isEmpty, self substring 1)
   def to_s: String                                  = self
   def trimLines: String                             = mapLines(_.trim).trim
@@ -65,7 +68,7 @@ class MatcherIterator(m: Matcher) extends scIterator[String] {
   )
 }
 
-final class Regex(val pattern: Pattern) extends AnyVal with ShowSelf {
+final class Regex(val pattern: Pattern) extends ShowSelf {
   def matcher(input: jCharSequence): Matcher = pattern matcher input
 
   def iteratorAll(s: String): scIterator[String] = new MatcherIterator(matcher(s))
@@ -73,13 +76,14 @@ final class Regex(val pattern: Pattern) extends AnyVal with ShowSelf {
 
   def append(e: String): Regex               = mapRegex(_ + e)
   def capturingGroup: Regex                  = surround("(", ")")
-  def ends: Regex                            = append("$")
+  def ends: Regex                            = cond(to_s endsWith "$", this, append("$"))
   def flags: Int                             = pattern.flags
   def isMatch(input: jCharSequence): Boolean = matcher(input).matches
   def isMatch[A: Show](x: A): Boolean        = isMatch(x.doc.render)
   def literal: Regex                         = surround("\\Q", "\\E") // Not setFlag(LITERAL) lest further regex additions be misinterpreted
   def mapRegex(f: ToSelf[String]): Regex     = Regex(f(to_s), flags)
-  def starts: Regex                          = mapRegex("^" + _)
+  def prepend(s: String): Regex              = mapRegex(s + _)
+  def starts: Regex                          = cond(to_s startsWith "^", this, prepend("^"))
   def surround(s: String, e: String): Regex  = mapRegex(s + _ + e)
   def to_s: String                           = s"$pattern"
 

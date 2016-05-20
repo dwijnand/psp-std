@@ -7,18 +7,19 @@ trait AllImplicit extends StdEmpty with StdViewers with StdConverters with StdOp
   import java.util.AbstractMap.SimpleImmutableEntry
 
   // Values.
-  implicit def cleaverJMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B]       = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
-  implicit def cleaverProduct2[A, B]: Cleaver[A -> B, A, B]                 = cleaver[A -> B, A, B](((_, _)), fst, snd)
-  implicit def cleaverProduct3[A, B, C]: Cleaver[`3->`[A, B, C], A, B -> C] = cleaver((x, y) => ((x, fst(y), snd(y))), _._1, x => pair(x._2, x._3))
-  implicit def cleaversciList[A]: Cleaver[sciList[A], A, sciList[A]]        = cleaver(_ :: _, _.head, _.tail)
-  implicit def conforms[A]: (A <:< A)                                       = new conformance[A]
-  implicit def defaultRenderer: FullRenderer                                = new FullRenderer(minElements = Size(3), maxElements = Size(10))
+  implicit def cleaverJMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B]      = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
+  implicit def cleaverPair[A, B]: Cleaver[A -> B, A, B]                    = cleaver[A -> B, A, B](((_, _)), fst, snd)
+  implicit def cleaverTriple[A, B, C]: Cleaver[Triple[A, B, C], A, B -> C] = cleaver((x, y) => ((x, fst(y), snd(y))), _._1, x => pair(x._2, x._3))
+  implicit def cleaverScalaList[A]: Cleaver[sciList[A], A, sciList[A]]     = cleaver(_ :: _, _.head, _.tail)
+  implicit def cleaverPspList[A]: Cleaver[Plist[A], A, Plist[A]]           = cleaver(_ :: _, _.head, _.tail)
+  implicit def conforms[A]: (A <:< A)                                      = new conformance[A]
+  implicit def defaultRenderer: FullRenderer                               = new FullRenderer(minElements = Size(3), maxElements = Size(10))
 
   // Conversions.
-  implicit def longToPrecise(x: Long): Precise                    = Size(x)
-  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B  = f.toPartial
-  implicit def promoteApiView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
-  implicit def showableToDoc[A](x: A)(implicit z: Show[A]): Doc   = Doc(x)
+  implicit def longToPrecise(x: Long): Precise                     = Size(x)
+  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B   = f.toPartial
+  implicit def apiViewToIdView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
+  implicit def hasShowToDoc[A](x: A)(implicit z: Show[A]): Doc     = Doc(x)
 }
 
 trait StdOps0 {
