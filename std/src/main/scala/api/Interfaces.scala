@@ -14,7 +14,6 @@ import Api._
 trait Foreach[+A] extends Any {
   def foreach(f: A => Unit): Unit
   def size: Size
-  def head: A
 }
 
 /** When a Show type class is more trouble than it's worth.

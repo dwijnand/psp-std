@@ -174,7 +174,6 @@ object RepView {
     def xs: View[A] = op[View](basis)
     def size: Size  = op[ConstSize](basis.size)
     def opDoc: Doc  = op[ConstDoc](Doc.empty)
-    def head: A     = xs.head
 
     // log"$opDoc: ${ Doc(this map (_.any_s) joinWords) }"
     def foreach(f: A => Unit): Unit = xs foreach f
