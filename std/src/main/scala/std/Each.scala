@@ -12,6 +12,8 @@ trait Indexed[+A] extends Any with Each[A] {
 }
 trait Direct[+A] extends Any with Indexed[A] {
   def size: Precise
+  def head: A            = apply(_0) // depend on this
+  def reverse: Direct[A] = size.getInt |> (e => Makes.fromInts(n => apply(Index(e - 1 - n)), 0, e))
 }
 
 object Cont {
@@ -42,7 +44,6 @@ object Cont {
 }
 
 abstract class StdDirect[A](val size: Precise) extends Direct[A] {
-  def head: A                           = apply(_0)
   final def foreach(f: A => Unit): Unit = size.indices foreach (i => f(apply(i)))
 }
 
@@ -54,7 +55,6 @@ object Each {
   }
   class IntIndexed[A](f: Int => A, start: Int, end: Int) extends StdDirect[A](Size(end - start)) {
     def apply(idx: Vdex): A    = f(start + idx.indexValue.toInt)
-    def reverse: IntIndexed[A] = intIndexed(n => f(end - 1 - n), 0, size.getInt)
   }
   class Const[A](elem: A) extends Indexed[A] {
     def apply(idx: Vdex): A         = elem

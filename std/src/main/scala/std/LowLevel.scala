@@ -142,7 +142,6 @@ object ll {
     private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
-    def head: A                             = apply(_0)
     @inline def foreach(f: A => Unit): Unit = foreachLong(0, size.lastIndex.indexValue, i => f(apply(Index(i))))
 
     def isFull                      = seen >= cap

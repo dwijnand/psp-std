@@ -5,7 +5,7 @@ import std._, all._
 
 class CollectionsSpec extends ScalacheckBundle {
   def bundle = "Type Inference, General"
-  def props  = pspProps ++ javaProps ++ scalaProps ++ jvmProps
+  def props  = pspProps ++ javaProps ++ scalaProps ++ jvmProps toVec
 
   type A  = String
   type B  = Int

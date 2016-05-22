@@ -54,9 +54,9 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
 final class Regex(val pattern: Pattern) extends ShowSelf {
   def matcher(input: jCharSequence): Matcher = pattern matcher input
 
-  def findAll(s: String): Vec[String] = {
-    def loop(m: Matcher): Vec[String] = if (m.find) m.group +: loop(m) else vec()
-    loop(matcher(s))
+  def findAll(s: String): Direct[String] = {
+    def loop(m: Matcher): View[String] = if (m.find) m.group +: loop(m) else view()
+    loop(matcher(s)).toVec
   }
 
   def append(e: String): Regex               = mapRegex(_ + e)

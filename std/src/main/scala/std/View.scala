@@ -104,6 +104,9 @@ trait ViewMethods[R, A] {
 
   def slice(start: Vdex, len: Precise): View[A] = this drop start.excluding take len
 
+  def head: A = take(1).zfoldl[Opt[A]]((res, x) => some(x)) | abort("empty.head")
+  def last: A = xs takeRight 1 head
+
   def applyIndex(idx: Vdex): A                        = sliceIndex(idx).head
   def count(p: ToBool[A]): Int                        = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
   def exists(p: ToBool[A]): Boolean                   = foldl(false)((res, x) => cond(p(x), return true, res))
@@ -111,7 +114,6 @@ trait ViewMethods[R, A] {
   def forall(p: ToBool[A]): Boolean                   = !exists(!p)
   def indexWhere(p: ToBool[A]): Index                 = xs.zipIndex first { case (x, i) if p(x) => i }
   def isEmpty: Boolean                                = xs.size.isZero || !exists(ConstantTrue)
-  def last: A                                         = xs takeRight 1 head
   def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
   def zhead(implicit z: Empty[A]): A                  = zcond(!isEmpty, xs.head)
   def zlast(implicit z: Empty[A]): A                  = zcond(!isEmpty, last)

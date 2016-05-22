@@ -84,7 +84,6 @@ sealed trait RView[A, R] extends View[A] {
     case IdView(underlying) => underlying foreach f
     case _                  => RunView.loop(this)(f)
   }
-  def head: A = take(1).toVec.head
 
   def collect[B](pf: A ?=> B): MapTo[B]     = Collected(this, pf)
   def drop(n: Precise): This                = Dropped(this, n)

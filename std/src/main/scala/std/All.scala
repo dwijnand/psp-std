@@ -312,7 +312,7 @@ class NonValueImplicitClasses extends AllExplicit {
 
   implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
-    def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
+    def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
     def indexOf(x: A): Index    = xs indexWhere (_ === x)
 
     def hashFun(): HashFun[A] = eqv match {
