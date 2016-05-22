@@ -29,7 +29,7 @@ sealed abstract class Interval extends (Vdex => Long) {
   def slice(r: VdexRange): Closed              = zcond(!r.isEmpty, slice(r.head, r.size))
 }
 object Interval {
-  val Empty = new Closed(0L, Size._0)
+  val Empty = new Closed(0L, _0)
 
   def unapply(r: Interval): Some[Long -> Atomic] = Some(r.startLong -> r.size)
 
@@ -55,8 +55,8 @@ object Interval {
     def isEmpty: Bool                        = size.isZero
     def isPoint: Bool                        = size.getLong === 1L
     def map[A](f: Long => A): ClosedRange[A] = Consecutive(this, f)
-    def take(n: Precise): Closed             = closed(startLong, size min n)
-    def takeRight(n: Precise): Closed        = (size min n) |> (s => closed(exclusiveEnd - s.getLong, s))
+    def take(n: Precise): Closed             = closed(startLong, min(size, n))
+    def takeRight(n: Precise): Closed        = min(size, n) |> (s => closed(exclusiveEnd - s.getLong, s))
   }
 
   final case class Open private[Interval](startLong: Long) extends Interval {

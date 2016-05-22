@@ -46,7 +46,7 @@ class ADTSpec extends ScalacheckBundle {
     "size.min is commutative" -> commutative[Size](_ min _),
     "index/nth are consistent" -> forAll((x: Index) => x.indexValue === x.toNth.indexValue),
     "nth/index are consistent" -> forAll((x: Nth) => x.nthValue === x.toIndex.nthValue),
-    seqShows("1, 1", vec(xs(Index(0)), xs(Nth(1)))),
+    seqShows("1, 1", vec(xs(_0), xs(Nth(1)))),
     seqShows("2, 4, 6", xs map f1),
     seqShows("6, 12, 18", xs map f2),
     seqShows("6, 12", xs collect f3),
@@ -110,7 +110,7 @@ class GridSpec extends ScalacheckBundle {
   type LongGrid = View2D[Long]
   implicit def showLongGrid = showBy[LongGrid](_.grid_s)
 
-  def primePartition: LongGrid               = View2D.mpartition(longsFrom(2))(xs => _ % xs.head === 0)
+  def primePartition: LongGrid               = View2D.mpartition(2L.andUp)(xs => _ % xs.head === 0)
   def primePartitionGrid(n: Int): LongGrid   = primePartition take n map (_ take n)
   def primePartitionGrid_t(n: Int): LongGrid = primePartition.transpose take n map (_ take n)
 

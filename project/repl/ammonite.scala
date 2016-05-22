@@ -20,7 +20,7 @@ object ReplMain {
 /** This sets up the ammonite repl with the correct compiler settings
  *  and desired namespace elements and aesthetics.
  */
-class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", elems()) {
+class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", emptyValue) {
   override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
   override val prompt   = Ref("psp> ")
 
@@ -49,12 +49,10 @@ object INREPL {
    *  to the console by appending > or >> to the creating expression, depending on whether
    *  you want to require a Show[A] instance.
    */
-  implicit final class ReplOpsWithShow[A, R](val xs: R)(implicit val z: ViewsAs[A, R]) {
-    private def run(f: View[A] => View[String]): R = sideEffect(xs, f(z viewAs xs) foreach (x => println(x)))
-
-    def > (implicit z: Show[A] = Show.Inherited)     = run(_ map z.show)
-    def >>(implicit z: Show[A])                      = run(_ map z.show)
-    def !>(implicit ord: Order[A], z: Show[A]): Unit = run(_.sort map z.show)
+  implicit final class ReplOpsWithShow[A](val xs: View[A]) {
+    def > (implicit z: Show[A] = Show.Inherited)     = println(pp"$xs")
+    def >>(implicit z: Show[A])                      = println(pp"$xs")
+    def !>(implicit ord: Order[A], z: Show[A]): Unit = println(pp"${ xs.sort }")
   }
 
   implicit def showToAmmonite[A](implicit z: Show[A]): pprint.PPrinter[A] =

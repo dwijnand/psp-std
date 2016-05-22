@@ -13,17 +13,17 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def *(n: Precise): String                         = Each const self take n joinString
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
-  def capitalize: String                            = zcond(!self.isEmpty, head.toUpper.to_s append tail.force)
+  def capitalize: String                            = if (self.isEmpty) "" else self o (_ splitAt _1 app (_.head.toUpper +: _))
   def charSeq: scSeq[Char]                          = chars.m.seq
   def collect(pf: Char ?=> Char): String            = chars collect pf force
   def containsChar(ch: Char): Boolean               = chars.m contains ch
   def format(args: Any*): String                    = stringFormat(self, args: _*)
-  def head: Char                                    = self charAt 0
   def lines: View[String]                           = splitChar('\n')
   def lit: Doc                                      = Doc(self)
   def mapChars(pf: Char ?=> Char): String           = collect(pf orElse { case x => x })
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f joinWith ch
+  def prepend(that: String): String                 = that + self
   def processEscapes: String                        = StringContext processEscapes self
   def r: Regex                                      = Regex(self)
   def removeAll(regex: Regex): String               = regex matcher self replaceAll ""
@@ -32,15 +32,15 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def reverseChars: String                          = chars.inPlace.reverse.utf8String
   def sanitize: String                              = mapChars { case x if x.isControl => '?' }
   def splitChar(ch: Char): View[String]             = splitRegex(Regex quote ch.any_s)
-  def splitRegex(r: Regex): View[String]            = r.pattern split self
+  def splitRegex(r: Regex): View[String]            = RepView(r.pattern split self)
   def stripMargin(ch: Char): String                 = mapLines(_ stripPrefix WS <> ch.r)
   def stripMargin: String                           = stripMargin('|')
   def stripPrefix(prefix: String): String           = stripPrefix(prefix.r.literal)
   def stripPrefix(r: Regex): String                 = removeAll(r.starts)
   def stripSuffix(r: Regex): String                 = removeAll(r.ends)
   def stripSuffix(suffix: String): String           = stripSuffix(suffix.r.literal)
+  def surround(x: PairOf[String]): String           = surround(fst(x), snd(x))
   def surround(s: String, e: String): String        = s append self append e
-  def tail: String                                  = zcond(!self.isEmpty, self substring 1)
   def to_s: String                                  = self
 
   def ifPrefix[A](prefix: String)(f: String => A): Opt[A] =

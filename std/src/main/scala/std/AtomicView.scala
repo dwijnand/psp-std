@@ -4,7 +4,7 @@ package std
 import api._, all._, StdShow._
 import View._
 
-sealed trait View[+A] extends Any with Foreach[A]
+trait View[+A] extends Any with Foreach[A]
 
 object View {
   final case class Joined[A, R](prev: RView[A, R], ys: View[A])            extends CView[A, A, R](_ + ys.size)
@@ -45,7 +45,7 @@ object RunView {
       case TakenR(xs, Precise(0))            => ()
       case DroppedR(xs, n)                   => ll.foreachDropRight(xs, f, n)
       case TakenR(xs, n)                     => ll.foreachTakeRight(xs, f, n)
-      case Dropped(xs, n: Precise)           => ll.foreachSlice(xs, indexRange(n.getLong, MaxLong), f)
+      case Dropped(xs, n: Precise)           => ll.foreachSlice(xs, n.getLong indexUntil MaxLong, f)
       case Taken(xs, n: Precise)             => ll.foreachSlice(xs, n.indices, f)
       case xs: View[_]                       => xs foreach f
       case _                                 => abort(doc"Unexpected view class ${ classNameOf(xs) }")
@@ -60,10 +60,10 @@ object RunView {
   object FlatSlice {
     def unapply[A, R](xs: RView[A, R]): Option[(RView[A, R], VdexRange)] = xs match {
       case Mapped(xs, f)           => unapply(xs) map { case (xs, range) => (xs map f, range) }
-      case Dropped(xs, Size._0)  => unapply(xs)
-      case DroppedR(xs, Size._0) => unapply(xs)
-      case Taken(xs, Size._0)    => Some(emptyValue)
-      case TakenR(xs, Size._0)   => Some(emptyValue)
+      case Dropped(xs, Size.Zero)  => unapply(xs)
+      case DroppedR(xs, Size.Zero) => unapply(xs)
+      case Taken(xs, Size.Zero)    => Some(emptyValue)
+      case TakenR(xs, Size.Zero)   => Some(emptyValue)
       case DroppedR(xs, n)         => unapply(xs) map { case (xs, range) => (xs, range dropRight n) }
       case TakenR(xs, n)           => unapply(xs) map { case (xs, range) => (xs, range takeRight n) }
       case Dropped(xs, n)          => unapply(xs) map { case (xs, range) => (xs, range drop n) }
@@ -87,7 +87,7 @@ sealed trait RView[A, R] extends View[A] {
     case IdView(underlying) => underlying foreach f
     case _                  => if (!size.isZero) RunView.loop(this)(f)
   }
-  def head: A = take(1).force.head
+  def head: A = take(1).toVec.head
 
   def collect[B](pf: A ?=> B): MapTo[B]     = Collected(this, pf)
   def drop(n: Precise): This                = Dropped(this, n)
@@ -102,7 +102,7 @@ sealed trait RView[A, R] extends View[A] {
   def withFilter(p: ToBool[A]): This        = Filtered(this, p)
   def reverseView: This                     = Reversed(this)
 
-  def build(implicit z: Builds[A, R]): R = xs.force[R]
+  def build(implicit z: Makes[A, R]): R = xs.force[R]
 }
 final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R]
 

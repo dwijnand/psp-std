@@ -55,25 +55,4 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
   def lformat[A](n: Int): A => String              = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)
   def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x
-
-  def make[R]: Builds.MakeHelper[R]            = new Builds.MakeHelper[R]
-  def remake[R](xs: R): Builds.RemakeHelper[R] = new Builds.RemakeHelper[R](xs)
-
-  def bufferMap[A, B: Empty](): scmMap[A, B] = scmMap[A, B]() withDefaultValue emptyValue[B]
-
-  def closedRange[A](start: Long, size: Precise)(f: Long => A): ClosedRange[A] = Interval.closed(start, size) map f
-  def indexRange(start: Long, end: Long): VdexRange                            = Interval.until(start, end) map Index
-  def nthInclusive(start: Long, end: Long): VdexRange                          = Interval.to(start, end) map (n => Nth(n))
-  def longRange(start: Long, end: Long): LongRange                             = Interval.until(start, end) map identity
-  def longsFrom(start: Long): OpenRange[Long]                                  = openRange(start)(identity)
-  def openIndices: OpenRange[Index]                                            = openRange(0)(Index)
-  def openRange[A](start: Long)(f: Long => A): OpenRange[A]                    = Interval open start map f
-
-  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipCross(l, r)
-  def zipSplit[R, A, B](xs: View[R])(implicit z: Splitter[R, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
-  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                              = new Zip.ZipPairs(xs)
-  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipViews(l, r)
-  def zipMap[A, B](l: View[A], f: A => B): Zip[A, B]                           = new Zip.ZipMap(l, f)
-
-  def funGrid[A, B](xs: View[A])(columns: (A => B)*): View2D.FunGrid[A, B] = new View2D.FunGrid(xs, view(columns: _*))
 }

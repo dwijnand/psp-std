@@ -25,6 +25,11 @@ class LabeledFunction[-T, +R](f: T => R, str: () => String) extends (T ?=> R) wi
   def apply(x: T): R = f(x)
   def to_s: String   = str()
 }
+final class ZipIterator[A1, A2](ls: scIterator[A1], rs: scIterator[A2]) extends scIterator[A1 -> A2] {
+  def hasNext: Bool    = ls.hasNext && rs.hasNext
+  def hasMore: Bool    = ls.hasNext || rs.hasNext
+  def next(): A1 -> A2 = ls.next -> rs.next
+}
 
 sealed abstract class <:<[-From, +To] extends (From => To) { }
 final class conformance[A] extends <:<[A, A] { def apply(x: A): A = x }

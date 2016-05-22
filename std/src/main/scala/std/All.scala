@@ -14,9 +14,38 @@ object Unsafe {
 /** One import which includes the implicits, one which doesn't.
   *  This choice is mutually exclusive: everything which is in exp is in all.
   */
-object exp extends AllExplicit
+object exp extends AllExplicit {
+  implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
+    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
+  }
+}
+
 object all extends NonValueImplicitClasses with AllImplicit  {
+  implicit class MakesClassOps[A, R](z: Makes[A, R]) {
+    def apply(xs: A*): R                     = z make Each.elems(xs: _*)
+    def contraMap[B](g: B => A): Makes[B, R] = Makes(xs => z make (xs map g))
+    def map[S](g: R => S): Makes[A, S]       = Makes(g compose z.make)
+    def scalaBuilder()                       = scala.Vector.newBuilder[A] mapResult (z make _.m)
+  }
+  implicit class jMapEntryOps[A, B](private val x: jMapEntry[A, B]) {
+    def toPair: A->B = x.getKey -> x.getValue
+  }
+  implicit class StringViewOps(private val xs: View[String]) {
+    def trimmed: View[String]         = xs map (_.trim)
+    def joinWith(ch: Char): String    = xs joinWith ch.to_s
+    def joinWith(sep: String): String = xs zreducel (_ + sep + _)
+    def join: String                  = xs joinWith ""
+    def joinWords: String             = trimmed joinWith " "
+    def joinLines: String             = xs map (_ stripSuffix "\\s+".r) joinWith "\n"
+    def joinList: String              = trimmed joinWith ", "
+    def inParens: String              = joinList surround "(" -> ")"
+    def inBrackets: String            = joinList surround "[" -> "]"
+    def inBraces: String              = joinList surround "{" -> "}"
+  }
+
   implicit class AnyOps[A](private val x: A) extends AnyVal {
+    def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
+
     def any_s: String                     = s"$x"
     def id_## : Int                       = java.lang.System.identityHashCode(x)
     def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
@@ -28,6 +57,7 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
   }
   implicit class OptionOps[A](private val x: Option[A]) extends AnyVal {
+    def view: View[A]                 = x.seq.m
     def or(alt: => A): A              = x getOrElse alt
     def toVec: Vec[A]                 = this zfold (x => vec(x))
     def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
@@ -74,35 +104,29 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
     def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
-  implicit class StringViewOps(private val xs: View[String]) extends AnyVal {
-    def joinWith(ch: Char): String    = joinWith(ch.to_s)
-    def joinWith(sep: String): String = xs zreducel (_ + sep + _)
-    def join: String                  = xs joinWith ""
-    def joinWords: String             = xs map (_.trim) joinWith " "
-    def joinLines: String             = xs map (_ stripSuffix "\\s+".r) joinWith "\n"
-
-    def mk_s(sep: Char): String   = joinWith(sep.to_s)
-    def mk_s(sep: String): String = joinWith(sep)
-  }
 }
 
 class NonValueImplicitClasses extends AllExplicit {
   self: all.type =>
 
-  implicit class HasViewsAs[A, R](val repr: R)(implicit z: ViewsAs[A, R]) {
-    def m: IdView[A, R] = z viewAs repr
+  implicit class HasWalker[A, R](val repr: R)(implicit z: Walks[A, R]) {
+    def m: RepView[R, A] = RepView(repr)
+    def m2: IdView[A, R] = z walk repr
   }
   /** The type of args forces all the interpolation variables to
     * be of a type which is implicitly convertible to Doc.
     */
   implicit class DocInterpolators(private val sc: StringContext) {
+    import StdShow._
 
     /** The type of args forces all the interpolation variables to
       *  be of a type which is implicitly convertible to Doc.
       */
-    def doc(args: Doc*): Doc  = ShowInterpolator(sc).doc(args: _*)
-    def fdoc(args: Doc*): Doc = ShowInterpolator(sc).fdoc(args: _*)
-    def sdoc(args: Doc*): Doc = ShowInterpolator(sc).sdoc(args: _*)
+    def doc(args: Doc*): Doc    = ShowInterpolator(sc).doc(args: _*)
+    def fdoc(args: Doc*): Doc   = ShowInterpolator(sc).fdoc(args: _*)
+    def sdoc(args: Doc*): Doc   = ShowInterpolator(sc).sdoc(args: _*)
+    def log(args: Doc*): Unit   = println(pp(args: _*))
+    def any(args: Any*): String = pp(args.m asDocs Show.Inherited seq: _*)
 
     def pp(args: Doc*)(implicit z: Renderer): String = z show doc(args: _*)
     def fp(args: Doc*)(implicit z: Renderer): String = z show fdoc(args: _*)
@@ -138,7 +162,7 @@ class NonValueImplicitClasses extends AllExplicit {
       *  of the two sizes.
       */
     def union(rhs: Size): Size     = Size.Range(lhs max rhs, lhs + rhs)
-    def intersect(rhs: Size): Size = Size.Range(Size._0, lhs min rhs)
+    def intersect(rhs: Size): Size = Size.Range(_0, Size.min(lhs, rhs))
     def diff(rhs: Size): Size      = Size.Range(lhs - rhs, lhs)
 
     def +(rhs: Size): Size = (lhs, rhs) match {
@@ -184,22 +208,19 @@ class NonValueImplicitClasses extends AllExplicit {
       case MinLong => MinInt
       case _       => assertInIntRange(); self.toInt
     }
-    def takeNext(len: Precise): LongRange = closedRange(self, len)(x => x)
+    def andUp: OpenRange[Long]            = Interval open self map identity
+    def takeNext(len: Precise): LongRange = Interval.closed(self, len) map identity
     def to(end: Long): LongRange          = Interval.to(self, end) map identity
     def until(end: Long): LongRange       = Interval.until(self, end) map identity
+    def indexUntil(end: Long): VdexRange  = Interval.until(self, end) map Index
+    def nthTo(end: Long): VdexRange       = Interval.to(self, end) map Nth
 
     private def assertInIntRange(): Unit = assert(MinInt <= self && self <= MaxInt, s"$self out of range")
   }
   implicit class PreciseOps(private val size: Precise) {
     def exclusive: Index   = Index(size.getLong)
-    def indices: VdexRange = indexRange(0, size.getLong)
+    def indices: VdexRange = 0L indexUntil size.getLong
     def lastIndex: Index   = Index(size.getLong - 1) // effectively maps both undefined and zero to no index.
-
-    def +(n: Precise): Precise             = size + n.getLong
-    def -(n: Precise): Precise             = size - n.getLong
-    def containsIndex(vdex: Vdex): Boolean = indices containsLong vdex.indexValue
-
-    def min(rhs: Precise): Precise = all.min(size, rhs)
   }
   implicit class PartialOps[A, B](pf: A ?=> B) {
     def contains(x: A): Bool                  = pf isDefinedAt x
@@ -275,10 +296,6 @@ class NonValueImplicitClasses extends AllExplicit {
     }
     def |(that: => Cmp): Cmp = if (cmp eq EQ) that else cmp
   }
-  implicit class ViewOpOps[A, B](private val op: Op[A, B]) {
-    def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
-    def ~[C](that: Op[B, C]): Op[A, C]                       = Op.Compose[A, B, C](op, that)
-  }
   implicit class SplittableValueSameTypeOps[A, R](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Each[A]              = Each pair x
@@ -291,6 +308,8 @@ class NonValueImplicitClasses extends AllExplicit {
   }
 
   implicit class SplittableValueOps[R, A, B](private val x: R)(implicit z: Splitter[R, A, B]) {
+    def mk_s(sep: String)(implicit za: Show[A], zb: Show[B]): String  = _1.show + sep + _2.show
+
     def _1: A                                    = fst(z split x)
     def _2: B                                    = snd(z split x)
     def appLeft[C](f: A => C): C                 = f(_1)
@@ -304,7 +323,7 @@ class NonValueImplicitClasses extends AllExplicit {
   }
   implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
     def toPmap(implicit z: Hash[A]): Pmap[A, B]                         = toMap[Pmap]
-    def toMap[CC[_, _]](implicit z: Builds[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split build xs
+    def toMap[CC[_, _]](implicit z: Makes[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split make xs
   }
 
   implicit class ShowableViewOps[A](private val xs: View[A])(implicit z: Show[A]) {

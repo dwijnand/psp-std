@@ -37,7 +37,7 @@ trait Zip[+A1, +A2] extends Any {
   def size: Size
 }
 trait ZipFromViews[+A1, +A2] extends Any with Zip[A1, A2] {
-  def pairs: View[A1 -> A2] = inView(mf => this.foreach((x, y) => mf(x -> y)))
+  def pairs: View[A1 -> A2] = this map (_ -> _)
   def size                  = pairs.size
 }
 trait ZipFromPairs[+A1, +A2] extends Any with Zip[A1, A2] {
@@ -90,13 +90,7 @@ object Zip {
     def unzip: View[A1] -> View[A2]            = lefts -> rights
     def withFilter(p: PredBoth): This          = zipSplit(inView[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
 
-    def force[R](implicit z: Builds[Both, R]): R = z build pairs
-  }
-
-  final case class ZipIterator[A1, A2](ls: scIterator[A1], rs: scIterator[A2]) extends scIterator[A1 -> A2] {
-    def hasNext: Bool    = ls.hasNext && rs.hasNext
-    def hasMore: Bool    = ls.hasNext || rs.hasNext
-    def next(): A1 -> A2 = ls.next -> rs.next
+    def force[R](implicit z: Makes[Both, R]): R = z make pairs
   }
 
   final case class ZipSplit[A, A1, A2](xs: View[A])(implicit z: Splitter[A, A1, A2]) extends ZipFromPairs[A1, A2] {
@@ -114,11 +108,6 @@ object Zip {
 }
 
 trait StdSplitZip {
-  /** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
-    *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
-    *  "to adhere firmly and closely as though evenly and securely glued" as well
-    *  as "to divide into two parts by a cutting blow".
-    */
   def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
   def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R    = f(x._1, x._2) }
 
@@ -126,4 +115,10 @@ trait StdSplitZip {
     def split(x: R): A -> B = l(x) -> r(x)
     def join(x: A -> B): R  = x app f
   }
+
+  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipCross(l, r)
+  def zipSplit[R, A, B](xs: View[R])(implicit z: Splitter[R, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
+  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                              = new Zip.ZipPairs(xs)
+  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipViews(l, r)
+  def zipMap[A, B](l: View[A], f: A => B): Zip[A, B]                           = new Zip.ZipMap(l, f)
 }

@@ -51,7 +51,7 @@ class ViewBasic extends ScalacheckBundle {
 
   def plist: Plist[Int]  = elems(1, 2, 3)
   def pvector: Vec[Int]  = elems(1, 2, 3)
-  def parray: Array[Int] = arr(1, 2, 3)
+  def parray: Array[Int] = elems(1, 2, 3)
   def pseq: Each[Int]    = elems(1, 2, 3)
   def punfold: Interval  = Interval open 1
 
@@ -66,7 +66,7 @@ class ViewBasic extends ScalacheckBundle {
   val s4 = new Bippy("def", 3)
   val strs = sciVector(s1, s2, s3, s4)
 
-  def xxNumbers: View[Int] = openRange(0)(_.toInt).m grep """^(.*)\1""".r
+  def xxNumbers: View[Long] = 0.andUp grep """^(.*)\1""".r
 
   def props = miscProps ++ vecProps ++ rangeProps
 
@@ -124,7 +124,7 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", pvector ++ pvector),
     showsAs("[1..)", punfold),
     seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),
-    seqShows("11, 22, 33, 44", indexRange(1, 50) grep """(.)\1""".r),
+    seqShows("11, 22, 33, 44", 1 indexUntil 50 grep """(.)\1""".r),
     seqShows("99, 1010, 1111", xxNumbers.slice(8, Size(3))),
     expectValue[Size](4)(strs.byRef.distinct.force.size),
     expectValue[Size](3)(strs.byEquals.distinct.force.size),

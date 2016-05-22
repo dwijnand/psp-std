@@ -28,10 +28,12 @@ sealed trait Size {
 sealed trait Atomic extends Size
 final case object Infinite extends Atomic
 final class Precise private[api](val getLong: Long) extends Atomic {
-  def /(n: Long): Precise = Precise(getLong / n)
-  def *(n: Long): Precise = Precise(getLong * n)
-  def +(n: Long): Precise = Precise(getLong + n)
-  def -(n: Long): Precise = Precise(getLong - n)
+  def /(n: Long): Precise    = Precise(getLong / n)
+  def *(n: Long): Precise    = Precise(getLong * n)
+  def +(n: Long): Precise    = Precise(getLong + n)
+  def -(n: Long): Precise    = Precise(getLong - n)
+  def +(n: Precise): Precise = Precise(getLong + n.getLong)
+  def -(n: Precise): Precise = Precise(getLong - n.getLong)
 }
 final case class Bounded private[api](lo: Precise, hi: Atomic) extends Size
 
@@ -53,10 +55,10 @@ object Precise extends (Long => Precise) {
 }
 
 object Size {
-  val _0       = new Precise(0)
-  val _1       = new Precise(1)
-  val Unknown  = _0.atLeast
-  val NonEmpty = _1.atLeast
+  val Zero     = new Precise(0)
+  val One      = new Precise(1)
+  val Unknown  = Zero.atLeast
+  val NonEmpty = One.atLeast
 
   def equiv(lhs: Size, rhs: Size): Bool = (lhs, rhs) match {
     case (Precise(l), Precise(r))           => l == r
@@ -153,4 +155,24 @@ object :: {
   def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R = Pair(x, y)
   def unapply[R, A, B](x: R)(implicit z1: Splitter[R, A, B], z2: Empty[R], z3: Eq[R]): Option[A -> B] =
     if (z3.eqv(x, z2.empty)) none() else some(z1 split x)
+}
+
+
+trait ZeroOne[+A] {
+  def zero: A
+  def one: A
+}
+trait ZeroOne0 {
+  self: ZeroOne.type =>
+
+  implicit val zeroSize: ZeroOne[Size] = make[Size](Size.Zero, Size.One)
+}
+object ZeroOne {
+  def make[A](z: A, o: A): ZeroOne[A] = new ZeroOne[A] {
+    def zero: A = z
+    def one: A  = o
+  }
+
+  implicit val zeroIndex: ZeroOne[Index]     = make(Index(0), Index(1))
+  implicit val zeroPrecise: ZeroOne[Precise] = make(Size.Zero, Size.One)
 }
