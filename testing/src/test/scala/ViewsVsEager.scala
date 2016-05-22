@@ -20,7 +20,7 @@ class OperationCounts extends ScalacheckBundle {
   def lowHalf   = 0L upTo max / 2
   def highHalf  = max / 2 upTo max
   def genSmall  = 1L upTo max / 20
-  def genRange  = (genSmall zipWith fullRange)(indexRange)
+  def genRange  = (genSmall zipWith fullRange)(_ indexUntil _)
 
   private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, () => label)
 

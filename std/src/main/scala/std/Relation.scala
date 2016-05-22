@@ -51,8 +51,8 @@ trait StdRelation0 {
   implicit def combineHash[A](implicit z: Order[A], h: Hash[A]): HashOrder[A] = z hashWith h.hash
   implicit def sizeRelation: Hash[Size]                                       = Relation.hash(Size.equiv, _.##)
   implicit def comparableRelation[A <: Comparable[A]]: HashOrder[A]           = Relation.all[A]((x, y) => longCmp(x compareTo y), _.##)
-  implicit def viewsAsRelation[A, R](implicit b: ViewsAs[A, R], z: Eq[A]): Eq[R] =
-    Relation.equiv((xs, ys) => intoView(xs) zip intoView(ys) corresponds z.eqv)
+  implicit def viewsAsRelation[A, R](implicit b: Walks[A, R], z: Eq[A]): Eq[R] =
+    Relation.equiv[R]((xs, ys) => xs.m2 zip ys.m2 corresponds z.eqv)
 }
 trait StdRelation1 extends StdRelation0 {
 

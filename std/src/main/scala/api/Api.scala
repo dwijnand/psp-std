@@ -55,14 +55,18 @@ abstract class ApiValues extends ApiTypes {
   def indexOutOfBoundsException(msg: Any): Nothing  = throw new IndexOutOfBoundsException(s"$msg")
   def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(s"$msg")
 
-  def ?[A](implicit value: A): A                         = value
+  def ?[A](implicit value: A): A             = value
+  def _0[A](implicit z: ZeroOne[A]): A       = z.zero
+  def _1[A](implicit z: ZeroOne[A]): A       = z.one
+  def emptyValue[A](implicit z: Empty[A]): A = z.empty
+  def show[A](implicit z: Show[A]): Show[A]  = z
+
   def castRef[A](value: A): Ref[A]                       = cast(value)
   def cast[A](value: Any): A                             = value.asInstanceOf[A]
   def classOf[A: CTag](): Class[_ <: A]                  = cast(classTag[A].runtimeClass)
   def classTag[A: CTag]: CTag[A]                         = ?[CTag[A]]
   def cond[A](p: Bool, thenp: => A, elsep: => A): A      = if (p) thenp else elsep
   def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
-  def emptyValue[A](implicit z: Empty[A]): A             = z.empty
   def fst[A, B](x: A -> B): A                            = x._1
   def identity[A](x: A): A                               = x
   def isInstance[A: CTag](x: Any): Bool                  = classOf[A]() isAssignableFrom x.getClass
@@ -75,7 +79,6 @@ abstract class ApiValues extends ApiTypes {
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = new Tuple2(x, y)
-  def show[A](implicit z: Show[A]): Show[A]              = z
   def sideEffect[A](result: A, exprs: Any*): A           = result
   def snd[A, B](x: A -> B): B                            = x._2
   def some[A](x: A): Option[A]                           = scala.Some(x)

@@ -109,6 +109,8 @@ trait StdShow extends StdShow1 {
 
   implicit def showFunGrid[A, B](implicit z: Show[B]): Show[View2D.FunGrid[A, B]] = showBy(_.lines.joinLines)
 
+  def joinPair[A: Show, B: Show](xy: A->B)(f: BinOp[String]): String = f(fst(xy).show, snd(xy).show)
+
   implicit def showSize: Show[Size] = Show[Size] {
     case Precise(size)         => pp"$size"
     case Bounded(lo, Infinite) => pp"$lo+"
@@ -118,8 +120,8 @@ trait StdShow extends StdShow1 {
 
   implicit def showInterval: Show[Interval] = Show {
     case Interval(start, Infinite) => pp"[$start..)"
-    case Interval(_, Size._0)      => "[0,0)"
-    case Interval(start, Size._1)  => pp"[$start]"
+    case Interval(_, Size.Zero)    => "[0,0)"
+    case Interval(start, Size.One) => pp"[$start]"
     case Interval(start, end)      => pp"[$start..${ end - 1 }]"
   }
 
@@ -130,13 +132,17 @@ trait StdShow extends StdShow1 {
   }
 }
 trait StdShow0 {
-  implicit def showView[A: Show](implicit z: FullRenderer): Show[View[A]] = Show(xs => z show Doc.Group(xs.asDocs))
+  implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).show)
 }
 trait StdShow1 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] = showBy[Pmap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
+  implicit def showPset[A: Show]          = showBy[Pset[A]](_.basis.asShown.inBraces)
 
-  implicit def showEach[A: Show](implicit z: FullRenderer): Show[Each[A]] = showView[A](?, z) on (_.m)
-  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]]          = showBy[Zip[A1, A2]](_.pairs)
-  implicit def showArray[A: Show]: Show[Array[A]]                         = showBy[Array[A]](_.toVec)
-  implicit def showSplit[A: Show]: Show[Split[A]]                         = showBy[Split[A]](x => "Split(".lit ~ x.leftView ~ ", " ~ x.rightView ~ ")")
+  implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(xs => xs.m.pairs map (_ mk_s "=") inBraces)
+  implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(xs => xs.m.asShown.inBrackets)
+  implicit def showScalaIterable[A: Show]: Show[scIterable[A]]   = Show(xs => xs.m.asShown.inParens prepend xs.stringPrefix)
+  implicit def showEach[A: Show]: Show[Each[A]]                  = Show(_.asDocs.show)
+  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]] = showBy[Zip[A1, A2]](_.pairs)
+  implicit def showArray[A: Show]: Show[Array[A]]                = showBy[Array[A]](_.toVec)
+  implicit def showSplit[A: Show]: Show[Split[A]]                = showBy[Split[A]](x => "Split(".lit ~ x.leftView ~ ", " ~ x.rightView ~ ")")
 }

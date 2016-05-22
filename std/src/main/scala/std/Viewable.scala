@@ -47,6 +47,13 @@ object Op {
   final case class Maps[A, B](f: A => B)                      extends Op[A, B]
   final case class FlatMap[A, B](f: A => View[B])             extends Op[A, B]
   final case class Compose[A, B, C](p: Op[A, B], q: Op[B, C]) extends Op[A, C]
+  final case class Append[A](xs: View[A])                     extends Op[A, A]
+  final case class Prepend[A](xs: View[A])                    extends Op[A, A]
+
+  implicit class OpOps[A, B](private val op: Op[A, B]) extends AnyVal {
+    def ~[C](that: Op[B, C]): Op[A, C] = Compose[A, B, C](op, that)
+    def apply[M[X]](xs: M[A])(implicit z: Operable[M]): M[B] = z(xs)(op)
+  }
 }
 
 object Operable {
@@ -65,6 +72,8 @@ object Operable {
       case Filter(p)       => in.atMost
       case Collect(pf)     => in.atMost
       case Maps(_)         => in
+      case Prepend(xs)     => in + xs.size
+      case Append(xs)      => in + xs.size
       case FlatMap(f)      => if (in.isZero) in else Size.Unknown
       case Compose(o1, o2) => apply(apply(in)(o1))(o2)
     }
@@ -89,6 +98,8 @@ object Operable {
       case Collect(pf)     => str(in, "collect", pf)
       case Maps(f)         => str(in, "map", f)
       case FlatMap(f)      => str(in, "flatMap", f)
+      case Prepend(xs)     => str(in, "prepend", "<xs>")
+      case Append(xs)      => str(in, "append", "<xs>")
       case Compose(o1, o2) => apply(apply(in)(o1))(o2)
     }
   }
@@ -111,6 +122,8 @@ object Operable {
         case Collect(pf)     => xs collect pf
         case Maps(f)         => xs map f
         case FlatMap(f)      => xs flatMap f
+        case Prepend(that)   => Each.join(that, xs).m
+        case Append(that)    => Each.join(xs, that).m
         case Compose(o1, o2) => apply(apply(xs)(o1))(o2)
       }
       cast(res)

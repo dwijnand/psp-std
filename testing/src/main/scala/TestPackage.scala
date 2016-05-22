@@ -57,13 +57,14 @@ trait Explicit {
   def expectType(expected: jClass, found: jClass): NamedProp           = fp"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
   def expectType[A: CTag](result: A): NamedProp                        = expectType(classOf[A], result.getClass)
   def expectTypes(expected: jClass, found: Each[jClass]): NamedProp    = fp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
-  def expectTypes[A: CTag](results: A*): NamedProp                     = expectTypes(classOf[A], results.toVec map (_.getClass) force)
+  def expectTypes[A: CTag](results: A*): NamedProp                     = expectTypes(classOf[A], results map (_.getClass) toVec)
   def expectValue[A: Eq: Show](expected: A)(x: A): NamedProp           = x.show -> (expected =? x)
   def junitAssert(body: => Boolean): Unit                              = org.junit.Assert assertTrue body
   def preNewline(s: String): String                                    = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
   def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
-  def sameDoc[A](expr: Doc, expected: Doc): Unit                       = same(expr.show, expected.show)
+  def sameDocAsToString[A: Show](expr: A): Unit                        = same(expr.show, expr.toString)
+  def sameDoc(expr: Doc, expected: Doc): Unit                          = same(expr.show, expected.show)
   def seqShows[A: Show](expected: String, xs: View[A]): NamedProp      = preNewline(expected) -> (expected =? (xs joinWith ", "))
   def showsAs[A: Show](expected: String, x: A): NamedProp              = preNewline(expected) -> (expected =? pp"$x")
 
@@ -103,15 +104,11 @@ trait Implicit extends Explicit {
   implicit def assertions: Assertions             = ImmediateTraceAssertions
   implicit def showScalacheckResult: Show[Result] = Show(r => pretty(r, Params(0)))
 
-  implicit class TestBuildsOps[A, CC[X]](z: Builds[A, CC[A]]) {
-    def toScalacheck: Buildable[A, CC] = new Buildable[A, CC] { def builder = z.scalaBuilder }
-  }
-  implicit class TestViewsOps[A, CC[X]](z: ViewsAs[A, CC[A]]) {
-    def toScalacheck: CC[A] => scTraversable[A] = z viewAs _ trav
-  }
-
-  implicit def buildsBuildable[A, CC[X]](implicit z: Builds[A, CC[A]]): Buildable[A, CC] =
+  implicit def buildsBuildable[A, CC[X]](implicit z: Makes[A, CC[A]]): Buildable[A, CC] =
     new Buildable[A, CC] { def builder = z.scalaBuilder }
+
+  implicit def walksWalkable[A, CC[X]](implicit z: Walks[A, CC[A]]): CC[A] => scTraversable[A] =
+    z walk _ trav
 
   implicit class ArbitraryOps[A](x: Arb[A]) {
     def map[B](f: A => B): Arb[B]    = Arb(x.arbitrary map f)
@@ -131,11 +128,8 @@ trait Implicit extends Explicit {
     def flatMap[B](f: A => Gen[B]): Arb[B]        = Arb(self.arbitrary flatMap f)
   }
   implicit class GenOps[A](val self: Gen[A]) extends GenTransform[Gen, A] {
-    def container[M[X]](n: Precise)(implicit z1: Builds[A, M[A]], z2: ViewsAs[A, M[A]]): Gen[M[A]] =
-      Gen.containerOfN[M, A](n.getInt, self)(z1.toScalacheck, z2.toScalacheck)
-
     def transform[B](f: Gen[A] => Gen[B]): Gen[B] = f(self)
-    def stream: Each[A]                           = Each continually self.sample flatMap (_.toVec)
+    def stream: Each[A]                           = Each continually self.sample flatMap (_.view) toVec
     def take(n: Int): Vec[A]                      = stream take n toVec
   }
   implicit class TestLongOps(val self: Long) {

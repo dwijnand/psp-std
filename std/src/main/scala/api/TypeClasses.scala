@@ -29,6 +29,12 @@ trait MIndexer[M[+X], -R, +A] extends Any {
 trait MEmpty[M[+X], +A] extends Any {
   def empty: M[A]
 }
+
+/** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
+  *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
+  *  "to adhere firmly and closely as though evenly and securely glued" as well
+  *  as "to divide into two parts by a cutting blow".
+  */
 trait MSplitter[M[+X], -R, +A, +B] extends Any {
   // Consider: what is the significance of M[A] -> M[B], not M[A -> B] ?
   def split(x: M[R]): M[A] -> M[B]

@@ -85,7 +85,7 @@ object ll {
   final def foldRight[A, B](xs: View[A], initial: B, f: (A, B) => B): B = {
     val arr: Array[Ref[A]] = doto(xs.toRefArray)(_.inPlace.reverse)
     var res: B = initial
-    arr foreach (x => res = f(x, res))
+    arr.m foreach (x => res = f(x, res))
     res
   }
 
@@ -142,12 +142,12 @@ object ll {
     private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
-    def head: A                             = apply(Index(0))
+    def head: A                             = apply(_0)
     @inline def foreach(f: A => Unit): Unit = foreachLong(0, size.lastIndex.indexValue, i => f(apply(Index(i))))
 
     def isFull                      = seen >= cap
     def apply(index: Vdex): A       = cast(buffer((readPointer + index.getInt) % cap))
-    def size: Precise               = capacity min Size(seen)
+    def size: Precise               = min(capacity, seen)
     def ++=(xs: View[A]): this.type = sideEffect(this, xs foreach setHead)
     def +=(x: A): this.type         = sideEffect(this, setHead(x))
     def push(x: A): A               = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")

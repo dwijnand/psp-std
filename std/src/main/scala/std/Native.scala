@@ -21,6 +21,7 @@ final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A] {
   def size = Size.NonEmpty
 }
 final case object Pnil extends Plist[Nothing] {
+  def apply[A](): Plist[A] = cast(Pnil)
   def size = Size(0)
   def head = abort("Pnil.head")
   def tail = abort("Pnil.tail")
@@ -80,7 +81,7 @@ object Consecutive {
     def apply(vdex: Vdex): A        = f(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (f andThen g)
     def map[B](g: A => B): Open[B]  = in map (f andThen g)
-    def head: A                     = apply(Index(0))
+    def head: A                     = apply(_0)
   }
   final class Closed[+A](val in: Interval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
@@ -92,7 +93,7 @@ object Consecutive {
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size
 
-    def head: A                          = apply(Index(0))
+    def head: A                          = apply(_0)
     def last: A                          = apply(size.lastIndex)
     def drop(n: Precise): Closed[A]      = Consecutive(in drop n, f)
     def dropRight(n: Precise): Closed[A] = Consecutive(in dropRight n, f)

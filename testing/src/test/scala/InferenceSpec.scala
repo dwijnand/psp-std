@@ -6,8 +6,8 @@ import psp.std._, all._, api._, StdShow._
 class SliceSpec extends ScalacheckBundle {
   def bundle = "Slice Operations"
   def checkSlice[A : Eq : Show](xs: Direct[A], start: Int, end: Int, expect: Direct[A]): Direct[NamedProp] = vec(
-    pp"$xs.slice($start, $end) === $expect"              -> Prop(remake(xs)(_ slice indexRange(start, end)) === expect),
-    pp"$xs drop $start take ($end - $start) === $expect" -> Prop(remake(xs)(_ drop start take end - start) === expect)
+    pp"$xs.slice($start, $end) === $expect"              -> Prop(xs.o(_ slice (start indexUntil end)) === expect),
+    pp"$xs drop $start take ($end - $start) === $expect" -> Prop(xs.o(_ drop start take end - start) === expect)
   )
 
   def props = checkSlice('a' to 'g', 2, 5, 'c' to 'e')
@@ -24,12 +24,12 @@ class InferenceSpec extends ScalacheckBundle {
   val vs: sciVector[Int] = elems(1, 2, 3)
   val xs: Pset[Int]      = elems(1, 2, 3)
 
-  val b1 = as map identity build
-  val b2 = ds map identity build
-  val b3 = fs map identity build
-  val b4 = ls.m map identity build
-  val b5 = ss map identity build
-  val b6 = vs.m map identity build
+  val b1 = as o (_ map identity)
+  val b2 = ds o (_ map identity)
+  val b3 = fs o (_ map identity)
+  val b4 = ls o (_ map identity)
+  val b5 = ss o (_ map identity)
+  val b6 = vs o (_ map identity)
   val b7 = xs mapToSet identity
 
   def ptBuild = vec[NamedProp](
@@ -49,7 +49,6 @@ class InferenceSpec extends ScalacheckBundle {
     ls.m map identity force,
     vs.m map identity force,
     xs.m map identity force,
-    as map identity build,
     as map identity force
   )
   def ptView = expectTypes[View[Int]](
@@ -80,9 +79,9 @@ class InferenceSpec extends ScalacheckBundle {
 
   def props: Vec[NamedProp] = vec(ptArray, ptView, ptVector) ++ ptBuild ++ vec(
     expectType[Array[Char]]   (ss.m map identity force),
-    expectType[String]        (remake(ss)(_ map identity)),
-    expectType[String]        (remake(ss)(_ map identity)),
-    expectType[String]        (remake(ss)(_.m map identity)),
+    expectType[String]        (ss o (_ map identity)),
+    expectType[String]        (ss o (_ map identity)),
+    expectType[String]        (ss o (_.m map identity)),
     expectType[String]        (ss map identity build),
     expectType[String]        (ss.m map identity force),
     expectType[View[Char]]    (ss.m map identity),

@@ -52,7 +52,7 @@ object Cont {
 }
 
 abstract class StdDirect[A](val size: Precise) extends Direct[A] {
-  def head: A                           = apply(Index(0))
+  def head: A                           = apply(_0)
   final def foreach(f: A => Unit): Unit = size.indices foreach (i => f(apply(i)))
 }
 
@@ -109,7 +109,7 @@ object View2D {
   type Coords = PairOf[Vdex]
 
   def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
-    xs partition p(xs) app ((ls, rs) => lazyView(ls +: mpartition(rs)(p)))
+    xs partition p(xs) app ((ls, rs) => inView(ls +: mpartition(rs)(p) foreach _))
 
   class FunGrid[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
     def isEmpty: Bool        = basis.isEmpty || functions.isEmpty
