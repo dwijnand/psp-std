@@ -86,7 +86,7 @@ class InferenceSpec extends ScalacheckBundle {
     expectType[String]        (ss.m map identity force),
     expectType[View[Char]]    (ss.m map identity),
     expectType[Pset[Int]]     (xs.m map identity force),
-    expectType[Each[Int]]     (fs map identity),
+    expectType[Each[Int]]     (fs o (_ map identity)),
     expectType[Each[Int]]     (fs.m map identity force),
     expectType[Direct[Int]]   (ds map identity build),
     expectType[Direct[Int]]   (ds.m map identity force),

@@ -6,30 +6,23 @@ import api._, all._
 /** "Native" psp collections.
   */
 sealed abstract class Plist[A] extends Each[A] {
-  def head: A
-  def tail: Plist[A]
-  def ::(head: A): Plist[A] = Pcons(head, this)
+  def ::(head: A): Pcons[A] = Pcons(head, this)
   @inline final def foreach(f: A => Unit): Unit = {
-    def loop(xs: Plist[A]): Unit = xs match {
+    @tailrec def loop(xs: Plist[A]): Unit = xs match {
       case Pcons(hd, tl) => f(hd); loop(tl)
       case _             =>
     }
     loop(this)
   }
 }
-final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A] {
-  def size = Size.NonEmpty
-}
+final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A]
 final case object Pnil extends Plist[Nothing] {
   def apply[A](): Plist[A] = cast(Pnil)
-  def size = Size(0)
-  def head = abort("Pnil.head")
-  def tail = abort("Pnil.tail")
 }
 final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
   private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
 
-  def head: A            = underlying(0)
+  def head: A            = underlying(0) // We depend on this!
   def isEmpty            = length <= 0
   def length: Int        = underlying.length
   def size: Precise      = Size(length)
@@ -56,8 +49,7 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def map[B](g: A => B): CC[B]
   def applyLong(x: Long): A
 
-  def viewLongs: View[Long]  = Each.construct[Long](in.size, in foreach _).m
-  def zipLongs: Zip[Long, A] = zipMap(viewLongs, applyLong)
+  def zipLongs: Zip[Long, A] = zipMap(in.view, applyLong)
   def startLong: Long        = in.startLong
 }
 object Consecutive {

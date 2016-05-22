@@ -25,7 +25,6 @@ final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
   def zipped: Zip[A, B]             = zipMap(keys, lookup)
 }
 final case class Pset[A](basis: View[A], table: HashFun[A])(implicit heq: Hash[A]) {
-  def size                                  = basis.size
   def map[B](f: A => B): Pmap[A, B]         = Pmap(this, Fun(f))
   def mapToSet[B: Hash](f: A => B): Pset[B] = basis map f toPset
   def contains(x: A): Bool                  = table(x.hash) exists (_ === x)

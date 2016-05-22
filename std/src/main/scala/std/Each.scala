@@ -22,7 +22,6 @@ object Cont {
   final case class Filter[A](c: Cont[A], p: ToBool[A])        extends Cont[A]
   final case class Mapped[A, B](c: Cont[A], g: A => B)        extends Cont[B]
   final case class FlatMap[A, B](c: Cont[A], g: A => Cont[B]) extends Cont[B]
-  final case class Sized[A](c: Cont[A], size: Size)           extends Cont[A]
 
   final class Stream[A](head: => A, tail: => Stream[A])
 
@@ -31,7 +30,6 @@ object Cont {
     def filter(p: ToBool[A]): Cont[A]        = Filter(c, p)
     def map[B](f: A => B): Cont[B]           = Mapped(c, f)
     def flatMap[B](f: A => Cont[B]): Cont[B] = FlatMap(c, f)
-    def sized(size: Size): Cont[A]           = Sized(c, size)
 
     def resume(f: ToUnit[A]): Unit = c match {
       case Opaque(mf)     => mf(f)
@@ -39,14 +37,6 @@ object Cont {
       case Filter(c, p)   => c resume (x => if (p(x)) f(x))
       case Mapped(c, g)   => c resume (x => g andThen f)
       case FlatMap(c, g)  => c resume (x => g(x) resume f)
-      case Sized(c, size) => c resume f
-    }
-    def size: Size = c match {
-      case Sized(_, size) => size
-      case Join(c1, c2)   => c1.size + c2.size
-      case Filter(c, _)   => c.size.atMost
-      case Mapped(c, _)   => c.size
-      case _              => Size.Unknown
     }
   }
 }
@@ -60,8 +50,6 @@ object Each {
   def suspend[A](c: Cont[A]): Each[A] = new Suspend(c)
 
   class Suspend[A](c: Cont[A]) extends Each[A] {
-    def head: A                     = { c resume (x => return x); ??? }
-    def size: Size                  = c.size
     def foreach(f: A => Unit): Unit = c resume f
   }
   class IntIndexed[A](f: Int => A, start: Int, end: Int) extends StdDirect[A](Size(end - start)) {
@@ -70,14 +58,10 @@ object Each {
   }
   class Const[A](elem: A) extends Indexed[A] {
     def apply(idx: Vdex): A         = elem
-    def head: A                     = elem
-    def size                        = Infinite
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
   class Continual[A](elem: => A) extends Indexed[A] {
     def apply(idx: Vdex): A         = elem
-    def head: A                     = elem
-    def size                        = Infinite
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
 
@@ -89,17 +73,16 @@ object Each {
   def continually[A](expr: => A): Each[A]                             = new Continual(expr)
   def intIndexed[A](f: Int => A, start: Int, end: Int): IntIndexed[A] = new IntIndexed(f, start, end)
 
-  def apply[A](mf: Suspended[A]): Each[A]                 = new Suspend(Cont(mf))
-  def construct[A](size: Size, mf: Suspended[A]): Each[A] = new Suspend(Cont(mf) sized size)
-  def each[A](xs: Foreach[A]): Each[A]                    = new Suspend(Cont[A](xs foreach _) sized xs.size)
-  def join[A](xs: Foreach[A], ys: Foreach[A]): Each[A]    = new Suspend(Cont[A](xs foreach _) join Cont[A](ys foreach _))
-  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]         = new Suspend(Cont[A -> B](xs.entrySet map (_.toPair) foreach _) sized xs.size)
-  def java[A](xs: jIterable[A]): Each[A]                  = new Suspend(Cont[A](xs.iterator foreach _))
+  def apply[A](mf: Suspended[A]): Each[A]              = new Suspend(Cont(mf))
+  def each[A](xs: Foreach[A]): Each[A]                 = new Suspend(Cont[A](xs foreach _))
+  def join[A](xs: Foreach[A], ys: Foreach[A]): Each[A] = new Suspend(Cont[A](xs foreach _) join Cont[A](ys foreach _))
+  def javaMap[A, B](xs: jMap[A, B]): Each[A -> B]      = new Suspend(Cont[A -> B](xs.entrySet map (_.toPair) foreach _))
+  def java[A](xs: jIterable[A]): Each[A]               = new Suspend(Cont[A](xs.iterator foreach _))
 
   def scalaOnce[A](xs: GTOnce[A]): Each[A] = scala(xs.toTraversable)
   def scala[A](xs: sCollection[A]): Each[A] = xs match {
     case xs: sciIndexedSeq[_] => intIndexed(xs.apply, 0, xs.length)
-    case _                    => construct(xs.size, xs.foreach)
+    case _                    => apply(xs foreach _)
   }
 
   def unapplySeq[A](xs: Each[A]): Some[scSeq[A]] = Some(xs.seq)

@@ -4,15 +4,17 @@ package std
 import api._, all._, StdShow._
 import View._
 
-trait View[+A] extends Any with Foreach[A]
+trait View[+A] extends Any with Foreach[A] {
+  def size = Size.Unknown
+}
 
 object View {
   final case class Joined[A, R](prev: RView[A, R], ys: View[A])            extends CView[A, A, R](_ + ys.size)
   final case class Filtered[A, R](prev: RView[A, R], p: ToBool[A])         extends CView[A, A, R](_.atMost)
   final case class Dropped[A, R](prev: RView[A, R], n: Precise)            extends CView[A, A, R](_ - n)
   final case class DroppedR[A, R](prev: RView[A, R], n: Precise)           extends CView[A, A, R](_ - n)
-  final case class Taken[A, R](prev: RView[A, R], n: Precise)              extends CView[A, A, R](_ min n)
-  final case class TakenR[A, R](prev: RView[A, R], n: Precise)             extends CView[A, A, R](_ min n)
+  final case class Taken[A, R](prev: RView[A, R], n: Precise)              extends CView[A, A, R](Size.min(n, _))
+  final case class TakenR[A, R](prev: RView[A, R], n: Precise)             extends CView[A, A, R](Size.min(n, _))
   final case class TakenWhile[A, R](prev: RView[A, R], p: ToBool[A])       extends CView[A, A, R](_.atMost)
   final case class DropWhile[A, R](prev: RView[A, R], p: ToBool[A])        extends CView[A, A, R](_.atMost)
   final case class Mapped[A, B, R](prev: RView[A, R], f: A => B)           extends CView[A, B, R](x => x)
@@ -78,14 +80,9 @@ sealed trait RView[A, R] extends View[A] {
   type This     = MapTo[A]
 
   def xs: RView[A, R] = this
-
-  def size: Size = this match {
-    case IdView(xs)          => xs.size
-    case CView(prev, effect) => effect(prev.size)
-  }
   def foreach(f: ToUnit[A]): Unit = this match {
     case IdView(underlying) => underlying foreach f
-    case _                  => if (!size.isZero) RunView.loop(this)(f)
+    case _                  => RunView.loop(this)(f)
   }
   def head: A = take(1).toVec.head
 
@@ -104,7 +101,13 @@ sealed trait RView[A, R] extends View[A] {
 
   def build(implicit z: Makes[A, R]): R = xs.force[R]
 }
-final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R]
+final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R] {
+  override def size = underlying match {
+    case xs: Direct[_] => xs.size
+    case _: Indexed[_] => Infinite
+    case _             => super.size
+  }
+}
 
 sealed abstract class CView[A, B, R](val sizeEffect: ToSelf[Size]) extends RView[B, R] {
   def prev: RView[A, R]

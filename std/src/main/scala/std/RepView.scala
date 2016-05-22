@@ -1,9 +1,7 @@
 package psp
 package std
 
-import api._, exp._
-import all.{ opsWrapString, HeytingAlgebraOps, predicate1BoolAlgebra, longToPrecise, AnyOps, DocInterpolators }
-import StdEmpty._
+import api._, all._
 
 trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[R, A] {
   type MapTo[B] = RepView[R, B]
@@ -17,7 +15,6 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
   def tails: Map2D[A]                           = view[MapTo[A]](this) ++ cond(isEmpty, view(), tail.tails)
   def asRefs: MapTo[Ref[A]]                     = this map castRef
 
-  // def asShown(implicit z: Show[A]): MapTo[String] = this map z.show
   def asDocs(implicit z: Show[A]): MapTo[Doc]     = this map (x => Doc(x))
   def mkDoc(sep: Doc)(implicit z: Show[A]): Doc   = asDocs zreducel (_ ~ sep ~ _)
 
@@ -49,8 +46,6 @@ object RepView {
     type M[X] = RepView[R, X]
     type V    = M[A]
     type Pred = ToBool[A]
-
-    import all._
 
     def zipCross[B, C](l: M[B], r: M[C]): Zip[B, C]                           = new ZipFromCross(l, r)
     def zipSplit[A, B, C](xs: M[A])(implicit z: Splitter[A, B, C]): Zip[B, C] = new ZipFromSplit(xs)
@@ -88,8 +83,6 @@ object RepView {
       def rights: M[C]   // the right element of each pair. Moral equivalent of pairs map snd.
       def pairs: M[B->C] // the pairs. Moral equivalent of lefts zip rights.
 
-      def size = pairs.size
-
       def foldl[D](zero: D)(f: (D, B, C) => D): D =
         ll.foldLeft[B->C, D](pairs, zero, (res, x) => f(res, fst(x), snd(x)))
 
@@ -97,8 +90,8 @@ object RepView {
         foldl(none())((res, x, y) => cond(p(x, y), return some(x -> y), res))
 
       def foreach(f: (B, C) => Unit): Unit = (lefts, rights) match {
-        case (xs: Direct[B], ys) => xs.size.indices zip ys mapLeft xs.apply
-        case (xs, ys: Direct[C]) => xs zip ys.size.indices mapRight ys.apply
+        case (xs: Direct[B], ys) => cast[Precise](xs.size).indices zip ys mapLeft xs.apply
+        case (xs, ys: Direct[C]) => xs zip cast[Precise](ys.size).indices mapRight ys.apply
         case _                   => lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return )))
       }
 
@@ -155,10 +148,6 @@ object RepView {
     def zip[B](ys: View[B]): Zip[A, B] = zipViews(self, insist("zip")(ys))
   }
 
-
-  implicit def emptyRepView[R, A]: Empty[RepView[R, A]]                               = Empty(empty[R, A])
-  implicit def showRepView[R, A: Show](implicit z: FullRenderer): Show[RepView[R, A]] = Show(xs => z show Doc.Group(xs.asDocs))
-
   def empty[R, A]: RepView[R, A]                                 = insist("empty")(view())
   def apply[R, A](xs: R)(implicit z: Walks[A, R]): RepView[R, A] = insist("apply")(z walk xs)
   def insist[R](str: String): ImplHelper[R]                      = new ImplHelper[R](str)
@@ -172,7 +161,6 @@ object RepView {
     def view[B](xs: B*): RepView[R, B]     = insist(any"view(<${xs.length} elems>)")(exp.view(xs: _*))
 
     def xs: View[A] = op[View](basis)
-    def size: Size  = op[ConstSize](basis.size)
     def opDoc: Doc  = op[ConstDoc](Doc.empty)
 
     // log"$opDoc: ${ Doc(this map (_.any_s) joinWords) }"
