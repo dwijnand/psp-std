@@ -49,7 +49,7 @@ trait StdRelation0 {
 }
 trait StdRelation1 extends StdRelation0 {
   implicit def pairEq[A: Eq, B: Eq]: Eq[A->B]             = Eq((x, y) => fst(x) === fst(y) && snd(x) === snd(y))
-  implicit def pairOrder[A: Order, B: Order]: Order[A->B] = Order((x, y) => fst(x) < fst(y) && snd(x) < snd(y))
+  implicit def pairOrder[A: Order, B: Order]: Order[A->B] = Order { case (x1 -> x2) -> (y1 -> y2) => (x1 < y1) || !(y1 < x1) && (x2 < y2) }
   implicit def pairHash[A: Hash, B: Hash]: Hash[A->B]     = Hash(x => fst(x).hash + snd(x).hash)
 
   implicit def optionHash[A: Hash]: Hash[Opt[A]] = Hash(_.fold(0L)(_.hash))
@@ -80,17 +80,19 @@ trait StdRelation1 extends StdRelation0 {
   implicit def viewHash[A: Hash]: Hash[View[A]] = Hash(_.map(_.hash).foldl(0L)(_ + _))
   implicit def viewEq[A: Eq]: Eq[View[A]]       = Eq((xs, ys) => xs zip ys corresponds (_ === _))
   implicit def viewOrder[A: Order]: Order[View[A]] = Order { (xs, ys) =>
-    def loop(x: A, y: A): Opt[Bool] = (
-      if (x < y) some(true)
-      else if (x < y) some(false)
-      else none()
+    val ls = xs.iterator
+    val rs = ys.iterator
+    def loop(): Bool = (
+      rs.hasNext && {
+        !ls.hasNext || {
+          val x = ls.next
+          val y = rs.next
+          (x < y) || !(y < x) && loop()
+        }
+      }
     )
-    xs zip ys map loop find (_.isDefined) match {
-      case Some(Some(r)) => r
-      case _             => false
-    }
+    loop()
   }
-
 }
 trait StdRelation extends StdRelation1 {
   implicit def intervalHashEqOrder: HashEqOrder[Interval] =
