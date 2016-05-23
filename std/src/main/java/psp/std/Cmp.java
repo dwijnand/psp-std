@@ -3,12 +3,12 @@ package psp.std;
 public enum Cmp {
   LT(-1), EQ(0), GT(1);
 
-  private final int intValue;
-  private Cmp(final int intValue) { this.intValue = intValue; }
-  public int intValue() { return intValue; }
+  private final int value;
+  private Cmp(final int value) { this.value = value; }
+  public int intValue() { return value; }
   public Cmp flip() {
-    if (intValue < 0) return GT;
-    else if (intValue > 0) return LT;
+    if (value < 0) return GT;
+    else if (value > 0) return LT;
     return EQ;
   }
 }
