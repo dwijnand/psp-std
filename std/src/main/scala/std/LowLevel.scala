@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 import java.io.{ ByteArrayOutputStream, BufferedInputStream }
 
 object ll {

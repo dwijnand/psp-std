@@ -3,7 +3,7 @@ package tests
 
 import org.scalacheck._
 import org.scalacheck.Prop.forAll
-import psp.std._, api._, all._
+import psp.std._, all._
 
 class BoolAlgebraSpec extends AlgebraSpec[Bool]("Bool") with ScalacheckBundle
 class Pred1AlgebraSpec extends AlgebraSpec[Char => Bool]("Char => Bool")( ?, ?, functionRelation[Char, Bool] ) with ScalacheckBundle

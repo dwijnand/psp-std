@@ -1,13 +1,10 @@
 package psp
-package api
+package std
 
-import scala.{ Tuple2, Tuple3, collection => sc }
+import scala.{ Tuple3, collection => sc }
 import java.{ lang => jl }
 import java.nio.{ file => jnf }
-
-// Importing from this is necessary to use these aliases within the api package,
-// where they aren't otherwise visible because there's no api package object.
-private[api] final object Api extends ApiValues
+import exp._
 
 trait ApiTypes extends ExternalTypes {
   // Aliases for internal and external types.
@@ -38,6 +35,7 @@ trait ApiTypes extends ExternalTypes {
   type ToSelf[A]         = A => A
   type ToString[-A]      = A => String
   type ToUnit[-A]        = A => Unit
+  type <:<[-A, +B]       = A => B
 }
 
 abstract class ApiValues extends ApiTypes {
@@ -78,11 +76,11 @@ abstract class ApiValues extends ApiTypes {
   def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) eq Cmp.LT, l, r)
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
-  def pair[A, B](x: A, y: B): Tuple2[A, B]               = new Tuple2(x, y)
+  def pair[A, B](x: A, y: B): Tuple2[A, B]               = Tuple2(x, y)
   def sideEffect[A](result: A, exprs: Any*): A           = result
   def snd[A, B](x: A -> B): B                            = x._2
   def some[A](x: A): Option[A]                           = scala.Some(x)
-  def swap[A, B](x: A, y: B): B -> A                     = scala.Tuple2(y, x)
+  def swap[A, B](x: A, y: B): B -> A                     = Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
   def zcond[A: Empty](p: Bool, thenp: => A): A           = cond(p, thenp, emptyValue[A])
   def newArray[A: CTag](len: Int): Array[A]              = new Array[A](len)

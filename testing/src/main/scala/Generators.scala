@@ -2,7 +2,7 @@ package psp
 package tests
 
 import Gen._
-import psp._, std._, all._, api._, Size._
+import psp._, std._, all._, Size._
 
 object gen {
   class TextGenerator(val letter: Gen[Char], charsInWord: Gen[Int], wordsInLine: Gen[Int]) {
@@ -17,7 +17,7 @@ object gen {
   def index: Gen[Index]     = frequency(10 -> (nats ^^ Index), 1 -> emptyValue[Index])
   def ints: Gen[Int]        = MinInt upTo MaxInt
   def nats: Gen[Long]       = 0L upTo MaxLong
-  def precise: Gen[Precise] = frequency(1 -> Zero, 1 -> One, 1 -> Size(MaxInt.toLong * 2), 20 -> (1 upTo 1000 map exp.precise))
+  def precise: Gen[Precise] = frequency(1 -> Zero, 1 -> One, 1 -> Size(MaxInt.toLong * 2), 20 -> (1 upTo 1000 map (_.size)))
   def size: Gen[Size]       = oneOf(atomic, bounded)
 }
 

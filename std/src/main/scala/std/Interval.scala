@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._, Interval._
+import all._, Interval._
 
 /** TODO: deal with Vdex potentially having -1 for a value.
   */

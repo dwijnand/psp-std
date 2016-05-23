@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import std._, api._, all._, StdShow._
+import std._, all._, StdShow._
 import Unsafe.promoteIndex
 import scala.collection.immutable.{ List => sciList, Vector => sciVector }
 
@@ -57,9 +57,7 @@ class ViewBasic extends ScalacheckBundle {
   def pseq: Each[Int]    = elems(1, 2, 3)
   def punfold: Interval  = Interval open 1
 
-  case class Bippy(s: String, i: Int) {
-    override def toString = s
-  }
+  case class Bippy(to_s: String, i: Int) extends ShowSelf
 
   // Testing different kinds of "distinct" calls.
   val s1 = new Bippy("abc", 1)
@@ -82,7 +80,7 @@ class ViewBasic extends ScalacheckBundle {
     val len  = 100
     val half = len / 2
 
-    def pair(r: LongRange) = (0 upTo half map index) zip (0 upTo half map precise)
+    def pair(r: LongRange) = 0.index upTo half zip (0.size upTo half)
 
     implicit val arbRange = Arb[LongRange](Gen const (0L until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))
@@ -130,6 +128,6 @@ class ViewBasic extends ScalacheckBundle {
     seqShows("99, 1010, 1111", xxNumbers.slice(8, Size(3))),
     expectValue[Size](4)(strs.byRef.distinct.force.size),
     expectValue[Size](3)(strs.byEquals.distinct.force.size),
-    expectValue[Size](2)(strs.byToString.distinct.force.size)
+    expectValue[Size](2)(strs.byShow.distinct.force.size)
   )
 }

@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import psp.std._, all._, api._, StdShow._
+import psp.std._, all._, StdShow._
 import org.scalacheck._, Prop.forAll, Gen._
 
 class OperationCounts extends ScalacheckBundle {
@@ -89,7 +89,7 @@ object OperableCounter {
   import Op._
 
   // show-related accesses not to be counted
-  implicit def showCountXs[A: Show] : Show[CountXs[A]] = showBy(_.xs)
+  implicit def showCountXs[A: Show] : Show[CountXs[A]] = Show.by(_.xs)
 
   class CountXs[A](val xs: Direct[A], val counter: OpCount) extends StdDirect[A](xs.size) {
     def apply(idx: Vdex): A = sideEffect(xs(idx), counter access idx)

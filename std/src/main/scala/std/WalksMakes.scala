@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 trait Walks[A, R] {
   def walk(xs: R): IdView[A, R]
@@ -70,12 +70,11 @@ trait StdMakes {
 }
 
 trait StdConstructors {
-  def bufferMap[A, B: Empty](): scmMap[A, B]                               = scmMap[A, B]() withDefaultValue emptyValue[B]
-  def elems[A, R](xs: A*)(implicit z: Makes[A, R]): R                      = z make xs
-  def funGrid[A, B](xs: View[A])(columns: (A => B)*): View2D.FunGrid[A, B] = new View2D.FunGrid(xs, view(columns: _*))
-  def inView[A](mf: Suspended[A]): IdView[A, Each[A]]                      = Each(mf).m2
-  def make[R]: Makes.Helper[R]                                             = new Makes.Helper[R]
-  def openIndices: OpenRange[Index]                                        = 0.andUp map Index
-  def vec[A](xs: A*): Vec[A]                                               = elems(xs: _*)
-  def view[A](xs: A*): RepView[Vec[A], A]                                  = vec(xs: _*).m
+  def bufferMap[A, B: Empty](): scmMap[A, B]          = scmMap[A, B]() withDefaultValue emptyValue[B]
+  def elems[A, R](xs: A*)(implicit z: Makes[A, R]): R = z make xs
+  def inView[A](mf: Suspended[A]): IdView[A, Each[A]] = Each(mf).m2
+  def make[R]: Makes.Helper[R]                        = new Makes.Helper[R]
+  def openIndices: OpenRange[Index]                   = 0.andUp map Index
+  def vec[A](xs: A*): Vec[A]                          = elems(xs: _*)
+  def view[A](xs: A*): RepView[Vec[A], A]             = vec(xs: _*).m
 }

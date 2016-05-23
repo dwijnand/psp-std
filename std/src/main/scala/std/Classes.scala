@@ -1,11 +1,16 @@
 package psp
 package std
 
-import api._, all._
+import all._
+
+/** Holding area for things which should later be made configurable.
+ */
+object Pconfig {
+  val renderer = new FullRenderer(Size(3) to 9)
+}
 
 /** Motley objects for which a file of residence is not obvious.
-  */
-
+ */
 final class JvmName(val raw: String) extends ShowSelf {
   def segments: Vec[String] = raw splitChar '.' toVec
   def short: String         = segments.last
@@ -31,9 +36,17 @@ final class ZipIterator[A1, A2](ls: scIterator[A1], rs: scIterator[A2]) extends 
   def next(): A1 -> A2 = ls.next -> rs.next
 }
 
-sealed abstract class <:<[-From, +To] extends (From => To) { }
-final class conformance[A] extends <:<[A, A] { def apply(x: A): A = x }
-
+/** Various objects for construction, extraction, alias storage.
+ */
+object Pair {
+  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R          = z.join(pair(x, y))
+  def unapply[R, A, B](x: R)(implicit z: Splitter[R, A, B]): Some[A -> B] = scala.Some(z split x)
+}
+object :: {
+  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R = Pair(x, y)
+  def unapply[R, A, B](x: R)(implicit z1: Splitter[R, A, B], z2: Empty[R], z3: Eq[R]): Option[A -> B] =
+    if (z3.eqv(x, z2.empty)) none() else some(z1 split x)
+}
 object IsClass {
   def unapply[A: CTag](x: Any): Option[A] = classFilter[A] lift x
 }
@@ -42,6 +55,30 @@ object +: {
 }
 object :+ {
   def unapply[A](xs: View[A]): Opt[View[A] -> A] = zcond(!xs.isEmpty, some(xs.init -> xs.last))
+}
+
+/** A valid index is always non-negative. All negative indices are
+  *  mapped to NoIndex, which has an underlying value of -1.
+  *  Manipulations of invalid values remain invalid, like NaN.
+  *  All valid indices give rise to a corresponding Nth which is
+  *  one larger, i.e. Index(3) is equivalent to Nth(4).
+  */
+object Index extends (Long => Index) {
+  final class Extractor(val get: Long) extends AnyVal { def isEmpty = get < 0 }
+
+  def invalid: Index            = new Index(-1L)
+  def apply(value: Long): Index = if (value < 0) invalid else new Index(value)
+  def unapply(x: Vdex)          = new Extractor(x.indexValue)
+}
+
+/** Nth is a 1-based index.
+  */
+object Nth extends (Long => Nth) {
+  final class Extractor(val get: Long) extends AnyVal { def isEmpty = get <= 0 }
+
+  def invalid: Nth            = new Nth(-1L)
+  def apply(value: Long): Nth = if (value <= 0) invalid else new Nth(value - 1)
+  def unapply(x: Vdex)        = new Extractor(x.nthValue)
 }
 object Inv {
   /** Scala, so aggravating.

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[R, A] {
   type MapTo[B] = RepView[R, B]
@@ -127,13 +127,13 @@ object RepView {
       def zip: Zip[A, A]   = app(zipViews)
     }
 
-    def partition(p: Pred): Split        = Split(this filter p, this filter !p)
-    def span(p: Pred): Split             = Split(this takeWhile p, this dropWhile p)
-    def splitAround(idx: Vdex): Split    = splitAt(idx) mapRight (_ tail)
-    def splitAt(idx: Vdex): Split        = splitAtTake(idx.excluding)
-    def splitAtTake(len: Precise): Split = Split(this take len, this drop len)
-    def dropIndex(idx: Vdex):V           = splitAround(idx).join
-    def takeToFirst(p: Pred): V          = this span !p app ((x, y) => x ++ (y take 1))
+    def partition(p: Pred): Split       = Split(this filter p, this filter !p)
+    def span(p: Pred): Split            = Split(this takeWhile p, this dropWhile p)
+    def splitAround(idx: Vdex): Split   = splitAt(idx) mapRight (_ tail)
+    def splitAt(idx: Vdex): Split       = splitAfter(idx.excluding)
+    def splitAfter(len: Precise): Split = Split(this take len, this drop len)
+    def dropIndex(idx: Vdex):V          = splitAround(idx).join
+    def takeToFirst(p: Pred): V         = this span !p app ((x, y) => x ++ (y take 1))
 
     def zipTail: Zip[A, A]      = zipViews(self, tail)
     def zipIndex: Zip[A, Index] = zipViews(self, insist("zipIndex")(openIndices))

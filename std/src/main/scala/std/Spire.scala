@@ -2,7 +2,7 @@ package psp
 package std
 package spire
 
-import api._, exp._
+import exp._
 
 /** Classes copied from spire to avoid the dependency.
   */

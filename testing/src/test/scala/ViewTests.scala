@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import api._, std._, all._, StdShow._, Makes._
+import std._, all._, StdShow._, Makes._
 
 class StringViewTests {
   val ad: String    = ('a' to 'd').m.joinString
@@ -10,7 +10,7 @@ class StringViewTests {
   val adda2: String = view(ad, "c", da).join
   val adda3: String = view(ad, "pa", da).join
 
-  def split(s: String)            = s splitAtTake s.length / 2 mapRight (_.reverseView)
+  def split(s: String)            = s splitAfter s.length / 2 mapRight (_.reverseView)
   def isPalindrome(s: String)     = split(s).zip forall (_ === _)
   def isEvenPalindrome(s: String) = split(s) app (_ === _)
 
@@ -24,7 +24,7 @@ class StringViewTests {
     sameDoc("[a].".r findAll adda3, "[ ab, ad ]")
     sameDoc("abcdefg" stripPrefix "a..", "abcdefg")
     sameDoc("abcdefg" stripPrefix "a..".r, "defg")
-    same("123456" o (_ splitAt nth(4) mapEach (_.reverseView) join), "321654")
+    same("123456" o (_ splitAfter 3.size mapEach (_.reverseView) join), "321654")
     same("1234" o (_ reverseView), "4321")
     same(Array(1, 2, 3) o (_ reverseView), Array(3, 2, 1))
     same(scalaList(1, 2, 3) o (_ reverseView), scalaList(3, 2, 1))
@@ -71,8 +71,8 @@ class IntViewTests {
     same(ints forall (_ < 10), false)
     same(ints forall (_ < 11), true)
     same(ints head, 1)
-    same(ints indexWhere (_ < 1), emptyValue[Index])
-    same[Vdex](ints indexWhere (_ > 1), _1)
+    same(ints indexWhere (_ < 1), Index(-12345)) // There's only one invalid index
+    same(ints indexWhere (_ > 1), Index(1))
     same(ints indexWhere (_ > 1), Nth(2))
     same(ints last, 10)
     same(ints reducel (_ + _), 55)
@@ -100,12 +100,12 @@ class IntViewTests {
     same(ints sort reverseInt head, 10)
     same(ints.toVec o (_ mapIf { case 1 => -1 }) size, Size(10))
     same(ints mapIf { case 1 => -1 } head, -1)
-    same[View[Int]](ints.slice(Index(2), Size(2)), view(3, 4))
+    same[View[Int]](ints.slice(2.index, Size(2)), view(3, 4))
     same[View[Int]](ints.slice(Nth(2), Size(2)), view(2, 3))
     same[View[Int]](ints slice (1 indexUntil 4), view(2, 3, 4))
     same[View[Int]](ints slice (3 nthTo 4), view(3, 4))
     same[View[Int]](ints drop 2 take 2, view(3, 4))
-    same(1 to 3 map nth, 0 to 2 map index)
+    same(1 to 3 map (_.nth), 0 to 2 map (_.index))
     same(1 nthTo 3, 0 indexUntil 3)
     same(ints takeToFirst (_ > 2), view(1, 2, 3))
     same(ints.span(_ < 4).collate, view(1, 4, 2, 5, 3, 6))
@@ -114,8 +114,8 @@ class IntViewTests {
     same(xints.sortBy(_.any_s), view(106, 25, 304))
     same(xints.sortBy(_.any_s.reverseBytes.utf8String), view(304, 25, 106))
     same(xints sortWith ((x, y) => longCmp(y - x)), view(304, 106, 25))
-    same(ints3 splitAround nth(2) join, view(1, 3))
-    same(ints3 dropIndex nth(2), view(1, 3))
+    same(ints3 splitAround Nth(2) join, view(1, 3))
+    same(ints3 dropIndex Nth(2), view(1, 3))
     same(5 +: ints3 :+ 5, view(5, 1, 2, 3, 5))
   }
 
@@ -134,19 +134,20 @@ class IntViewTests {
     same(ints zreducer (_ + _), 55)
     same(ints3 zfoldl[Int](_ - _), -6)
     same(ints3 zfoldr[Int](_ - _), 2)
+    same(view[Int]() zreducel (_ + _), 0)
   }
 
   @Test
   def readmeShowTests(): Unit = {
-    val xs = 1 to 20 splitAt index(10)
-    val ys = zipCross(1 to 3, vec("a", "bb", "ccc"))
-    val zs = ys filter (_ === _.length)
+    val xs = 1 to 20 splitAfter 10.size
+    val ys = zipCross(1 to 3, view("a", "bb"))
+    val zs = ys eqBy (x => x, _.length)
 
-    sameDoc(xs, "Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])")
+    sameDoc(xs, "[ 1, 2, 3, ... ] / [ 11, 12, 13, ... ]")
     sameDoc(xs mapLeft (_ dropRight 8) join, "[ 1, 2, 11, ... ]")
     sameDoc(xs.zip filterRight (_ % 3 === 0), "[ 2 -> 12, 5 -> 15, 8 -> 18 ]")
-    sameDoc(ys, "[ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]")
-    sameDoc(zs, "[ 1 -> a, 2 -> bb, 3 -> ccc ]")
-    sameDoc(zs.rights joinWith '/', "a/bb/ccc")
+    sameDoc(ys, "[ 1 -> a, 1 -> bb, 2 -> a, 2 -> bb, 3 -> a, 3 -> bb ]")
+    sameDoc(zs, "[ 1 -> a, 2 -> bb ]")
+    sameDoc(zs.rights joinWith '/', "a/bb")
   }
 }

@@ -75,7 +75,7 @@ class PspVectorBenchmarker {
     var total = 0L
     var i = 0
     while (i < xs.size.getInt) {
-      total += xs(index(i))
+      total += xs(Index(i))
       i += 1
     }
     total
