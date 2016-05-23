@@ -53,10 +53,10 @@ object Precise extends (Long => Precise) {
 }
 
 object Size {
-  val Zero     = new Precise(0)
-  val One      = new Precise(1)
-  val Unknown  = Zero.atLeast
-  val NonEmpty = One.atLeast
+  val Zero: Precise = Size(0)
+  val One: Precise  = Size(1)
+  val Unknown       = Zero.atLeast
+  val NonEmpty      = One.atLeast
 
   def equiv(lhs: Size, rhs: Size): Bool = (lhs, rhs) match {
     case (Precise(l), Precise(r))           => l == r
@@ -120,50 +120,15 @@ object Vindex {
   val Zero = new AnyRef
   val One  = new AnyRef
 }
-
-/** A valid index is always non-negative. All negative indices are
-  *  mapped to NoIndex, which has an underlying value of -1.
-  *  Manipulations of invalid values remain invalid, like NaN.
-  *  All valid indices give rise to a corresponding Nth which is
-  *  one larger, i.e. Index(3) is equivalent to Nth(4).
-  */
-object Index extends (Long => Index) {
-  final class Extractor(val get: Long) extends AnyVal { def isEmpty = get < 0 }
-
-  def invalid: Index            = new Index(-1L)
-  def apply(value: Long): Index = if (value < 0) invalid else new Index(value)
-  def unapply(x: Vdex)          = new Extractor(x.indexValue)
-}
-
-/** Nth is a 1-based index.
-  */
-object Nth extends (Long => Nth) {
-  final class Extractor(val get: Long) extends AnyVal { def isEmpty = get <= 0 }
-
-  def invalid: Nth            = new Nth(-1L)
-  def apply(value: Long): Nth = if (value <= 0) invalid else new Nth(value - 1)
-  def unapply(x: Vdex)        = new Extractor(x.nthValue)
-}
-
-object Pair {
-  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R          = z.join(pair(x, y))
-  def unapply[R, A, B](x: R)(implicit z: Splitter[R, A, B]): Some[A -> B] = scala.Some(z split x)
-}
-object :: {
-  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R = Pair(x, y)
-  def unapply[R, A, B](x: R)(implicit z1: Splitter[R, A, B], z2: Empty[R], z3: Eq[R]): Option[A -> B] =
-    if (z3.eqv(x, z2.empty)) none() else some(z1 split x)
-}
-
-
 trait ZeroOne[+A] {
   def zero: A
   def one: A
 }
+
 trait ZeroOne0 {
   self: ZeroOne.type =>
 
-  implicit val zeroSize: ZeroOne[Size] = make[Size](Size.Zero, Size.One)
+  implicit val zeroSize: ZeroOne[Size] = make[Size](Size(0), Size(1))
 }
 object ZeroOne {
   def make[A](z: A, o: A): ZeroOne[A] = new ZeroOne[A] {
@@ -172,5 +137,5 @@ object ZeroOne {
   }
 
   implicit val zeroIndex: ZeroOne[Index]     = make(Index(0), Index(1))
-  implicit val zeroPrecise: ZeroOne[Precise] = make(Size.Zero, Size.One)
+  implicit val zeroPrecise: ZeroOne[Precise] = make(Size(0), Size(1))
 }

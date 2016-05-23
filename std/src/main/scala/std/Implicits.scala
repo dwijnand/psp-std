@@ -8,7 +8,7 @@ trait AllImplicit extends AllImplicit0 with StdEmpty with StdBuilders with StdAl
 
   implicit def cleaveJavaMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B] = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
   implicit def cleaveScalaProduct[A, B]: Cleaver[A -> B, A, B]          = cleaver[A -> B, A, B](((_, _)), fst, snd)
-  implicit def conforms[A]: (A <:< A)                                   = new conformance[A]
+  implicit def conforms[A] : A <:< A                                    = x => x
 
   // Conversions.
   implicit def longToPrecise(x: Long): Precise                     = Size(x)

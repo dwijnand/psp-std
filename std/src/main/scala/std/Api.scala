@@ -35,6 +35,7 @@ trait ApiTypes extends ExternalTypes {
   type ToSelf[A]         = A => A
   type ToString[-A]      = A => String
   type ToUnit[-A]        = A => Unit
+  type <:<[-A, +B]       = A => B
 }
 
 abstract class ApiValues extends ApiTypes {
