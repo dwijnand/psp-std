@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._, Fun._
+import all._, Fun._
 
 /** When you come down to it,
   *

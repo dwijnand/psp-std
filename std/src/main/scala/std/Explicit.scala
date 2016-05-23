@@ -1,7 +1,6 @@
 package psp
 package std
 
-import psp.api._
 import scala.collection.{ mutable => scm }
 
 abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip with StdConstructors {
@@ -12,6 +11,7 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
   final val Some    = scala.Some
   final val Success = scala.util.Success
   final val Try     = scala.util.Try
+  final val Tuple2  = scala.Tuple2
   final val scmMap  = scm.Map
 
   final val ConstantFalse  = (x: scala.Any) => false

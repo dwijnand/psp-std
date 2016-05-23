@@ -1,9 +1,9 @@
 package psp
 package std
 
-import api._, exp._
+import exp._
 
-trait AllImplicit extends AllImplicit0 with StdEmpty with MakesWalks with StdAlgebra {
+trait AllImplicit extends AllImplicit0 with StdEmpty with StdBuilders with StdAlgebra {
   import java.util.AbstractMap.SimpleImmutableEntry
 
   implicit def cleaveJavaMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B] = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)

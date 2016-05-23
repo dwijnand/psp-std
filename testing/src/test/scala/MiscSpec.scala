@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import std._, api._, all._, StdShow._
+import std._, all._, StdShow._
 import Prop.forAll
 
 class MiscTests {

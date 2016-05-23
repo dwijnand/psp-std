@@ -1,5 +1,5 @@
 package psp
-package api
+package std
 
 import scala.{ collection => sc }, sc.{ mutable => scm, immutable => sci }
 import java.{ lang => jl }
@@ -45,17 +45,18 @@ trait ExternalTypes {
   type Unit    = scala.Unit
 
   // scala magic types, mostly not renamed.
-  type Array[A]      = scala.Array[A]
-  type BigDecimal    = scala.math.BigDecimal
-  type BigInt        = scala.math.BigInt
-  type CTag[A]       = scala.reflect.ClassTag[A]
-  type Dynamic       = scala.Dynamic
-  type Failure[+A]   = scala.util.Failure[A]
-  type Option[+A]    = scala.Option[A]
-  type Some[+A]      = scala.Some[A]
-  type StringContext = scala.StringContext
-  type Success[+A]   = scala.util.Success[A]
-  type Try[+A]       = scala.util.Try[A]
+  type Array[A]       = scala.Array[A]
+  type BigDecimal     = scala.math.BigDecimal
+  type BigInt         = scala.math.BigInt
+  type CTag[A]        = scala.reflect.ClassTag[A]
+  type Dynamic        = scala.Dynamic
+  type Failure[+A]    = scala.util.Failure[A]
+  type Option[+A]     = scala.Option[A]
+  type Some[+A]       = scala.Some[A]
+  type StringContext  = scala.StringContext
+  type Success[+A]    = scala.util.Success[A]
+  type Try[+A]        = scala.util.Try[A]
+  type Tuple2[+A, +B] = scala.Tuple2[A, B]
 
   // scala annotations
   type inline    = scala.inline

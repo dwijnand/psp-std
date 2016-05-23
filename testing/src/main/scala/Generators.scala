@@ -2,7 +2,7 @@ package psp
 package tests
 
 import Gen._
-import psp._, std._, all._, api._, Size._
+import psp._, std._, all._, Size._
 
 object gen {
   class TextGenerator(val letter: Gen[Char], charsInWord: Gen[Int], wordsInLine: Gen[Int]) {

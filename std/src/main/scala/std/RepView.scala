@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[R, A] {
   type MapTo[B] = RepView[R, B]

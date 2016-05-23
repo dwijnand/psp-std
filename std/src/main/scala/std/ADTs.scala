@@ -1,9 +1,7 @@
 package psp
-package api
+package std
 
-/** Sealed ADTs embedded in the API bedrock.
-  */
-import Api._, Size._
+import exp._, Size._
 
 /** The Size hierarchy is:
   *                     Size
@@ -27,7 +25,7 @@ sealed trait Size {
 }
 sealed trait Atomic extends Size
 final case object Infinite extends Atomic
-final class Precise private[api](val getLong: Long) extends Atomic {
+final class Precise private[std](val getLong: Long) extends Atomic {
   def /(n: Long): Precise    = Precise(getLong / n)
   def *(n: Long): Precise    = Precise(getLong * n)
   def +(n: Long): Precise    = Precise(getLong + n)
@@ -35,7 +33,7 @@ final class Precise private[api](val getLong: Long) extends Atomic {
   def +(n: Precise): Precise = Precise(getLong + n.getLong)
   def -(n: Precise): Precise = Precise(getLong - n.getLong)
 }
-final case class Bounded private[api](lo: Precise, hi: Atomic) extends Size
+final case class Bounded private[std](lo: Precise, hi: Atomic) extends Size
 
 object Precise extends (Long => Precise) {
   final class Extractor(val get: Long) extends AnyVal { def isEmpty = get < 0 }
@@ -98,7 +96,7 @@ object Size {
 
 /** Virtual Index.
   */
-final class Vindex[Base] private[api](val indexValue: Long) extends AnyVal {
+final class Vindex[Base] private[std](val indexValue: Long) extends AnyVal {
   type This = Vindex[Base]
 
   def create(indexValue: Long): This = new Vindex[Base](indexValue)

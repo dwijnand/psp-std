@@ -1,8 +1,7 @@
 package psp
 package std
 
-import api._, all._, StdShow._
-import View._
+import all._, StdShow._, View._
 
 trait View[+A] extends Any with Foreach[A] {
   def size = Size.Unknown

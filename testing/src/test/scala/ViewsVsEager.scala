@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import psp.std._, all._, api._, StdShow._
+import psp.std._, all._, StdShow._
 import org.scalacheck._, Prop.forAll, Gen._
 
 class OperationCounts extends ScalacheckBundle {

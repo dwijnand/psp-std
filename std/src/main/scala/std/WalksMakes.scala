@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 trait Walks[A, R] {
   def walk(xs: R): IdView[A, R]

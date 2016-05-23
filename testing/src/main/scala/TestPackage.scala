@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import api._, std._, all._, StdShow._
+import std._, all._, StdShow._
 import org.scalacheck.Prop._, Color._
 
 object Color {

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._, StdShow._
+import all._, StdShow._
 import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
 import jl.Integer.parseInt, jl.Long.parseLong

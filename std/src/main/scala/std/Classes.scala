@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 /** Holding area for things which should later be made configurable.
  */

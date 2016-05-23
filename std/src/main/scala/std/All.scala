@@ -1,8 +1,6 @@
 package psp
 package std
 
-import psp.api._
-import scala.Tuple2
 import java.io.BufferedInputStream
 
 object Unsafe {

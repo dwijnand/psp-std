@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import api._, std._, all._, StdShow._, Makes._
+import std._, all._, StdShow._, Makes._
 
 class StringViewTests {
   val ad: String    = ('a' to 'd').m.joinString

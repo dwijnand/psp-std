@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, exp._, StdShow._
+import exp._, StdShow._
 
 /** Op and Operable
   *

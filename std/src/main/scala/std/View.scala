@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 class ViewOps[A, R](val xs: View[A]) extends ViewMethods[R, A] {
   type MapTo[B] = View[B]

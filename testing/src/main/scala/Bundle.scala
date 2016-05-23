@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import psp._, std._, all._, api._, StdShow._
+import psp._, std._, all._, StdShow._
 import Color._
 
 trait Bundle extends ShowSelf {

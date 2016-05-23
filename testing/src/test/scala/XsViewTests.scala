@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import api._, std._
+import std._
 import all._
 import StdShow._, Makes._
 

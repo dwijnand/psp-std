@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 final class InPlace[A](val xs: Array[A]) extends AnyVal {
   private def lastIndex                   = xs.length - 1

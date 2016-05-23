@@ -1,36 +1,7 @@
 package psp
 package std
 
-import api._, all._
-
-object Order {
-  val Inherited: HashOrder[String] = comparable[String] hashWith (_.##)
-  val ToString: HashOrder[Any]     = Relation.allBy[Any](_.any_s)(Inherited)
-
-  def apply[A](r: OrderRelation[A]): Order[A]      = new OrderImpl(r)
-  def by[A]: OrderBy[A]                            = new OrderBy[A]
-  def comparable[A <: Comparable[A]]: HashOrder[A] = apply[A]((x, y) => longCmp(x compareTo y)) hashWith (_.##)
-  def shown[A](implicit z: Show[A]): Order[A]      = by[A](_.pp)(Inherited)
-
-  class OrderImpl[A](r: OrderRelation[A]) extends Order[A] {
-    def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
-    def cmp(x: A, y: A): Cmp  = r(x, y)
-  }
-  final class OrderBy[A] {
-    def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = z on f
-  }
-}
-object Eq {
-  def apply[A](r: EqRelation[A]): Eq[A] = new EqImpl(r)
-  def by[A]: EqBy[A]                    = new EqBy[A]
-
-  class EqImpl[A](r: EqRelation[A]) extends Eq[A] {
-    def eqv(x: A, y: A): Bool = r(x, y)
-  }
-  final class EqBy[A] {
-    def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A] = z on f
-  }
-}
+import all._
 
 object Relation {
   val Inherited: Hash[Any]   = hash[Any](_ == _, _.##)

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import all._
 
 /** When a View is split into two disjoint views.
   * Notably, that's span, partition, and splitAt.

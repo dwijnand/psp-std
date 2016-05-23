@@ -1,9 +1,7 @@
 package psp
-package api
+package std
 
-/** API level type classes and interfaces other than the collections.
-  */
-import Api._
+import all._
 
 /** Type classes for "inside" a context.
   *  The more familiar type classes extends these with M[X] = X.
@@ -100,4 +98,63 @@ trait Joiner[+R, -A, -B] extends Any with MJoiner[Id, R, A, B] with AJoiner[R] {
 trait Cleaver[R, A, B] extends Any with MCleaver[Id, R, A, B] with Joiner[R, A, B] with Splitter[R, A, B] with ACleaver[R] {
   type Left  = A
   type Right = B
+}
+
+
+/*********
+ *
+ *********/
+
+object Order {
+  val Inherited: HashOrder[String] = comparable[String] hashWith (_.##)
+  val ToString: HashOrder[Any]     = Relation.allBy[Any](_.any_s)(Inherited)
+
+  def apply[A](r: OrderRelation[A]): Order[A]      = new OrderImpl(r)
+  def by[A]: OrderBy[A]                            = new OrderBy[A]
+  def comparable[A <: Comparable[A]]: HashOrder[A] = apply[A]((x, y) => longCmp(x compareTo y)) hashWith (_.##)
+  def shown[A](implicit z: Show[A]): Order[A]      = by[A](_.pp)(Inherited)
+
+  class OrderImpl[A](r: OrderRelation[A]) extends Order[A] {
+    def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
+    def cmp(x: A, y: A): Cmp  = r(x, y)
+  }
+  final class OrderBy[A] {
+    def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = z on f
+  }
+}
+object Eq {
+  def apply[A](r: EqRelation[A]): Eq[A] = new EqImpl(r)
+  def by[A]: EqBy[A]                    = new EqBy[A]
+
+  class EqImpl[A](r: EqRelation[A]) extends Eq[A] {
+    def eqv(x: A, y: A): Bool = r(x, y)
+  }
+  final class EqBy[A] {
+    def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A] = z on f
+  }
+}
+object Show {
+  /** This of course is not implicit as that would defeat the purpose of the endeavor.
+    *  There is however an implicit universal instance in the Unsafe object.
+    */
+  val Inherited: Show[Any] = apply[Any](s => zcond(s != null, s.toString))
+
+  def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
+  def by[A]: ShowBy[A]                  = new ShowBy[A]
+
+  final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] {
+    def show(x: A) = f(x)
+  }
+  final class ShowBy[A] {
+    def apply[B](f: A => B)(implicit z: Show[B]): Show[A] = z on f
+  }
+}
+object Empty {
+  def empty[A]: Empty[A]             = new Throws[A]("empty") // the empty empty
+  def apply[A](empty: => A): Impl[A] = new Impl[A](empty)
+  def const[A](empty: A): Const[A]   = new Const[A](empty)
+
+  final class Throws[+A](msg: String) extends Empty[A] { def empty: A = abort(msg) }
+  final class Impl[+A](expr: => A)    extends Empty[A] { def empty: A = expr }
+  final class Const[+A](val empty: A) extends Empty[A] {}
 }

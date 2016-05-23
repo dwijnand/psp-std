@@ -1,7 +1,14 @@
 package psp
 package std
 
-import api._, all._, Show.by
+import all._, Show.by
+
+/** When a Show type class is more trouble than it's worth.
+  *  Not overriding toString here to leave open the possibility of
+  *  using a synthetic toString, e.g. of case classes.
+  */
+trait ShowDirect extends Any { def to_s: String }
+trait ShowSelf extends Any with ShowDirect { override def toString = to_s }
 
 object StdShow extends StdShow
 
@@ -26,24 +33,6 @@ object Doc {
   def empty: Doc                                    = NoDoc
   def apply[A](x: A)(implicit z: Show[A]): Shown[A] = Shown[A](x, z)
   def apply(s: String): Literal                     = Literal(s)
-}
-
-object Show {
-
-  /** This of course is not implicit as that would defeat the purpose of the endeavor.
-    *  There is however an implicit universal instance in the Unsafe object.
-    */
-  val Inherited: Show[Any] = apply[Any](s => zcond(s != null, s.toString))
-
-  def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
-  def by[A]: ShowBy[A]                  = new ShowBy[A]
-
-  final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] {
-    def show(x: A) = f(x)
-  }
-  final class ShowBy[A] {
-    def apply[B](f: A => B)(implicit z: Show[B]): Show[A] = z on f
-  }
 }
 
 class FullRenderer(elemRange: SizeRange) extends Renderer {
