@@ -9,10 +9,10 @@ class ViewOps[A, R](val xs: View[A]) extends ViewMethods[R, A] {
   def view[A](xs: A*): MapTo[A]       = exp.view(xs: _*)
   def apply[B](op: Op[A, B]): View[B] = Operable.OperableView(xs)(op)
 
-  def inits: Map2D[A] = view(xs) ++ zcond(!isEmpty, init.inits)
-  def tails: Map2D[A] = view(xs) ++ zcond(!isEmpty, tail.tails)
-  def init: This = this dropRight 1
-  def tail: This = this drop 1
+  def inits: Map2D[A]                         = view(xs) ++ zcond(!isEmpty, init.inits)
+  def tails: Map2D[A]                         = view(xs) ++ zcond(!isEmpty, tail.tails)
+  def init: This                              = this dropRight 1
+  def tail: This                              = this drop 1
   def asRefs: MapTo[Ref[A]]                   = xs map castRef
   def asDocs(implicit z: Show[A]): MapTo[Doc] = xs map (x => Doc(x))
 

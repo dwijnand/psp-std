@@ -46,8 +46,8 @@ object Show {
 class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
   private object UnderMax {
     def unapply(xs: View[Doc]) = xs splitAt maxElements.lastIndex match {
-      case Split(xs, ys) if ys.isEmpty => Some(xs)
-      case _                           => None
+      case SplitView(xs, ys) if ys.isEmpty => Some(xs)
+      case _                               => None
     }
   }
   def show(x: Doc): String = x match {

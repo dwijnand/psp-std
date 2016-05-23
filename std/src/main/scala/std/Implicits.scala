@@ -13,7 +13,6 @@ trait AllImplicit extends AllImplicit0 with StdEmpty with MakesWalks with StdAlg
 
   // Conversions.
   implicit def longToPrecise(x: Long): Precise                     = Size(x)
-  implicit def funToPartialFunction[A, B](f: Fun[A, B]): A ?=> B   = f.toPartial
   implicit def hasShowToDoc[A](x: A)(implicit z: Show[A]): Doc     = Doc(x)
   implicit def apiViewToIdView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
 }

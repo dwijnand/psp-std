@@ -84,6 +84,9 @@ object all extends NonValueImplicitClasses with AllImplicit  {
 
     import Fun._
 
+    def fn: A => B  = x => f(x)
+    def pf: A ?=> B = f.toPartial
+
     def andThen[C](g: B => C): Fun[A, C]      = AndThen(f, Opaque(g))
     def applyOrElse(x: A, g: A => B): B       = cond(f contains x, f(x), g(x))
     def compose[C](g: C => A): Fun[C, B]      = AndThen(Opaque(g), f)

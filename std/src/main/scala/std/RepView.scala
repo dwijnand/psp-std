@@ -9,11 +9,11 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
   def view[B](xs: B*): MapTo[B]
   def apply[B](next: Op[A, B]): MapTo[B]
 
-  def init: This                                = this dropRight 1
-  def tail: This                                = this drop 1
-  def inits: Map2D[A]                           = view[MapTo[A]](this) ++ cond(isEmpty, view(), init.inits)
-  def tails: Map2D[A]                           = view[MapTo[A]](this) ++ cond(isEmpty, view(), tail.tails)
-  def asRefs: MapTo[Ref[A]]                     = this map castRef
+  def init: This            = this dropRight 1
+  def tail: This            = this drop 1
+  def inits: Map2D[A]       = this +: zcond(!isEmpty, init.inits)
+  def tails: Map2D[A]       = this +: zcond(!isEmpty, tail.tails)
+  def asRefs: MapTo[Ref[A]] = this map castRef
 
   def asDocs(implicit z: Show[A]): MapTo[Doc]     = this map (x => Doc(x))
   def mkDoc(sep: Doc)(implicit z: Show[A]): Doc   = asDocs zreducel (_ ~ sep ~ _)
@@ -33,8 +33,7 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
   def filterNot(p: ToBool[A]): This         = apply(Op.Filter(!p))
   def append(that: View[A]): This           = apply(Op.Append(that))
   def prepend(that: View[A]): This          = apply(Op.Prepend(that))
-  def reverseView: This                     = this // XXX
-
+  def reverseView: This                     = apply(Op.Reverse())
 }
 
 object RepView {
@@ -117,21 +116,14 @@ object RepView {
     /** When a View is split into two disjoint views.
       * Notably, that's span, partition, and splitAt.
       */
-    case class Split(leftView: V, rightView: V) {
-      def appLeft[B](f: V => B): B      = f(leftView)
-      def appRight[B](f: V => B): B     = f(rightView)
-      def app[B](f: (V, V) => B): B     = views app f
-      def mapBoth[B](f: V => B): B->B   = views map2 f
-      def mapEach(f: ToSelf[V]): Split  = Split(f(leftView), f(rightView))
-      def mapLeft(f: ToSelf[V]): Split  = Split(f(leftView), rightView)
-      def mapRight(f: ToSelf[V]): Split = Split(leftView, f(rightView))
-      def pairs: M[A->A]                = zip.pairs
-      def views: V->V                   = leftView -> rightView
+    case class Split(leftView: V, rightView: V) extends SplitView[V] {
+      type This = Split
+      def remake(l: V, r: V): This = Split(l, r)
 
-      def collate: V = rightView.iterator |> (it => leftView.zfoldl[V]((res, x) => if (it.isEmpty) return res else res :+ x :+ it.next))
-      def join: V    = leftView ++ rightView
-
+      def collate: V       = rightView.iterator |> (it => leftView.zfoldl[V]((res, x) => if (it.isEmpty) return res else res :+ x :+ it.next))
       def cross: Zip[A, A] = app(zipCross)
+      def join: V          = leftView ++ rightView
+      def pairs: M[A->A]   = zip.pairs
       def zip: Zip[A, A]   = app(zipViews)
     }
 
