@@ -37,9 +37,6 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
   type View2D[+A]           = View[View[A]]
   type Vec[A]               = Direct[A]
 
-  // Helpers for inference when calling 'on' on contravariant type classes.
-  def hashBy[A]  = new Relation.HashBy[A]
-
   def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
   def lformat[A](n: Int): A => String              = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)

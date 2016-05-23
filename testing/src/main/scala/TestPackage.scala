@@ -26,7 +26,7 @@ trait Explicit {
   type Buildable[A, C[X]] = org.scalacheck.util.Buildable[A, C[A]]
   type Choose[A]          = org.scalacheck.Gen.Choose[A]
   type Forall1[-A]        = ToBool[A]
-  type Forall2[-A]        = EqRelation[A]
+  type Forall2[-A]        = Relation[A]
   type Forall3[-A]        = (A, A, A) => Boolean
   type GenParams          = Gen.Parameters
   type Gen[A]             = org.scalacheck.Gen[A]
@@ -44,7 +44,7 @@ trait Explicit {
   val Test   = org.scalacheck.Test
   val Predef = scala.Predef
 
-  private implicit def hashThrowable: Hash[Throwable] = hashBy[Throwable](_.getClass)
+  private implicit def hashThrowable: HashEq[Throwable] = Relation inheritedBy (_.getClass)
 
   def arb[A](implicit z: Arb[A]): Arb[A] = z
 

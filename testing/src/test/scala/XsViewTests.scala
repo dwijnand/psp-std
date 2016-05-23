@@ -100,7 +100,7 @@ class RepViewTests {
     same(xints.sort, view(25, 106, 304))
     same(xints.sortBy(_.any_s), view(106, 25, 304))
     same(xints.sortBy(_.any_s.reverseBytes.utf8String), view(304, 25, 106))
-    same(xints sortWith ((x, y) => longCmp(y - x)), view(304, 106, 25))
+    same(xints sortWith (_ > _), view(304, 106, 25))
 
     // Same here after making Split a nested class.
     same[DVInt](ints takeToFirst (_ > 2), view(1, 2, 3))

@@ -113,7 +113,7 @@ class IntViewTests {
     same(xints.sort, view(25, 106, 304))
     same(xints.sortBy(_.any_s), view(106, 25, 304))
     same(xints.sortBy(_.any_s.reverseBytes.utf8String), view(304, 25, 106))
-    same(xints sortWith ((x, y) => longCmp(y - x)), view(304, 106, 25))
+    same(xints sortWith (_ > _), view(304, 106, 25))
     same(ints3 splitAround Nth(2) join, view(1, 3))
     same(ints3 dropIndex Nth(2), view(1, 3))
     same(5 +: ints3 :+ 5, view(5, 1, 2, 3, 5))

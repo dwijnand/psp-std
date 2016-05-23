@@ -12,10 +12,10 @@ abstract class Laws[A : Eq] {
   def idempotence(f: BinOp[A]): Forall1[A]               = a         => f(a, a) === a
 }
 abstract class RelationLaws[A] {
-  def reflexive(f: EqRelation[A]): Forall1[A]     = a => f(a, a)
-  def transitive(f: EqRelation[A]): Forall3[A]    = (a, b, c) => (f(a, b) && f(b, c)) ==> f(a, c)
-  def symmetric(f: EqRelation[A]): Forall2[A]     = (a, b) => f(a, b) === f(b, a)
-  def antisymmetric(f: EqRelation[A]): Forall2[A] = (a, b) => f(a, b) =!= f(b, a)
+  def reflexive(f: Relation[A]): Forall1[A]     = a => f(a, a)
+  def transitive(f: Relation[A]): Forall3[A]    = (a, b, c) => (f(a, b) && f(b, c)) ==> f(a, c)
+  def symmetric(f: Relation[A]): Forall2[A]     = (a, b) => f(a, b) === f(b, a)
+  def antisymmetric(f: Relation[A]): Forall2[A] = (a, b) => f(a, b) =!= f(b, a)
 }
 abstract class AlgebraLaws[A : Eq : BoolAlgebra] extends Laws[A] {
   def complement(f: BinOp[A], id: A): Forall1[A] = a => f(a, !a) === id

@@ -24,14 +24,14 @@ final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
   def values: View[B]               = keys map lookup.fn
   def zipped: Zip[A, B]             = zipMap(keys, lookup.fn)
 }
-final case class Pset[A](basis: View[A], table: HashFun[A])(implicit heq: Hash[A]) {
-  def map[B](f: A => B): Pmap[A, B]         = Pmap(this, Fun(f))
-  def mapToSet[B: Hash](f: A => B): Pset[B] = basis map f toPset
-  def contains(x: A): Bool                  = table(x.hash) exists (_ === x)
+final case class Pset[A](basis: View[A], table: HashFun[A])(implicit hz: Hash[A], ez: Eq[A]) {
+  def map[B](f: A => B): Pmap[A, B]               = Pmap(this, Fun(f))
+  def mapToSet[B : Eq : Hash](f: A => B): Pset[B] = basis map f toPset
+  def contains(x: A): Bool                        = table(x.hash) exists (_ === x)
 }
 
 object Pset {
-  def apply[A](xs: View[A])(implicit z: Eq[A]): Pset[A] = Pset(xs, xs.hashFun)(z.toHash)
+  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, xs.hashFun)
 }
 
 sealed abstract class Fun[-A, +B] { self =>

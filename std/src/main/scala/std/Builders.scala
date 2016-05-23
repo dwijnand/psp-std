@@ -21,8 +21,8 @@ trait StdBuilders3 extends StdBuilders2 {
   implicit def makesJvmArray[A: CTag]: Makes[A, Array[A]]                                             = Makes.jvmArray
   implicit def makesJvmString: Makes[Char, String]                                                    = Makes.jvmString
   implicit def makesPspList[A]: Makes[A, Plist[A]]                                                    = Makes.pspList
-  implicit def makesPspMap[K: Eq, V]: Makes[K->V, Pmap[K, V]]                                         = Makes.pspMap
-  implicit def makesPspSet[A: Eq]: Makes[A, Pset[A]]                                                  = Makes.pspSet
+  implicit def makesPspMap[K : Hash : Eq, V]: Makes[K->V, Pmap[K, V]]                                 = Makes.pspMap
+  implicit def makesPspSet[A : Hash : Eq]: Makes[A, Pset[A]]                                          = Makes.pspSet
   implicit def makesPspView[A]: Makes[A, View[A]]                                                     = Makes.pspView
   implicit def makesScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Makes[K->V, That] = Makes.scalaGenericMap
   implicit def makesScala[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                     = Makes.scalaTraversable

@@ -50,20 +50,20 @@ trait StdMakes {
   def scalaGenericMap[K, V, That](implicit z: CanBuild[(K, V), That]): Makes[K->V, That]            = scalaTraversable contraMap (_ app pair)
   def scalaTraversable[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                      = create(z())(_.result)(_ += _)
 
-  def javaList[A]: Makes[A, jList[A]]           = javaCollection
-  def javaMap[K, V]: Makes[K->V, jMap[K, V]]    = javaGenericMap
-  def javaSet[A]: Makes[A, jSet[A]]             = javaCollection
-  def jvmArray[A: CTag]: Makes[A, Array[A]]     = create(Array.newBuilder[A])(_.result)(_ += _)
-  def jvmString: Makes[Char, String]            = create(new StringBuilder)(_.toString)(_ append _)
-  def pspList[A]: Makes[A, Plist[A]]            = Makes(xs => ll.foldRight[A, Plist[A]](xs, Pnil(), _ :: _))
-  def pspMap[K: Eq, V]: Makes[K->V, Pmap[K, V]] = pspDirect[K->V] map (kvs => kvs.m.toMap[sciMap](scalaMap) |> (f => Pmap(kvs map fst toPset, Fun(f))))
-  def pspSet[A: Eq]: Makes[A, Pset[A]]          = Makes(Pset apply _)
-  def pspDirect[A]: Makes[A, Direct[A]]         = scalaVector[A] map (xs => Makes.fromInts(xs.apply, 0, xs.length))
-  def pspView[A]: Makes[A, View[A]]             = Makes(identity)
-  def scalaList[A]: Makes[A, sciList[A]]        = scalaTraversable
-  def scalaMap[K, V]: Makes[K->V, sciMap[K, V]] = scalaGenericMap
-  def scalaSet[A]: Makes[A, sciSet[A]]          = scalaTraversable
-  def scalaVector[A]: Makes[A, sciVector[A]]    = scalaTraversable
+  def javaList[A]: Makes[A, jList[A]]                   = javaCollection
+  def javaMap[K, V]: Makes[K->V, jMap[K, V]]            = javaGenericMap
+  def javaSet[A]: Makes[A, jSet[A]]                     = javaCollection
+  def jvmArray[A: CTag]: Makes[A, Array[A]]             = create(Array.newBuilder[A])(_.result)(_ += _)
+  def jvmString: Makes[Char, String]                    = create(new StringBuilder)(_.toString)(_ append _)
+  def pspList[A]: Makes[A, Plist[A]]                    = Makes(xs => ll.foldRight[A, Plist[A]](xs, Pnil(), _ :: _))
+  def pspMap[K : Hash : Eq, V]: Makes[K->V, Pmap[K, V]] = pspDirect[K->V] map (kvs => kvs.m.toMap[sciMap](scalaMap) |> (f => Pmap(kvs map fst toPset, Fun(f))))
+  def pspSet[A : Hash : Eq]: Makes[A, Pset[A]]          = Makes(Pset apply _)
+  def pspDirect[A]: Makes[A, Direct[A]]                 = scalaVector[A] map (xs => Makes.fromInts(xs.apply, 0, xs.length))
+  def pspView[A]: Makes[A, View[A]]                     = Makes(identity)
+  def scalaList[A]: Makes[A, sciList[A]]                = scalaTraversable
+  def scalaMap[K, V]: Makes[K->V, sciMap[K, V]]         = scalaGenericMap
+  def scalaSet[A]: Makes[A, sciSet[A]]                  = scalaTraversable
+  def scalaVector[A]: Makes[A, sciVector[A]]            = scalaTraversable
 
   private def create[B, A, R](buf: => B)(finish: B => R)(add: (B, A) => Unit): Makes[A, R] =
     Makes(xs => finish(doto(buf)(b => xs foreach (x => add(b, x)))))
