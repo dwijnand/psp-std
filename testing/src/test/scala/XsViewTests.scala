@@ -1,9 +1,7 @@
 package psp
 package tests
 
-import std._
-import all._
-import StdShow._, Makes._
+import std._, all._, StdShow._, Makes._
 
 class RepViewTests {
   type DView[A] = RepView[Direct[A], A]

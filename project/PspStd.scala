@@ -54,7 +54,7 @@ object PspStd {
   )
 
   def ammoniteTask: TaskOf[Unit] = Def task {
-    val forker    = new Fork("java", Some("psp.ReplMain"))
+    val forker    = new Fork("java", Some("psprepl.Main"))
     val files     = (fullClasspath in Compile in LocalProject("root")).value.files filterNot (_.toString contains "scoverage")
     val classpath = files mkString ":"
     val jvmArgs   = Vector(s"-Xbootclasspath/a:$classpath") // boot classpath way faster

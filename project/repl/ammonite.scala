@@ -1,17 +1,16 @@
-package psp
+package psprepl
 
-import std._, all._, StdShow._
+import psp.std._, all._, StdShow._
 import ammonite.repl.{ Ref, Repl, Storage }
 import ammonite.repl.Main.defaultAmmoniteHome
 import ammonite.repl.frontend.FrontEnd
 import java.lang.System
 
-object ReplMain {
+object Main {
   def storage = Storage(defaultAmmoniteHome, None)
   def initImports = sm"""
-    |import psp.std._, all._
-    |import StdShow._, INREPL._
-    |import Unsafe.promoteIndex
+    |import psp.std._, all._, StdShow._
+    |import psprepl._, INREPL._
   """
 
   def main(args: Array[String]): Unit = new REPL(Ref(storage), initImports, args.toVec).start()
