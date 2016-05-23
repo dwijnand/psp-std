@@ -83,7 +83,7 @@ trait Explicit {
    *  recursively throw scalacheck at it again, verifying arbitrary inputs have the same result.
    */
   def functionRelation[A : Arb, B : Eq] : Eq[A => B] =
-    Relation equiv ((f, g) => (Test check forAll((x: A) => f(x) === g(x)))(identity).passed)
+    Eq((f, g) => (Test check forAll((x: A) => f(x) === g(x)))(identity).passed)
 }
 
 trait Implicit extends Explicit {

@@ -4,8 +4,13 @@ package std
 import api._, all._
 
 object Order {
-  def apply[A](r: OrderRelation[A]): Order[A] = new OrderImpl(r)
-  def by[A]: OrderBy[A]                       = new OrderBy[A]
+  val Inherited: HashOrder[String] = comparable[String] hashWith (_.##)
+  val ToString: HashOrder[Any]     = Relation.allBy[Any](_.any_s)(Inherited)
+
+  def apply[A](r: OrderRelation[A]): Order[A]      = new OrderImpl(r)
+  def by[A]: OrderBy[A]                            = new OrderBy[A]
+  def comparable[A <: Comparable[A]]: HashOrder[A] = apply[A]((x, y) => longCmp(x compareTo y)) hashWith (_.##)
+  def shown[A](implicit z: Show[A]): Order[A]      = by[A](_.pp)(Inherited)
 
   class OrderImpl[A](r: OrderRelation[A]) extends Order[A] {
     def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
@@ -15,26 +20,28 @@ object Order {
     def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = z on f
   }
 }
-
-object Relation {
-  val Inherited: Hash[Any]       = hash[Any](_ == _, _.##)
-  val Reference: Hash[Any]       = hash[Any](_ id_== _, _.id_##)
-  val Lexical: HashOrder[String] = byComparable[String]
-  val ToString: HashOrder[Any]   = allBy[Any](_.any_s)(Lexical)
-  val Longs: HashOrder[Long]     = all[Long]((x, y) => longCmp(x - y), identity)
-
-  def equiv[A](r: EqRelation[A]): Eq[A]                       = new EqImpl(r)
-  def hash[A](r: EqRelation[A], h: ToLong[A]): Hash[A]        = new HashImpl(r, h)
-  def all[A](r: OrderRelation[A], h: ToLong[A]): HashOrder[A] = new AllImpl(r, h)
-
-  def allBy[A]                                       = new AllBy[A]
-  def inherited[A]: Hash[A]                          = Inherited
-  def shown[A](implicit z: Show[A]): HashOrder[A]    = allBy[A](z.show)
-  def byComparable[A <: Comparable[A]]: HashOrder[A] = all[A]((x, y) => longCmp(x compareTo y), _.##)
+object Eq {
+  def apply[A](r: EqRelation[A]): Eq[A] = new EqImpl(r)
+  def by[A]: EqBy[A]                    = new EqBy[A]
 
   class EqImpl[A](r: EqRelation[A]) extends Eq[A] {
     def eqv(x: A, y: A): Bool = r(x, y)
   }
+  final class EqBy[A] {
+    def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A] = z on f
+  }
+}
+
+object Relation {
+  val Inherited: Hash[Any]   = hash[Any](_ == _, _.##)
+  val Reference: Hash[Any]   = hash[Any](_ id_== _, _.id_##)
+  val Longs: HashOrder[Long] = all[Long]((x, y) => longCmp(x - y), identity)
+
+  def hash[A](r: EqRelation[A], h: ToLong[A]): Hash[A]        = new HashImpl(r, h)
+  def all[A](r: OrderRelation[A], h: ToLong[A]): HashOrder[A] = new AllImpl(r, h)
+  def allBy[A]                                                = new AllBy[A]
+  def inherited[A]: Hash[A]                                   = Inherited
+
   class HashImpl[A](r: EqRelation[A], h: ToLong[A]) extends Hash[A] {
     def eqv(x: A, y: A): Bool = r(x, y)
     def hash(x: A): Long      = h(x)
@@ -56,18 +63,18 @@ object Relation {
 trait StdRelation0 {
   implicit def combineHash[A](implicit z: Order[A], h: Hash[A]): HashOrder[A] = z hashWith h.hash
   implicit def sizeRelation: Hash[Size]                                       = Relation.hash(Size.equiv, _.##)
-  implicit def comparableRelation[A <: Comparable[A]]: HashOrder[A]           = Relation.all[A]((x, y) => longCmp(x compareTo y), _.##)
+  implicit def comparableOrder[A <: Comparable[A]]: HashOrder[A]              = Order.comparable[A]
   implicit def viewsAsRelation[A, R](implicit b: Walks[A, R], z: Eq[A]): Eq[R] =
-    Relation.equiv[R]((xs, ys) => xs.m2 zip ys.m2 corresponds z.eqv)
+    Eq((xs, ys) => xs.m2 zip ys.m2 corresponds z.eqv)
 }
 trait StdRelation1 extends StdRelation0 {
 
-  implicit def optionRelation[A: Eq]: Eq[Opt[A]] = Relation equiv {
+  implicit def optionRelation[A: Eq]: Eq[Opt[A]] = Eq {
     case (Some(x), Some(y)) => x === y
     case (x, y)             => x.isEmpty && y.isEmpty
   }
 
-  implicit def enumRelation[A <: jEnum[A]] : HashOrder[A] = Relation.byComparable[A]
+  implicit def enumOrder[A <: jEnum[A]] : Order[A] = Order.comparable[A]
 
   implicit def longRelation: HashOrder[Long]       = Relation.Longs
   implicit def boolRelation: HashOrder[Bool]       = Relation allBy (x => if (x) 1L else 0L)
@@ -75,10 +82,10 @@ trait StdRelation1 extends StdRelation0 {
   implicit def intRelation: HashOrder[Int]         = Relation allBy (x => x: Long)
   implicit def vindexRelation: HashOrder[Vdex]     = Relation allBy (_.indexValue)
   implicit def preciseRelation: HashOrder[Precise] = Relation allBy (_.getLong)
-  implicit def stringRelation: HashOrder[String]   = Relation.Lexical
+  implicit def stringOrder: HashOrder[String]      = Order.Inherited
   implicit def classRelation: Hash[jClass]         = Relation.Inherited
 
-  implicit def tryRelation[A: Eq](implicit z: Eq[Throwable]): Eq[Try[A]] = Relation equiv {
+  implicit def tryRelation[A: Eq](implicit z: Eq[Throwable]): Eq[Try[A]] = Eq {
     case (Success(x), Success(y)) => x === y
     case (Failure(x), Failure(y)) => x === y
     case _                        => false

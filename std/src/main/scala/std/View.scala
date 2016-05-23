@@ -82,10 +82,10 @@ trait ViewMethods[R, A] {
   def asDocs(implicit z: Show[A]): MapTo[Doc]
   def asShown(implicit z: Show[A]): MapTo[String] = this map z.show
 
-  def by(eqv: Hash[A]): EqViewOps[A] = new EqViewOps[A](xs)(eqv)
-  def byEquals: EqViewOps[A]         = by(Relation.Inherited)
-  def byRef: EqViewOps[Ref[A]]       = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)
-  def byToString: EqViewOps[A]       = by(Relation.ToString)
+  def by(eqv: Eq[A]): EqViewOps[A]              = new EqViewOps[A](xs)(eqv)
+  def byEquals: EqViewOps[A]                    = by(Relation.Inherited)
+  def byRef: EqViewOps[Ref[A]]                  = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)
+  def byShow(implicit z: Show[A]): EqViewOps[A] = by(Eq.by[A](_.pp))
 
   def ++(ys: View[A]): This = append(ys)
   def +:(head: A): This     = prepend(view(head))

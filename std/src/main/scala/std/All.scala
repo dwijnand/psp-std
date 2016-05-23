@@ -244,7 +244,7 @@ class NonValueImplicitClasses extends AllExplicit {
   }
 
   implicit class EqClassOps[A](private val z: Eq[A]) {
-    def on[B](f: B => A): Eq[B]         = Relation.equiv(z.eqv _ on f)
+    def on[B](f: B => A): Eq[B]         = Eq(z.eqv _ on f)
     def hashWith(f: ToLong[A]): Hash[A] = Relation.hash(z.eqv, f)
 
     def toHash: Hash[A] = z match {

@@ -78,9 +78,3 @@ trait StdConstructors {
   def vec[A](xs: A*): Vec[A]                          = elems(xs: _*)
   def view[A](xs: A*): RepView[Vec[A], A]             = vec(xs: _*).m
 }
-
-object < {
-  def apply[A, R](xs: A*)(implicit z: Makes[A, R]): Builder[R] = new Builder[R](z make xs)
-
-  final class Builder[R](val > : R)
-}

@@ -140,7 +140,7 @@ class IntViewTests {
   @Test
   def readmeShowTests(): Unit = {
     val xs = 1 to 20 splitAfter 10.size
-    val ys = zipCross(1 to 3, <( "a", "bb" )> )
+    val ys = zipCross(1 to 3, view("a", "bb"))
     val zs = ys eqBy (x => x, _.length)
 
     sameDoc(xs, "[ 1, 2, 3, ... ] / [ 11, 12, 13, ... ]")

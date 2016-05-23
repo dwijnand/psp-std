@@ -57,9 +57,7 @@ class ViewBasic extends ScalacheckBundle {
   def pseq: Each[Int]    = elems(1, 2, 3)
   def punfold: Interval  = Interval open 1
 
-  case class Bippy(s: String, i: Int) {
-    override def toString = s
-  }
+  case class Bippy(to_s: String, i: Int) extends ShowSelf
 
   // Testing different kinds of "distinct" calls.
   val s1 = new Bippy("abc", 1)
@@ -130,6 +128,6 @@ class ViewBasic extends ScalacheckBundle {
     seqShows("99, 1010, 1111", xxNumbers.slice(8, Size(3))),
     expectValue[Size](4)(strs.byRef.distinct.force.size),
     expectValue[Size](3)(strs.byEquals.distinct.force.size),
-    expectValue[Size](2)(strs.byToString.distinct.force.size)
+    expectValue[Size](2)(strs.byShow.distinct.force.size)
   )
 }
