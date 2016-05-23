@@ -27,7 +27,7 @@ trait StdEmpty extends StdEmpty0 {
   implicit def emptyFromMakes[A, R](implicit z: Makes[A, R]): Empty[R]       = Empty(elems())
   implicit def emptyFromCanBuild[A, R](implicit z: CanBuild[A, R]): Empty[R] = Empty(z().result)
   implicit def emptyFromHeyting[A: Heyting]: Empty[A]                        = Empty(?[Heyting[A]].zero)
-  implicit def emptyRepView[R, A]: Empty[RepView[R, A]]                      = Empty(RepView.insist("Empty")(view[A]()))
+  implicit def emptyRepView[R, A]: Empty[RepView[R, A]]                      = Empty(RepView.empty[R, A])
   implicit def emptyOptional[A]: Empty[jOptional[A]]                         = Empty(java.util.Optional.empty[A]())
   implicit def emptyPair[A: Empty, B: Empty]: Empty[(A, B)]                  = Empty(pair(emptyValue[A], emptyValue[B]))
   implicit def emptyTriple[A: Empty, B: Empty, C: Empty]: Empty[(A, B, C)]   = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
@@ -48,4 +48,3 @@ trait StdEmpty extends StdEmpty0 {
   implicit lazy val emptyUri: Empty.Const[jUri]                 = Empty const jUri("")
   implicit lazy val emptyVdexRange: Empty.Const[VdexRange]      = Empty const (Interval.empty map Index)
 }
-object StdEmpty extends StdEmpty

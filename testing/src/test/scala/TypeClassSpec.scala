@@ -13,36 +13,38 @@ class EmptySpec extends ScalacheckBundle {
   implicit def emptyBippy: Empty[Bippy] = Empty(new Bippy("-"))
   implicit def emptyInt: Empty[Int]     = Empty(eint)
 
-  def props = vec(
-    seqShows(
-      "-, -, hi, hi, -, hi, -, hi",
-      vec[Bippy](
-        sciList[Bippy]().zhead,
-        sciList[Bippy]().zlast,
-        sciList(new Bippy("hi")).zhead,
-        sciList(new Bippy("hi")).zlast,
-        vec[Bippy]().zhead,
-        vec(new Bippy("hi")).zhead,
-        none[Bippy].zget,
-        some(new Bippy("hi")).zget
-      )
-    ),
-    seqShows(
-      "0, 0, -1, -1, 0",
-      vec[Long](
-        emptyValue[jPath].any_s.length,
-        emptyValue[jFile].any_s.length,
-        emptyValue[Index].indexValue,
-        emptyValue[Nth].indexValue,
-        emptyValue[String].length
-      )
-    ),
-    expectValue(eint)(view[Int]() zreducel (_ + _)),
-    expectValue(eint)(view[Int]().zfoldl[Int](_ + _)),
-    expectValue(3)(view(2, 3, 4) zreducer (_ - _)), // 2 - (3 - 4)
-    expectValue(-5)(view(2, 3, 4) zreducel (_ - _)), // (2 - 3) - 4
-    expectValue(7)(view(7) zreducel (_ * _)),
-    expectValue(7)(view(7) zreducer (_ * _))
+  def props = make(
+    vec(
+      seqShows(
+        "-, -, hi, hi, -, hi, -, hi",
+        vec[Bippy](
+          sciList[Bippy]().zhead,
+          sciList[Bippy]().zlast,
+          sciList(new Bippy("hi")).zhead,
+          sciList(new Bippy("hi")).zlast,
+          vec[Bippy]().zhead,
+          vec(new Bippy("hi")).zhead,
+          none[Bippy].zget,
+          some(new Bippy("hi")).zget
+        )
+      ),
+      seqShows(
+        "0, 0, -1, -1, 0",
+        vec[Long](
+          emptyValue[jPath].any_s.length,
+          emptyValue[jFile].any_s.length,
+          emptyValue[Index].indexValue,
+          emptyValue[Nth].indexValue,
+          emptyValue[String].length
+        )
+      ),
+      expectValue(eint)(view[Int]() zreducel (_ + _)),
+      expectValue(eint)(view[Int]().zfoldl[Int](_ + _)),
+      expectValue(3)(view(2, 3, 4) zreducer (_ - _)), // 2 - (3 - 4)
+      expectValue(-5)(view(2, 3, 4) zreducel (_ - _)), // (2 - 3) - 4
+      expectValue(7)(view(7) zreducel (_ * _)),
+      expectValue(7)(view(7) zreducer (_ * _))
+    )
   )
 }
 
@@ -68,7 +70,7 @@ class ViewBasic extends ScalacheckBundle {
 
   def xxNumbers: View[Long] = 0.andUp grep """^(.*)\1""".r
 
-  def props = miscProps ++ vecProps ++ rangeProps
+  def props = make(miscProps ++ rangeProps)
 
   lazy val rangeProps = {
     type Triple[A, B, C] = A -> (B -> C)
@@ -130,21 +132,4 @@ class ViewBasic extends ScalacheckBundle {
     expectValue[Size](3)(strs.byEquals.distinct.force.size),
     expectValue[Size](2)(strs.byToString.distinct.force.size)
   )
-
-  lazy val vecProps = {
-    val vec1  = Each const 1 take 32 toVec
-    val vec2  = vec1 map (_ => vec1) reducel (_ ++ _)
-    val vec3  = vec1 map (_ => vec2) reducel (_ ++ _)
-    val vec4  = vec3 :+ 1
-    val size4 = (32 * 32 * 32) + 1
-
-    vec[NamedProp](
-      expectValue[Int](vec4 drop 10 length)(size4 - 10),
-      expectValue[Int](vec4 dropRight 10 length)(size4 - 10),
-      expectValue[Int](vec4.updated(Index(100), 12345).apply(100))(12345),
-      expectValue[Int](vec4 take size4 + 10 length)(size4),
-      expectValue[Int](vec4 take size4 - 10 length)(size4 - 10),
-      expectValue[Int](vec4 takeRight size4 - 10 length)(size4 - 10)
-    )
-  }
 }

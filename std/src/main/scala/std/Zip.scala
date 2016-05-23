@@ -34,16 +34,13 @@ trait Zip[+A1, +A2] extends Any {
   def lefts: View[A1]       // the left element of each pair. Moral equivalent of pairs map fst.
   def rights: View[A2]      // the right element of each pair. Moral equivalent of pairs map snd.
   def pairs: View[A1 -> A2] // the pairs. Moral equivalent of lefts zip rights.
-  def size: Size
 }
 trait ZipFromViews[+A1, +A2] extends Any with Zip[A1, A2] {
   def pairs: View[A1 -> A2] = this map (_ -> _)
-  def size                  = pairs.size
 }
 trait ZipFromPairs[+A1, +A2] extends Any with Zip[A1, A2] {
   def lefts: View[A1]  = pairs map fst
   def rights: View[A2] = pairs map snd
-  def size             = lefts.size min rights.size
 }
 
 object Zip {
@@ -68,11 +65,8 @@ object Zip {
     def find(p: PredBoth): OptBoth =
       foldl(none())((res, x, y) => cond(p(x, y), return some(x -> y), res))
 
-    def foreach(f: MapTo[Unit]): Unit = (lefts, rights) match {
-      case (xs: Direct[A1], ys) => xs.size.indices zip ys mapLeft xs.apply
-      case (xs, ys: Direct[A2]) => xs zip ys.size.indices mapRight ys.apply
-      case _                    => lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return )))
-    }
+    def foreach(f: MapTo[Unit]): Unit =
+      lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return )))
 
     def corresponds(p: PredBoth): Bool         = iterator |> (it => it.forall(_ app p) && !it.hasMore)
     def drop(n: Precise): This                 = zipSplit(pairs drop n)

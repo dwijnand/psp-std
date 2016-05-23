@@ -92,7 +92,7 @@ class RepViewTests {
     same(ints sliceIndex Nth(20), view())
     same(ints sliceWhile (_ < 4, _ < 6), view(4, 5))
     same(ints sort reverseInt head, 10)
-    same(ints mapIf { case 1 => -1 } size, Size(10))
+    same(ints.toVec o (_ mapIf { case 1 => -1 }) size, Size(10))
     same(ints mapIf { case 1 => -1 } head, -1)
     same(ints.slice(Index(2), Size(2)), view(3, 4))
     same(ints.slice(Nth(2), Size(2)), view(2, 3))

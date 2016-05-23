@@ -6,48 +6,18 @@ import api._, all._
 /** "Native" psp collections.
   */
 sealed abstract class Plist[A] extends Each[A] {
-  def head: A
-  def tail: Plist[A]
-  def ::(head: A): Plist[A] = Pcons(head, this)
+  def ::(head: A): Pcons[A] = Pcons(head, this)
   @inline final def foreach(f: A => Unit): Unit = {
-    def loop(xs: Plist[A]): Unit = xs match {
+    @tailrec def loop(xs: Plist[A]): Unit = xs match {
       case Pcons(hd, tl) => f(hd); loop(tl)
       case _             =>
     }
     loop(this)
   }
 }
-final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A] {
-  def size = Size.NonEmpty
-}
+final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A]
 final case object Pnil extends Plist[Nothing] {
   def apply[A](): Plist[A] = cast(Pnil)
-  def size = Size(0)
-  def head = abort("Pnil.head")
-  def tail = abort("Pnil.tail")
-}
-final class Vec[A](private val underlying: sciVector[A]) extends AnyVal with Direct[A] {
-  private def make(f: sciVector[A] => sciVector[A]): Vec[A] = new Vec[A](f(underlying))
-
-  def head: A            = underlying(0)
-  def isEmpty            = length <= 0
-  def length: Int        = underlying.length
-  def size: Precise      = Size(length)
-  def apply(i: Vdex): A  = underlying(i.getInt)
-  def reverse: Direct[A] = Each.intIndexed(underlying, 0, length).reverse
-
-  def updated(i: Vdex, elem: A): Vec[A] = make(_.updated(i.getInt, elem))
-  def :+(elem: A): Vec[A]               = make(_ :+ elem)
-  def +:(elem: A): Vec[A]               = make(elem +: _)
-  def ++(that: Vec[A]): Vec[A]          = cond(that.isEmpty, this, cond(this.isEmpty, that, make(_ ++ that.trav)))
-
-  def drop(n: Vdex): Vec[A]      = make(_ drop n.getInt)
-  def dropRight(n: Vdex): Vec[A] = make(_ dropRight n.getInt)
-  def take(n: Vdex): Vec[A]      = make(_ take n.getInt)
-  def takeRight(n: Vdex): Vec[A] = make(_ takeRight n.getInt)
-
-  @inline def foreach(f: A => Unit): Unit =
-    ll.foreachInt(0, length - 1, i => f(underlying(i)))
 }
 
 sealed abstract class Consecutive[+A] extends Indexed[A] {
@@ -56,8 +26,7 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def map[B](g: A => B): CC[B]
   def applyLong(x: Long): A
 
-  def viewLongs: View[Long]  = Each.construct[Long](in.size, in foreach _).m
-  def zipLongs: Zip[Long, A] = zipMap(viewLongs, applyLong)
+  def zipLongs: Zip[Long, A] = zipMap(in.view, applyLong)
   def startLong: Long        = in.startLong
 }
 object Consecutive {
@@ -81,7 +50,6 @@ object Consecutive {
     def apply(vdex: Vdex): A        = f(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (f andThen g)
     def map[B](g: A => B): Open[B]  = in map (f andThen g)
-    def head: A                     = apply(_0)
   }
   final class Closed[+A](val in: Interval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
@@ -93,7 +61,6 @@ object Consecutive {
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size
 
-    def head: A                          = apply(_0)
     def last: A                          = apply(size.lastIndex)
     def drop(n: Precise): Closed[A]      = Consecutive(in drop n, f)
     def dropRight(n: Precise): Closed[A] = Consecutive(in dropRight n, f)

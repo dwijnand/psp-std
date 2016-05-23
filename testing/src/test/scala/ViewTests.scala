@@ -10,7 +10,7 @@ class StringViewTests {
   val adda2: String = view(ad, "c", da).join
   val adda3: String = view(ad, "pa", da).join
 
-  def split(s: String)            = s splitAtTake s.length / 2 mapRight (_.reverse)
+  def split(s: String)            = s splitAtTake s.length / 2 mapRight (_.reverseView)
   def isPalindrome(s: String)     = split(s).zip forall (_ === _)
   def isEvenPalindrome(s: String) = split(s) app (_ === _)
 
@@ -24,7 +24,7 @@ class StringViewTests {
     sameDoc("[a].".r findAll adda3, "[ ab, ad ]")
     sameDoc("abcdefg" stripPrefix "a..", "abcdefg")
     sameDoc("abcdefg" stripPrefix "a..".r, "defg")
-    same("123456" o (_ splitAt nth(4) mapRight (_.reverse) mapLeft (_ take 1) join), "1654")
+    same("123456" o (_ splitAt nth(4) mapRight (_.reverseView) mapLeft (_ take 1) join), "1654")
   }
 }
 
@@ -94,7 +94,7 @@ class IntViewTests {
     same(ints sliceIndex Nth(20), view())
     same(ints sliceWhile (_ < 4, _ < 6), view(4, 5))
     same(ints sort reverseInt head, 10)
-    same(ints mapIf { case 1 => -1 } size, Size(10))
+    same(ints.toVec o (_ mapIf { case 1 => -1 }) size, Size(10))
     same(ints mapIf { case 1 => -1 } head, -1)
     same[View[Int]](ints.slice(Index(2), Size(2)), view(3, 4))
     same[View[Int]](ints.slice(Nth(2), Size(2)), view(2, 3))

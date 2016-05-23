@@ -142,34 +142,15 @@ class NonValueImplicitClasses extends AllExplicit {
       case Precise(n) => n.toInt
       case s          => illegalArgumentException(s)
     }
-    def isZero        = lhs === _0
+    def isZero = lhs === _0
 
-    def loBound: Atomic = lhs match {
-      case Bounded(lo, _) => lo
-      case x: Atomic      => x
-    }
-    def hiBound: Atomic = lhs match {
-      case Bounded(_, hi) => hi
-      case x: Atomic      => x
-    }
-
-    def preciseOrMaxLong: Precise = hiBound match {
+    def preciseOrMaxLong: Precise = lhs match {
       case n: Precise => n
-      case Infinite   => Precise(MaxLong)
+      case _          => Precise(MaxLong)
     }
-    /** For instance taking the union of two sets. The new size is
-      *  at least the size of the larger operand, but at most the sum
-      *  of the two sizes.
-      */
-    def union(rhs: Size): Size     = Size.Range(lhs max rhs, lhs + rhs)
-    def intersect(rhs: Size): Size = Size.Range(_0, Size.min(lhs, rhs))
-    def diff(rhs: Size): Size      = Size.Range(lhs - rhs, lhs)
-
     def +(rhs: Size): Size = (lhs, rhs) match {
       case (Precise(l), Precise(r))                 => Precise(l + r)
-      case (Infinite, Precise(_))                   => Infinite
-      case (Precise(_), Infinite)                   => Infinite
-      case (Infinite, Infinite)                     => Infinite
+      case (Infinite, _) | (_, Infinite)            => Infinite
       case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 + l2, h1 + h2)
     }
     def -(rhs: Size): Size = (lhs, rhs) match {
@@ -179,8 +160,6 @@ class NonValueImplicitClasses extends AllExplicit {
       case (Infinite, Infinite)                     => Unknown
       case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
     }
-    def min(rhs: Size): Size = Size.min(lhs, rhs)
-    def max(rhs: Size): Size = Size.max(lhs, rhs)
   }
 
   implicit class CharOps(private val ch: Char) {
@@ -198,7 +177,6 @@ class NonValueImplicitClasses extends AllExplicit {
     def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
   }
   implicit class LongOps(private val self: Long) {
-
     /** Safe in the senses that it won't silently truncate values,
       *  and will translate MaxLong to MaxInt instead of -1.
       *  We depend on this!
@@ -334,7 +312,7 @@ class NonValueImplicitClasses extends AllExplicit {
 
   implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
-    def distinct: View[A]       = xs.zfoldl[Vec[A]]((res, x) => cond(res.m contains x, res, res :+ x))
+    def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
     def indexOf(x: A): Index    = xs indexWhere (_ === x)
 
     def hashFun(): HashFun[A] = eqv match {

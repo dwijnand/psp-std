@@ -62,11 +62,11 @@ object Operable {
   implicit object OperableSize extends Operable[ConstSize] {
     def apply[A, B](in: Size)(op: Op[A, B]): Size = op match {
       case Identity(_)     => in
-      case Take(n)         => in min n
+      case Take(n)         => Size.min(in, n)
       case Drop(n)         => in - n
-      case TakeRight(n)    => in min n
+      case TakeRight(n)    => Size.min(in, n)
       case DropRight(n)    => in - n
-      case Slice(range)    => in - range.startLong min range.size
+      case Slice(range)    => in - min(range.startLong, range.size)
       case TakeWhile(_)    => in.atMost
       case DropWhile(_)    => in.atMost
       case Filter(p)       => in.atMost

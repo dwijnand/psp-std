@@ -40,10 +40,10 @@ class ADTSpec extends ScalacheckBundle {
 
   def props = vec(
     "size.+ is commutative"   -> commutative[Size](_ + _),
-    "size.max is associative" -> associative[Size](_ max _),
-    "size.max is commutative" -> commutative[Size](_ max _),
-    "size.min is associative" -> associative[Size](_ min _),
-    "size.min is commutative" -> commutative[Size](_ min _),
+    "size.max is associative" -> associative[Size](Size.max),
+    "size.max is commutative" -> commutative[Size](Size.max),
+    "size.min is associative" -> associative[Size](Size.min),
+    "size.min is commutative" -> commutative[Size](Size.min),
     "index/nth are consistent" -> forAll((x: Index) => x.indexValue === x.toNth.indexValue),
     "nth/index are consistent" -> forAll((x: Nth) => x.nthValue === x.toIndex.nthValue),
     seqShows("1, 1", vec(xs(_0), xs(Nth(1)))),

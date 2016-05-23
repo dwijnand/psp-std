@@ -42,5 +42,5 @@ trait MakesWalks3 extends MakesWalks2 {
   implicit def walksScalaOnce[A, CC[X] <: GTOnce[X]]: Walks[A, CC[A]]                                 = Walks.scalaOnce
 }
 trait MakesWalks extends MakesWalks3 {
-  implicit def makesPspVec[A]: Makes[A, Vec[A]] = Makes.pspVec[A]
+  implicit def makesPspDirect[A]: Makes[A, Direct[A]] = Makes.pspDirect[A]
 }
