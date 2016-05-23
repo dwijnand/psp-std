@@ -41,6 +41,30 @@ class RepViewTests {
   }
 
   @Test
+  def orderedTests(): Unit = {
+    def nint = none[Int]()
+
+    junitAssert(
+      view(1, 2)    <  view(1, 2, 3),
+      view(1, 2)    <= view(1, 2, 3),
+      view(1, 2, 3) <= view(1, 2, 3),
+      some(1)       <  some(2),
+      some(2)       <= some(2),
+      nint          <  some(1),
+      (nint -> 2)   <  (some(1) -> 0)
+    )
+    junitAssertFalse(
+      view(1, 2)    >  view(1, 2, 3),
+      view(1, 2)    >= view(1, 2, 3),
+      view(1, 2, 3) >  view(1, 2, 3),
+      some(1)       >= some(2),
+      some(2)       >  some(2),
+      nint          >= some(1),
+      (nint -> 2)   >= (some(1) -> 0)
+    )
+  }
+
+  @Test
   def zipTests(): Unit = {
     same[VIntInt]((ints take 3).zipTail.pairs, view(1 -> 2, 2 -> 3))// zipViews(1 to 2, 2 to 3)) // "[ 1 -> 2, 2 -> 3 ]")
     sameDoc(mkInts(1, 100000).zipTail drop 100 take 2, "[ 101 -> 102, 102 -> 103 ]")

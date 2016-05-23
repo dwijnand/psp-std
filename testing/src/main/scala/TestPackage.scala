@@ -59,7 +59,8 @@ trait Explicit {
   def expectTypes(expected: jClass, found: Each[jClass]): NamedProp    = fp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
   def expectTypes[A: CTag](results: A*): NamedProp                     = expectTypes(classOf[A], results map (_.getClass) toVec)
   def expectValue[A: Eq: Show](expected: A)(x: A): NamedProp           = x.show -> (expected =? x)
-  def junitAssert(body: => Boolean): Unit                              = org.junit.Assert assertTrue body
+  def junitAssert(exprs: Boolean*): Unit                               = exprs foreach (org.junit.Assert assertTrue _)
+  def junitAssertFalse(exprs: Boolean*): Unit                          = exprs foreach (org.junit.Assert assertFalse _)
   def preNewline(s: String): String                                    = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
   def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
