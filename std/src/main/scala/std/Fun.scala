@@ -21,8 +21,8 @@ final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
   def keys: View[A]                 = keySet.basis
   def map[C](f: B => C): Pmap[A, C] = Pmap(keySet, lookup andThen f)
   def pairs: View[A -> B]           = zipped.pairs
-  def values: View[B]               = keys map lookup
-  def zipped: Zip[A, B]             = zipMap(keys, lookup)
+  def values: View[B]               = keys map lookup.fn
+  def zipped: Zip[A, B]             = zipMap(keys, lookup.fn)
 }
 final case class Pset[A](basis: View[A], table: HashFun[A])(implicit heq: Hash[A]) {
   def map[B](f: A => B): Pmap[A, B]         = Pmap(this, Fun(f))

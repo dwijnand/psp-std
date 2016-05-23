@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import api._, std._, all._, StdShow._
+import api._, std._, all._, StdShow._, Makes._
 
 class StringViewTests {
   val ad: String    = ('a' to 'd').m.joinString
@@ -24,7 +24,11 @@ class StringViewTests {
     sameDoc("[a].".r findAll adda3, "[ ab, ad ]")
     sameDoc("abcdefg" stripPrefix "a..", "abcdefg")
     sameDoc("abcdefg" stripPrefix "a..".r, "defg")
-    same("123456" o (_ splitAt nth(4) mapRight (_.reverseView) mapLeft (_ take 1) join), "1654")
+    same("123456" o (_ splitAt nth(4) mapEach (_.reverseView) join), "321654")
+    same("1234" o (_ reverseView), "4321")
+    same(Array(1, 2, 3) o (_ reverseView), Array(3, 2, 1))
+    same(scalaList(1, 2, 3) o (_ reverseView), scalaList(3, 2, 1))
+    same(javaList(1, 2, 3) o (_ reverseView), javaList(3, 2, 1))
   }
 }
 

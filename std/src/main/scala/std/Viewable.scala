@@ -37,6 +37,7 @@ object Op {
   final case class TakeRight[A](n: Precise)   extends Op[A, A]
   final case class DropRight[A](n: Precise)   extends Op[A, A]
   final case class Slice[A](range: VdexRange) extends Op[A, A]
+  final case class Reverse[A]()               extends Op[A, A]
 
   final case class Identity[A](label: String) extends Op[A, A]
   final case class TakeWhile[A](p: ToBool[A]) extends Op[A, A]
@@ -61,6 +62,7 @@ object Operable {
 
   implicit object OperableSize extends Operable[ConstSize] {
     def apply[A, B](in: Size)(op: Op[A, B]): Size = op match {
+      case Reverse()       => in
       case Identity(_)     => in
       case Take(n)         => Size.min(in, n)
       case Drop(n)         => in - n
@@ -87,6 +89,7 @@ object Operable {
 
     def apply[A, B](in: Doc)(op: Op[A, B]): Doc = op match {
       case Identity(label) => label
+      case Reverse()       => str(in, ".reverse", "")
       case Take(n)         => str(in, "take", n)
       case Drop(n)         => str(in, "drop", n)
       case TakeRight(n)    => str(in, "takeR", n)
@@ -111,6 +114,7 @@ object Operable {
     def apply[A, B](xs: View[A])(op: Op[A, B]): View[B] = {
       val res: View[_] = op match {
         case Identity(_)     => xs
+        case Reverse()       => xs.toVec.reverse
         case Take(n)         => xs take n
         case Drop(n)         => xs drop n
         case TakeRight(n)    => xs takeRight n

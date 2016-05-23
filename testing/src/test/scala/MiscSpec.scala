@@ -34,7 +34,7 @@ class ADTSpec extends ScalacheckBundle {
   )
 
   lazy val m1trace = {
-    xs map m1 force;
+    xs map m1.fn force;
     seen.trim
   }
 
@@ -47,11 +47,11 @@ class ADTSpec extends ScalacheckBundle {
     "index/nth are consistent" -> forAll((x: Index) => x.indexValue === x.toNth.indexValue),
     "nth/index are consistent" -> forAll((x: Nth) => x.nthValue === x.toIndex.nthValue),
     seqShows("1, 1", vec(xs(_0), xs(Nth(1)))),
-    seqShows("2, 4, 6", xs map f1),
-    seqShows("6, 12, 18", xs map f2),
-    seqShows("6, 12", xs collect f3),
-    seqShows("6, 12", xs collect f4),
-    seqShows("6, 12, 99", xs map f4),
+    seqShows("2, 4, 6", xs map f1.fn),
+    seqShows("6, 12, 18", xs map f2.fn),
+    seqShows("6, 12", xs collect f3.pf),
+    seqShows("6, 12", xs collect f4.pf),
+    seqShows("6, 12, 99", xs map f4.fn),
     showsAs("18", f2 get 3),
     showsAs("-", f3 get 3),
     showsAs("-", f4 get 3),

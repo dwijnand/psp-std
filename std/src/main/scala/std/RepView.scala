@@ -9,11 +9,11 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
   def view[B](xs: B*): MapTo[B]
   def apply[B](next: Op[A, B]): MapTo[B]
 
-  def init: This                                = this dropRight 1
-  def tail: This                                = this drop 1
-  def inits: Map2D[A]                           = view[MapTo[A]](this) ++ cond(isEmpty, view(), init.inits)
-  def tails: Map2D[A]                           = view[MapTo[A]](this) ++ cond(isEmpty, view(), tail.tails)
-  def asRefs: MapTo[Ref[A]]                     = this map castRef
+  def init: This            = this dropRight 1
+  def tail: This            = this drop 1
+  def inits: Map2D[A]       = this +: zcond(!isEmpty, init.inits)
+  def tails: Map2D[A]       = this +: zcond(!isEmpty, tail.tails)
+  def asRefs: MapTo[Ref[A]] = this map castRef
 
   def asDocs(implicit z: Show[A]): MapTo[Doc]     = this map (x => Doc(x))
   def mkDoc(sep: Doc)(implicit z: Show[A]): Doc   = asDocs zreducel (_ ~ sep ~ _)
@@ -33,8 +33,7 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
   def filterNot(p: ToBool[A]): This         = apply(Op.Filter(!p))
   def append(that: View[A]): This           = apply(Op.Append(that))
   def prepend(that: View[A]): This          = apply(Op.Prepend(that))
-  def reverseView: This                     = this // XXX
-
+  def reverseView: This                     = apply(Op.Reverse())
 }
 
 object RepView {
