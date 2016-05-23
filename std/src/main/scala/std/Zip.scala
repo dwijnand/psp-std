@@ -6,25 +6,37 @@ import api._, all._
 /** When a View is split into two disjoint views.
   * Notably, that's span, partition, and splitAt.
   */
-final case class Split[A](leftView: View[A], rightView: View[A]) {
+final case class Split[A](leftView: View[A], rightView: View[A]) extends SplitView[View[A]] {
   type V = View[A]
 
-  def appLeft[B](f: V => B): B             = f(leftView)
-  def appRight[B](f: V => B): B            = f(rightView)
-  def app[B](f: (V, V) => B): B            = views app f
-  def mapBoth[B](f: V => B): PairOf[B]     = views map2 f
-  def mapEach(f: ToSelf[V]): Split[A]      = Split(f(leftView), f(rightView))
-  def mapLeft(f: ToSelf[V]): Split[A]      = Split(f(leftView), rightView)
-  def mapRight(f: ToSelf[V]): Split[A]     = Split(leftView, f(rightView))
-  def pairs: View[PairOf[A]]               = zip.pairs
-  def sort(implicit z: Order[A]): Split[A] = mapEach(_.sort)
-  def views: PairOf[V]                     = leftView -> rightView
+  type This = Split[A]
+  def remake(l: V, r: V): This = Split(l, r)
 
-  def collate: V = pairs flatMap (_.each)
-  def join: V    = app(_ ++ _)
+  def pairs: View[PairOf[A]] = zip.pairs
+  def collate: V             = pairs flatMap (_.each)
+  def join: V                = app(_ ++ _)
+  def cross: Zip[A, A]       = app(zipCross)
+  def zip: Zip[A, A]         = app(zipViews)
+}
 
-  def cross: Zip[A, A] = app(zipCross)
-  def zip: Zip[A, A]   = app(zipViews)
+trait SplitView[V] {
+  type This <: SplitView[V]
+
+  def leftView: V
+  def rightView: V
+  def remake(l: V, r: V): This
+
+  def views: PairOf[V]                 = leftView -> rightView
+  def appLeft[B](f: V => B): B         = f(leftView)
+  def appRight[B](f: V => B): B        = f(rightView)
+  def app[B](f: (V, V) => B): B        = views app f
+  def mapBoth[B](f: V => B): PairOf[B] = views map2 f
+  def mapEach(f: ToSelf[V]): This      = remake(f(leftView), f(rightView))
+  def mapLeft(f: ToSelf[V]): This      = remake(f(leftView), rightView)
+  def mapRight(f: ToSelf[V]): This     = remake(leftView, f(rightView))
+}
+object SplitView {
+  def unapply[R](x: SplitView[R]) = some(x.leftView -> x.rightView)
 }
 
 /** When a View presents as a sequence of pairs.

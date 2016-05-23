@@ -117,21 +117,14 @@ object RepView {
     /** When a View is split into two disjoint views.
       * Notably, that's span, partition, and splitAt.
       */
-    case class Split(leftView: V, rightView: V) {
-      def appLeft[B](f: V => B): B      = f(leftView)
-      def appRight[B](f: V => B): B     = f(rightView)
-      def app[B](f: (V, V) => B): B     = views app f
-      def mapBoth[B](f: V => B): B->B   = views map2 f
-      def mapEach(f: ToSelf[V]): Split  = Split(f(leftView), f(rightView))
-      def mapLeft(f: ToSelf[V]): Split  = Split(f(leftView), rightView)
-      def mapRight(f: ToSelf[V]): Split = Split(leftView, f(rightView))
-      def pairs: M[A->A]                = zip.pairs
-      def views: V->V                   = leftView -> rightView
+    case class Split(leftView: V, rightView: V) extends SplitView[V] {
+      type This = Split
+      def remake(l: V, r: V): This = Split(l, r)
 
-      def collate: V = rightView.iterator |> (it => leftView.zfoldl[V]((res, x) => if (it.isEmpty) return res else res :+ x :+ it.next))
-      def join: V    = leftView ++ rightView
-
+      def collate: V       = rightView.iterator |> (it => leftView.zfoldl[V]((res, x) => if (it.isEmpty) return res else res :+ x :+ it.next))
       def cross: Zip[A, A] = app(zipCross)
+      def join: V          = leftView ++ rightView
+      def pairs: M[A->A]   = zip.pairs
       def zip: Zip[A, A]   = app(zipViews)
     }
 
