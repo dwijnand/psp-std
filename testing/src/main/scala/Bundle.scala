@@ -39,13 +39,13 @@ trait ScalacheckBundle extends Bundle {
 
   def runOne(p: NamedProp): Boolean = p.check |> (r =>
     doto(r.passed) {
-      case true  => println(doc"+ $pass  ${p.label}")
-      case false => println(doc"- $fail  ${p.label}\nFalsified after ${r.succeeded} passed tests\n$r")
+      case true  => println(pp"+ $pass  ${p.label}")
+      case false => println(pp"- $fail  ${p.label}\nFalsified after ${r.succeeded} passed tests\n$r")
     }
   )
 
   def run(): Boolean = {
-    println(doc"\n+ $start")
+    println(pp"\n+ $start")
     props map runOne forall (x => x)
   }
 

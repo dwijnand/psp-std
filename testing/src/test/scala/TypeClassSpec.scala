@@ -82,7 +82,7 @@ class ViewBasic extends ScalacheckBundle {
     val len  = 100
     val half = len / 2
 
-    def pair(r: LongRange) = (0 upTo half map index) zip (0 upTo half map precise)
+    def pair(r: LongRange) = 0.index upTo half zip (0.size upTo half)
 
     implicit val arbRange = Arb[LongRange](Gen const (0L until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))

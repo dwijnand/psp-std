@@ -96,7 +96,7 @@ class RepViewTests {
     same(ints mapIf { case 1 => -1 } head, -1)
     same(ints.slice(Index(2), Size(2)), view(3, 4))
     same(ints.slice(Nth(2), Size(2)), view(2, 3))
-    same(1 to 3 map nth, 0 to 2 map index)
+    same(1 to 3 map (_.nth), 0 to 2 map (_.index))
     same(1 nthTo 3, 0 indexUntil 3)
     same(cro9.force.size, Size(9))
     same(xints.sort, view(25, 106, 304))
@@ -107,8 +107,8 @@ class RepViewTests {
     // Same here after making Split a nested class.
     same[DVInt](ints takeToFirst (_ > 2), view(1, 2, 3))
     same[DVInt](ints.span(_ < 4).collate, view(1, 4, 2, 5, 3, 6))
-    same[DVInt](ints3 splitAround nth(2) join, view(1, 3))
-    same[DVInt](ints3 dropIndex nth(2), view(1, 3))
+    same[DVInt](ints3 splitAround Nth(2) join, view(1, 3))
+    same[DVInt](ints3 dropIndex Nth(2), view(1, 3))
 
     // [error] /g/psp-std/testing/src/test/scala/XsViewTests.scala:85:
     //           diverging implicit expansion for type psp.api.Eq[psp.std.RepView[psp.std.Direct[Int],Int]]

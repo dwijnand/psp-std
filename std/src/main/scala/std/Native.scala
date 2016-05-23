@@ -19,6 +19,11 @@ final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A]
 final case object Pnil extends Plist[Nothing] {
   def apply[A](): Plist[A] = cast(Pnil)
 }
+sealed class PunapplySeq[A](it: () => scIterator[A]) extends scSeq[A] {
+  def iterator        = it()
+  def apply(idx: Int) = iterator drop idx next
+  def length: Int     = if (iterator.hasNext) MaxInt else 0
+}
 
 sealed abstract class Consecutive[+A] extends Indexed[A] {
   type CC [X] <: Consecutive[X]

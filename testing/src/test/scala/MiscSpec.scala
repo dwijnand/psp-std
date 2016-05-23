@@ -108,7 +108,7 @@ class GridSpec extends ScalacheckBundle {
   def bundle = "Grid Operations"
 
   type LongGrid = View2D[Long]
-  implicit def showLongGrid = showBy[LongGrid](_.grid_s)
+  implicit def showLongGrid = Show.by[LongGrid](_.grid_s)
 
   def primePartition: LongGrid               = View2D.mpartition(2L.andUp)(xs => _ % xs.head === 0)
   def primePartitionGrid(n: Int): LongGrid   = primePartition take n map (_ take n)

@@ -24,23 +24,23 @@ Then `sbt console` and you can look around.
 % sbt console
 psp-std repl (ammonite 0.5.7, scala 2.11.8, jvm 1.8.0_92)
 
-psp> val xs = 1 to 20 splitAt 10
-xs: Split[Int] = Split([ 1, 2, 3, ... ], [ 11, 12, 13, ... ])
+psp> val xs = 1 to 20 splitAfter 10.size
+xs: Split[Int] = [ 1, 2, 3, ... ] / [ 11, 12, 13, ... ]
 
 psp> xs mapLeft (_ dropRight 8) join
 res0: View[Int] = [ 1, 2, 11, ... ]
 
-psp> xs.zip filterRight (_ % 3 == 0)
+psp> xs.zip filterRight (_ % 3 === 0)
 res1: Zip[Int, Int] = [ 2 -> 12, 5 -> 15, 8 -> 18 ]
 
-psp> val ys = zipCross(1 to 3, vec("a", "bb", "ccc"))
-ys: Zip[Int, String] = [ 1 -> a, 1 -> bb, 1 -> ccc, 2 -> a, 2 -> bb, 2 -> ccc, 3 -> a, 3 -> bb, 3 -> ccc ]
+psp> val ys = zipCross(1 to 3, view("a", "bb"))
+ys: Zip[Int, String] = [ 1 -> a, 1 -> bb, 2 -> a, 2 -> bb, 3 -> a, 3 -> bb ]
 
-psp> val same = ys filter (_ === _.length)
-same: Zip[Int, String] = [ 1 -> a, 2 -> bb, 3 -> ccc ]
+psp> val zs = ys eqBy (x => x, _.length)
+same: Zip[Int, String] = [ 1 -> a, 2 -> bb ]
 
-psp> same.rights joinWith '/'
-res2: String = a/bb/ccc
+psp> zs.rights joinWith '/'
+res2: String = a/bb
 ```
 
 ### Requirements

@@ -6,6 +6,14 @@ import java.{ lang => jl }
 import java.util.regex.{ Pattern, Matcher }
 import jl.Integer.parseInt, jl.Long.parseLong
 import Regex.WS
+import PChar._
+
+object PChar {
+  val toUpper: Char => Char   = jl.Character toUpperCase _
+  val isControl: Char => Bool = jl.Character isISOControl _
+
+  implicit def translateToMap[A, B](f: A => B): View[A] => View[B] = _ map f // experiment
+}
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
   import self.{ toCharArray => chars }
@@ -13,7 +21,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def *(n: Precise): String                         = Each const self take n joinString
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
-  def capitalize: String                            = if (self.isEmpty) "" else self o (_ splitAt _1 app (_.head.toUpper +: _))
+  def capitalize: String                            = self zmap (_ o (_ splitAfter _1 mapLeft toUpper join))
   def charSeq: scSeq[Char]                          = chars.m.seq
   def collect(pf: Char ?=> Char): String            = chars collect pf force
   def containsChar(ch: Char): Boolean               = chars.m contains ch
@@ -30,7 +38,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
   def reverseBytes: Array[Byte]                     = bytes.inPlace.reverse
   def reverseChars: String                          = chars.inPlace.reverse.utf8String
-  def sanitize: String                              = mapChars { case x if x.isControl => '?' }
+  def sanitize: String                              = this mapChars Fun.partial(isControl, _ => '?')
   def splitChar(ch: Char): View[String]             = splitRegex(Regex quote ch.any_s)
   def splitRegex(r: Regex): View[String]            = RepView(r.pattern split self)
   def stripMargin(ch: Char): String                 = mapLines(_ stripPrefix WS <> ch.r)
@@ -63,7 +71,7 @@ final class Regex(val pattern: Pattern) extends ShowSelf {
   def ends: Regex                            = cond(to_s endsWith "$", this, append("$"))
   def flags: Int                             = pattern.flags
   def isMatch(input: jCharSequence): Boolean = matcher(input).matches
-  def isMatch[A: Show](x: A): Boolean        = isMatch(x.doc.render)
+  def isMatch[A: Show](x: A): Boolean        = isMatch(x.pp)
   def literal: Regex                         = surround("\\Q", "\\E") // Not setFlag(LITERAL) lest further regex additions be misinterpreted
   def mapRegex(f: ToSelf[String]): Regex     = Regex(f(to_s), flags)
   def prepend(s: String): Regex              = mapRegex(s + _)

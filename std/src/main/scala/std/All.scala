@@ -2,7 +2,6 @@ package psp
 package std
 
 import psp.api._
-import java.{ lang => jl }
 import scala.Tuple2
 import java.io.BufferedInputStream
 
@@ -21,6 +20,14 @@ object exp extends AllExplicit {
 }
 
 object all extends NonValueImplicitClasses with AllImplicit  {
+  implicit class DocOps(private val lhs: Doc) {
+    import Doc._
+    def pp: String         = pp"$lhs"
+    def <>(rhs: Doc): Doc  = lhs ~ rhs
+    def <+>(rhs: Doc): Doc = lhs ~ SP ~ rhs
+    def ~(rhs: Doc): Doc   = Cat(lhs, rhs)
+  }
+
   implicit class MakesClassOps[A, R](z: Makes[A, R]) {
     def apply(xs: A*): R                     = z make Each.elems(xs: _*)
     def contraMap[B](g: B => A): Makes[B, R] = Makes(xs => z make (xs map g))
@@ -50,6 +57,8 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def id_## : Int                       = java.lang.System.identityHashCode(x)
     def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
     def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
+
+    def zmap(f: A => A)(implicit z: Empty[A], eqv: Eq[A]): A = zcond(x =!= z.empty, f(x))
 
     @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
   }
@@ -131,9 +140,9 @@ class NonValueImplicitClasses extends AllExplicit {
     def log(args: Doc*): Unit   = println(pp(args: _*))
     def any(args: Any*): String = pp(args.m asDocs Show.Inherited seq: _*)
 
-    def pp(args: Doc*)(implicit z: Renderer): String = z show doc(args: _*)
-    def fp(args: Doc*)(implicit z: Renderer): String = z show fdoc(args: _*)
-    def sm(args: Doc*)(implicit z: Renderer): String = z show sdoc(args: _*)
+    def pp(args: Doc*): String = Pconfig.renderer show doc(args: _*)
+    def fp(args: Doc*): String = Pconfig.renderer show fdoc(args: _*)
+    def sm(args: Doc*): String = Pconfig.renderer show sdoc(args: _*)
   }
   implicit class VindexOps(private val vdex: Vdex) {
     def getInt: Int = vdex.indexValue.safeToInt
@@ -166,10 +175,7 @@ class NonValueImplicitClasses extends AllExplicit {
   }
 
   implicit class CharOps(private val ch: Char) {
-    def isControl = jl.Character isISOControl ch
-    def toUpper   = jl.Character toUpperCase ch
-    def to_s      = ch.toString
-
+    def to_s: String                      = ch.toString
     def r: Regex                          = Regex(ch)
     def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
     def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
@@ -196,12 +202,18 @@ class NonValueImplicitClasses extends AllExplicit {
     def indexUntil(end: Long): VdexRange  = Interval.until(self, end) map Index
     def nthTo(end: Long): VdexRange       = Interval.to(self, end) map Nth
 
+    def size: Precise = Precise(self)
+    def index: Index  = Index(self)
+    def nth: Nth      = Nth(self)
+
     private def assertInIntRange(): Unit = assert(MinInt <= self && self <= MaxInt, s"$self out of range")
   }
   implicit class PreciseOps(private val size: Precise) {
-    def exclusive: Index   = Index(size.getLong)
-    def indices: VdexRange = 0L indexUntil size.getLong
-    def lastIndex: Index   = Index(size.getLong - 1) // effectively maps both undefined and zero to no index.
+    private def ls = size.getLong
+    def to(hi: Long): SizeRange = ls to hi map (n => Size(n))
+    def exclusive: Index        = Index(ls)
+    def indices: VdexRange      = 0L indexUntil ls
+    def lastIndex: Index        = Index(ls - 1) // effectively maps both undefined and zero to no index.
   }
   implicit class PartialOps[A, B](pf: A ?=> B) {
     def contains(x: A): Bool                  = pf isDefinedAt x
@@ -252,10 +264,10 @@ class NonValueImplicitClasses extends AllExplicit {
   implicit class OrderClassOps[A](private val r: Order[A]) {
     import r._
 
-    def flip: Order[A]                                  = Relation.order(cmp _ andThen (_.flip))
+    def flip: Order[A]                                  = Order(cmp _ andThen (_.flip))
     def hashWith(f: ToLong[A]): HashOrder[A]            = Relation.all(cmp, f)
-    def on[B](f: B => A): Order[B]                      = Relation.order[B](cmp _ on f)
-    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Relation.order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
+    def on[B](f: B => A): Order[B]                      = Order(cmp _ on f)
+    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
 
     def comparator: Comparator[A] = new scala.math.Ordering[A] {
       def compare(x: A, y: A): Int = cmp(x, y).intValue
@@ -289,7 +301,8 @@ class NonValueImplicitClasses extends AllExplicit {
   }
 
   implicit class SplittableValueOps[R, A, B](private val x: R)(implicit z: Splitter[R, A, B]) {
-    def mk_s(sep: String)(implicit za: Show[A], zb: Show[B]): String  = _1.show + sep + _2.show
+    def mkDoc(sep: Doc)(implicit za: Show[A], zb: Show[B]): Doc      = _1.doc ~ sep <> _2
+    def mk_s(sep: String)(implicit za: Show[A], zb: Show[B]): String = mkDoc(sep.lit).pp
 
     def _1: A                                    = fst(z split x)
     def _2: B                                    = snd(z split x)
@@ -309,7 +322,7 @@ class NonValueImplicitClasses extends AllExplicit {
 
   implicit class ShowableViewOps[A](private val xs: View[A])(implicit z: Show[A]) {
     def mkDoc(sep: Doc): Doc          = xs.asDocs zreducel (_ ~ sep ~ _)
-    def joinWith(sep: String): String = mkDoc(sep.lit).render
+    def joinWith(sep: String): String = pp"${mkDoc(sep.lit)}"
     def joinString: String            = joinWith("")
   }
 
@@ -330,6 +343,7 @@ class NonValueImplicitClasses extends AllExplicit {
   implicit class ShowableDocOps[A](private val lhs: A)(implicit z: Show[A]) {
     def doc: Doc     = Doc(lhs)
     def show: String = z show lhs
+    def pp: String   = pp"$doc"
   }
   implicit class HeytingAlgebraOps[A](private val lhs: A)(implicit z: Heyting[A]) {
     def unary_! : A     = z complement lhs

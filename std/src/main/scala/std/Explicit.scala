@@ -32,24 +32,13 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
   type LongRange            = ClosedRange[Long]
   type OpenRange[+A]        = Consecutive.Open[A]
   type Renderer             = Show[Doc]
+  type SizeRange            = ClosedRange[Precise]
   type VdexRange            = ClosedRange[Vdex]
   type View2D[+A]           = View[View[A]]
   type Vec[A]               = Direct[A]
 
   // Helpers for inference when calling 'on' on contravariant type classes.
-  def orderBy[A] = new Relation.OrderBy[A]
-  def showBy[A]  = new Relation.ShowBy[A]
   def hashBy[A]  = new Relation.HashBy[A]
-
-  /** Unfortunately we need the overloads for function type inference,
-    * e.g. `view(1, 2) map index` doesn't work if only Long is here.
-    */
-  def nth(n: Int): Nth          = Nth(n)
-  def nth(n: Long): Nth         = Nth(n)
-  def index(n: Int): Index      = Index(n)
-  def index(n: Long): Index     = Index(n)
-  def precise(n: Int): Precise  = Size(n)
-  def precise(n: Long): Precise = Size(n)
 
   def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import api._, all._
+import api._, all._, Show.by
 
 object StdShow extends StdShow
 
@@ -15,6 +15,8 @@ sealed abstract class Doc {
 }
 
 object Doc {
+  val SP = " ".lit
+
   final case object NoDoc extends Doc
   final case class Group(xs: View[Doc])               extends Doc
   final case class Cat(left: Doc, right: Doc)         extends Doc
@@ -24,11 +26,6 @@ object Doc {
   def empty: Doc                                    = NoDoc
   def apply[A](x: A)(implicit z: Show[A]): Shown[A] = Shown[A](x, z)
   def apply(s: String): Literal                     = Literal(s)
-
-  implicit class DocOps(private val lhs: Doc) {
-    def render(implicit z: Renderer): String = z show lhs
-    def ~(rhs: Doc): Doc                     = Doc.Cat(lhs, rhs)
-  }
 }
 
 object Show {
@@ -39,22 +36,31 @@ object Show {
   val Inherited: Show[Any] = apply[Any](s => zcond(s != null, s.toString))
 
   def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
+  def by[A]: ShowBy[A]                  = new ShowBy[A]
 
-  final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] { def show(x: A) = f(x) }
+  final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] {
+    def show(x: A) = f(x)
+  }
+  final class ShowBy[A] {
+    def apply[B](f: A => B)(implicit z: Show[B]): Show[A] = z on f
+  }
 }
 
-class FullRenderer(minElements: Precise, maxElements: Precise) extends Renderer {
+class FullRenderer(elemRange: SizeRange) extends Renderer {
+  def minElements = elemRange.head
+  def maxElements = elemRange.last
+
   private object UnderMax {
-    def unapply(xs: View[Doc]) = xs splitAt maxElements.lastIndex match {
-      case SplitView(xs, ys) if ys.isEmpty => Some(xs)
-      case _                               => None
+    def unapply(xs: View[Doc]) = xs splitAfter maxElements match {
+      case SplitView(xs, EmptyView()) => Some(xs)
+      case _                          => None
     }
   }
   def show(x: Doc): String = x match {
     case Doc.NoDoc               => ""
     case Doc.Cat(l, r)           => show(l) append show(r)
-    case Doc.Group(UnderMax(xs)) => xs joinWith ", " surround ("[ ", " ]")
-    case Doc.Group(xs)           => xs take minElements joinWith ", " surround ("[ ", ", ... ]")
+    case Doc.Group(UnderMax(xs)) => xs map (_.pp) joinWith ", " surround ("[ ", " ]")
+    case Doc.Group(xs)           => xs take minElements map (_.pp) joinWith ", " surround ("[ ", ", ... ]")
     case Doc.Shown(value, z)     => z show value
     case Doc.Literal(s)          => s
   }
@@ -82,7 +88,7 @@ case class ShowInterpolator(val stringContext: StringContext) {
     */
   def fdoc(args: Doc*): Doc = {
     // val fms = FormatSpec findAll escaped
-    escaped.format(args.map(_.render): _*)
+    escaped.format(args.map(_.pp): _*)
   }
 
   def sdoc(args: Doc*): Doc = new StringContext(strippedParts.seq: _*).raw(args: _*).trim
@@ -102,14 +108,12 @@ trait StdShow extends StdShow1 {
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
-  implicit def showVdex: Show[Vdex]                     = showBy(_.indexValue)
-  implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.doc.render))
-  implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show { case a -> b => a.doc ~ " -> " ~ b render }
-  implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc](Doc.empty).render)
+  implicit def showVdex: Show[Vdex]                     = by(_.indexValue)
+  implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
+  implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
+  implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc]("".lit).pp)
 
-  implicit def showFunGrid[A, B](implicit z: Show[B]): Show[View2D.FunGrid[A, B]] = showBy(_.lines.joinLines)
-
-  def joinPair[A: Show, B: Show](xy: A->B)(f: BinOp[String]): String = f(fst(xy).show, snd(xy).show)
+  implicit def showView2DLive[A, B](implicit z: Show[B]): Show[View2D.Live[A, B]] = by(_.lines.joinLines)
 
   implicit def showSize: Show[Size] = Show[Size] {
     case Precise(size)         => pp"$size"
@@ -132,17 +136,17 @@ trait StdShow extends StdShow1 {
   }
 }
 trait StdShow0 {
-  implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).show)
+  implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
 }
 trait StdShow1 extends StdShow0 {
-  implicit def showPmap[K: Show, V: Show] = showBy[Pmap[K, V]](xs => funGrid(xs.zipped.pairs)(_.show))
-  implicit def showPset[A: Show]          = showBy[Pset[A]](_.basis.asShown.inBraces)
+  implicit def showPmap[K: Show, V: Show] = by[Pmap[K, V]](_.pairs mapLive (_.pp)) //  xs => funGrid(xs.pairs)(_.show))
+  implicit def showPset[A: Show]          = by[Pset[A]](_.basis.asShown.inBraces)
 
-  implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(xs => xs.m.pairs map (_ mk_s "=") inBraces)
-  implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(xs => xs.m.asShown.inBrackets)
+  implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)
+  implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(_.m.asShown.inBrackets)
   implicit def showScalaIterable[A: Show]: Show[scIterable[A]]   = Show(xs => xs.m.asShown.inParens prepend xs.stringPrefix)
-  implicit def showEach[A: Show]: Show[Each[A]]                  = Show(_.asDocs.show)
-  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]] = showBy[Zip[A1, A2]](_.pairs)
-  implicit def showArray[A: Show]: Show[Array[A]]                = showBy[Array[A]](_.toVec)
-  implicit def showSplit[A: Show]: Show[Split[A]]                = showBy[Split[A]](x => "Split(".lit ~ x.leftView ~ ", " ~ x.rightView ~ ")")
+  implicit def showEach[A: Show]: Show[Each[A]]                  = by(_.m)
+  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]] = by(_.pairs)
+  implicit def showArray[A: Show]: Show[Array[A]]                = by(_.m)
+  implicit def showSplit[A: Show]: Show[Split[A]]                = Show(_ app (_.doc <+> "/" <+> _ pp))
 }

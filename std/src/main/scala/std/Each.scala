@@ -84,8 +84,6 @@ object Each {
     case xs: sciIndexedSeq[_] => intIndexed(xs.apply, 0, xs.length)
     case _                    => apply(xs foreach _)
   }
-
-  def unapplySeq[A](xs: Each[A]): Some[scSeq[A]] = Some(xs.seq)
 }
 
 object View2D {
@@ -94,13 +92,13 @@ object View2D {
   def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
     xs partition p(xs) app ((ls, rs) => inView(ls +: mpartition(rs)(p) foreach _))
 
-  class FunGrid[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
+  class Live[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
     def isEmpty: Bool        = basis.isEmpty || functions.isEmpty
     def apply(xy: Coords): B = xy app (rows applyIndex _ applyIndex _)
     def rows: View2D[B]      = basis map (r => functions map (_ apply r))
     def columns: View2D[B]   = rows.transpose
 
-    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.show.length) max)
+    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.pp.length) max)
     def lines(implicit z: Show[B]): View[String] = cond(isEmpty, view(), widths zip rows map (lformat(_)(_)))
   }
 }

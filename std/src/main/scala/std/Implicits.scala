@@ -6,10 +6,9 @@ import api._, exp._
 trait AllImplicit extends AllImplicit0 with StdEmpty with MakesWalks with StdAlgebra {
   import java.util.AbstractMap.SimpleImmutableEntry
 
-  implicit def cleaverJMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B] = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
-  implicit def cleaverPair[A, B]: Cleaver[A -> B, A, B]               = cleaver[A -> B, A, B](((_, _)), fst, snd)
-  implicit def conforms[A]: (A <:< A)                                 = new conformance[A]
-  implicit def defaultRenderer: FullRenderer                          = new FullRenderer(minElements = Size(3), maxElements = Size(10))
+  implicit def cleaveJavaMapEntry[A, B]: Cleaver[jMapEntry[A, B], A, B] = cleaver(new SimpleImmutableEntry(_, _), _.getKey, _.getValue)
+  implicit def cleaveScalaProduct[A, B]: Cleaver[A -> B, A, B]          = cleaver[A -> B, A, B](((_, _)), fst, snd)
+  implicit def conforms[A]: (A <:< A)                                   = new conformance[A]
 
   // Conversions.
   implicit def longToPrecise(x: Long): Precise                     = Size(x)

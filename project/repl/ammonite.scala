@@ -35,11 +35,8 @@ class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) ext
     run()
   }
 
-  override def action() = {
-    val res = super.action()
-    printStream.println("") // Blank line between results.
-    res
-  }
+  // Blank line between results.
+  override def action() = sideEffect(super.action(), printStream.println(""))
 }
 
 /** These classes are imported into the running repl.
@@ -49,10 +46,13 @@ object INREPL {
    *  to the console by appending > or >> to the creating expression, depending on whether
    *  you want to require a Show[A] instance.
    */
-  implicit final class ReplOpsWithShow[A](val xs: View[A]) {
-    def > (implicit z: Show[A] = Show.Inherited)     = println(pp"$xs")
-    def >>(implicit z: Show[A])                      = println(pp"$xs")
-    def !>(implicit ord: Order[A], z: Show[A]): Unit = println(pp"${ xs.sort }")
+  implicit class ReplShowWalks[A, R](repr: R)(implicit z: Walks[A, R]) {
+    def xs = z walk repr
+    def >>(implicit z: Show[A])                      = xs foreach println
+    def !>(implicit ord: Order[A], z: Show[A]): Unit = xs.sort foreach println
+  }
+  implicit class ReplShowRepr[R](repr: R) {
+    def > (implicit z: Show[R] = Show.Inherited) = println(repr.pp)
   }
 
   implicit def showToAmmonite[A](implicit z: Show[A]): pprint.PPrinter[A] =

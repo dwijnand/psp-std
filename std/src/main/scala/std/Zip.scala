@@ -56,7 +56,6 @@ trait ZipFromPairs[+A1, +A2] extends Any with Zip[A1, A2] {
 }
 
 object Zip {
-
   /** A Zip has similar operations to a View, but with the benefit of
     *  being aware each element has a left and a right.
     */
@@ -79,6 +78,9 @@ object Zip {
 
     def foreach(f: MapTo[Unit]): Unit =
       lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return )))
+
+    def eqBy[B: Eq](f: A1 => B, g: A2 => B): Zip[A1, A2] =
+      x filter ((a, b) => f(a) === g(b))
 
     def corresponds(p: PredBoth): Bool         = iterator |> (it => it.forall(_ app p) && !it.hasMore)
     def drop(n: Precise): This                 = zipSplit(pairs drop n)

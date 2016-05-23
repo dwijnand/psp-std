@@ -63,8 +63,8 @@ trait Explicit {
   def preNewline(s: String): String                                    = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
   def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
-  def sameDocAsToString[A: Show](expr: A): Unit                        = same(expr.show, expr.toString)
-  def sameDoc(expr: Doc, expected: Doc): Unit                          = same(expr.show, expected.show)
+  def sameDocAsToString[A: Show](expr: A): Unit                        = same(expr.pp, expr.toString)
+  def sameDoc(expr: Doc, expected: Doc): Unit                          = same(pp"$expr", pp"$expected")
   def seqShows[A: Show](expected: String, xs: View[A]): NamedProp      = preNewline(expected) -> (expected =? (xs joinWith ", "))
   def showsAs[A: Show](expected: String, x: A): NamedProp              = preNewline(expected) -> (expected =? pp"$x")
 
@@ -132,6 +132,12 @@ trait Implicit extends Explicit {
     def stream: Each[A]                           = Each continually self.sample flatMap (_.view) toVec
     def take(n: Int): Direct[A]                   = stream take n toVec
   }
+  implicit class TestSizeOps(val self: Precise) {
+    def upTo(hi: Long): Gen[Precise] = self.getLong upTo hi map (_.size)
+  }
+  implicit class TestIndexOps(val self: Index) {
+    def upTo(hi: Long): Gen[Index] = self.indexValue upTo hi map (_.index)
+  }
   implicit class TestLongOps(val self: Long) {
     def upTo(hi: Long): Gen[Long] = Gen.choose(self, hi)
   }
@@ -155,8 +161,8 @@ trait Implicit extends Explicit {
   }
   implicit class TestOnlyAnyOps[A](private val lhs: A) {
     def =?(rhs: A)(implicit eqv: Eq[A], z: Show[A]): Prop = {
-      def label = doc"Expected $rhs but got $lhs"
-      cond(lhs === rhs, proved, falsified :| label.render)
+      def label = pp"Expected $rhs but got $lhs"
+      cond(lhs === rhs, proved, falsified :| label)
     }
   }
 }

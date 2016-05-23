@@ -33,13 +33,13 @@ class ViewOps[A, R](val xs: View[A]) extends ViewMethods[R, A] {
   def append(that: View[A]): This           = Each.join(xs, that).m
   def prepend(that: View[A]): This          = Each.join(that, xs).m
 
-  def partition(p: ToBool[A]): Split[A]   = Split(xs filter p, xs filter !p)
-  def span(p: ToBool[A]): Split[A]        = Split(xs takeWhile p, xs dropWhile p)
-  def splitAround(idx: Vdex): Split[A]    = splitAt(idx) mapRight (_ tail)
-  def splitAt(idx: Vdex): Split[A]        = splitAtTake(idx.excluding)
-  def splitAtTake(len: Precise): Split[A] = Split(xs take len, xs drop len)
-  def dropIndex(idx: Vdex): View[A]       = splitAround(idx).join
-  def takeToFirst(p: ToBool[A]): View[A]  = this span !p app ((x, y) => x ++ (y take 1))
+  def partition(p: ToBool[A]): Split[A]  = Split(xs filter p, xs filter !p)
+  def span(p: ToBool[A]): Split[A]       = Split(xs takeWhile p, xs dropWhile p)
+  def splitAround(idx: Vdex): Split[A]   = splitAt(idx) mapRight (_ tail)
+  def splitAt(idx: Vdex): Split[A]       = splitAfter(idx.excluding)
+  def splitAfter(len: Precise): Split[A] = Split(xs take len, xs drop len)
+  def dropIndex(idx: Vdex): View[A]      = splitAround(idx).join
+  def takeToFirst(p: ToBool[A]): View[A] = this span !p app ((x, y) => x ++ (y take 1))
 
   def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail) // like "xs sliding 2" but better
   def zipIndex: Zip[A, Index]             = zipViews(xs, openIndices)
@@ -76,6 +76,7 @@ trait ViewMethods[R, A] {
   def tail: This
   def inits: Map2D[A]
   def tails: Map2D[A]
+  def mapLive[B](columns: (A => B)*): View2D.Live[A, B] = new View2D.Live(xs, view(columns: _*))
 
   def asRefs: MapTo[Ref[A]]
   def asDocs(implicit z: Show[A]): MapTo[Doc]
@@ -95,8 +96,8 @@ trait ViewMethods[R, A] {
   def sliceIndex(start: Vdex): View[A]                = slice(start, _1)
   def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A] = this dropWhile p takeWhile q
   def sort(implicit z: Order[A]): View[A]             = xs.toRefArray.inPlace.sort.m
-  def sortBy[B: Order](f: A => B): View[A]            = sort(orderBy[A](f))
-  def sortWith(cmp: OrderRelation[A]): View[A]        = sort(Relation order cmp)
+  def sortBy[B: Order](f: A => B): View[A]            = sort(Order by f)
+  def sortWith(cmp: OrderRelation[A]): View[A]        = sort(Order(cmp))
   def tee(f: ToUnit[A]): View[A]                      = this map (x => doto(x)(f))
 
   def max(implicit z: Order[A]): A = reducel(all.max)

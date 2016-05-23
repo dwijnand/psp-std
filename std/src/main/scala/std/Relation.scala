@@ -3,6 +3,19 @@ package std
 
 import api._, all._
 
+object Order {
+  def apply[A](r: OrderRelation[A]): Order[A] = new OrderImpl(r)
+  def by[A]: OrderBy[A]                       = new OrderBy[A]
+
+  class OrderImpl[A](r: OrderRelation[A]) extends Order[A] {
+    def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
+    def cmp(x: A, y: A): Cmp  = r(x, y)
+  }
+  final class OrderBy[A] {
+    def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = z on f
+  }
+}
+
 object Relation {
   val Inherited: Hash[Any]       = hash[Any](_ == _, _.##)
   val Reference: Hash[Any]       = hash[Any](_ id_== _, _.id_##)
@@ -12,7 +25,6 @@ object Relation {
 
   def equiv[A](r: EqRelation[A]): Eq[A]                       = new EqImpl(r)
   def hash[A](r: EqRelation[A], h: ToLong[A]): Hash[A]        = new HashImpl(r, h)
-  def order[A](r: OrderRelation[A]): Order[A]                 = new OrderImpl(r)
   def all[A](r: OrderRelation[A], h: ToLong[A]): HashOrder[A] = new AllImpl(r, h)
 
   def allBy[A]                                       = new AllBy[A]
@@ -27,10 +39,6 @@ object Relation {
     def eqv(x: A, y: A): Bool = r(x, y)
     def hash(x: A): Long      = h(x)
   }
-  class OrderImpl[A](r: OrderRelation[A]) extends Order[A] {
-    def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
-    def cmp(x: A, y: A): Cmp  = r(x, y)
-  }
   class AllImpl[A](r: OrderRelation[A], h: ToLong[A]) extends HashOrder[A] {
     def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
     def cmp(x: A, y: A): Cmp  = r(x, y)
@@ -41,8 +49,6 @@ object Relation {
     *  where it can either be inferred from an existing value or
     *  supplied directly.
     */
-  final class OrderBy[A] { def apply[B](f: A => B)(implicit z: Order[B]): Order[A]         = z on f }
-  final class ShowBy[A]  { def apply[B](f: A => B)(implicit z: Show[B]): Show[A]           = z on f }
   final class HashBy[A]  { def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A]           = z on f }
   final class AllBy[A]   { def apply[B](f: A => B)(implicit z: HashOrder[B]): HashOrder[A] = z on f }
 }
@@ -84,7 +90,7 @@ trait StdRelation extends StdRelation1 {
 
   implicit def pairRelation[A: HashOrder, B: HashOrder]: HashOrder[A -> B] =
     Relation.all[A -> B](
-      orderBy[A -> B](fst) | snd cmp,
+      Order.by[A -> B](fst) | snd cmp,
       xy => fst(xy).hash + snd(xy).hash
     )
 }

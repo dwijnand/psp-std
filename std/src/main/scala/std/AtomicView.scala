@@ -22,7 +22,11 @@ object View {
   final case class Collected[A, B, R](prev: RView[A, R], pf: A ?=> B)      extends CView[A, B, R](_.atMost)
   final case class Reversed[A, R](prev: RView[A, R])                       extends CView[A, A, R](x => x)
 
+  // XXX Figure out how to maintain laziness here.
   def unapplySeq[A](xs: View[A]): Some[scSeq[A]] = Some(xs.seq)
+}
+object EmptyView {
+  def unapply[A](xs: View[A]): Bool = xs.isEmpty
 }
 object CView {
   def unapply[A, B, R](xs: CView[A, B, R]): Some[RView[A, R] -> ToSelf[Size]] = Some(xs.prev -> xs.sizeEffect)

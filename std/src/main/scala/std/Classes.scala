@@ -3,6 +3,12 @@ package std
 
 import api._, all._
 
+/** Holding area for things which should later be made configurable.
+ */
+object Pconfig {
+  val renderer = new FullRenderer(Size(3) to 9)
+}
+
 /** Motley objects for which a file of residence is not obvious.
   */
 
