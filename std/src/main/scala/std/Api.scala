@@ -21,21 +21,22 @@ trait ApiTypes extends ExternalTypes {
   type Triple[+A, +B, +C] = scala.Product3[A, B, C]
   type Vdex               = Vindex[_]
   type sCollection[+A]    = sc.GenTraversable[A]        // named analogously to jCollection.
+  type HashEqOrder[-A]    = Hash[A] with Eq[A] with Order[A]
+  type HashEq[-A]         = Hash[A] with Eq[A]
 
   // Function types.
-  type ?=>[-A, +B]       = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
-  type BinOp[A]          = BinTo[A, A]                 // binary operation
-  type BinTo[-A, +R]     = (A, A) => R
-  type EqRelation[-A]    = BinTo[A, Bool]
-  type OrderRelation[-A] = BinTo[A, Cmp]
-  type Suspended[+A]     = ToUnit[ToUnit[A]]
-  type ToBool[-A]        = A => Bool
-  type ToInt[-A]         = A => Int
-  type ToLong[-A]        = A => Long
-  type ToSelf[A]         = A => A
-  type ToString[-A]      = A => String
-  type ToUnit[-A]        = A => Unit
-  type <:<[-A, +B]       = A => B
+  type ?=>[-A, +B]   = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
+  type BinOp[A]      = BinTo[A, A]                 // binary operation
+  type BinTo[-A, +R] = (A, A) => R
+  type Relation[-A]  = BinTo[A, Bool]
+  type Suspended[+A] = ToUnit[ToUnit[A]]
+  type ToBool[-A]    = A => Bool
+  type ToInt[-A]     = A => Int
+  type ToLong[-A]    = A => Long
+  type ToSelf[A]     = A => A
+  type ToString[-A]  = A => String
+  type ToUnit[-A]    = A => Unit
+  type <:<[-A, +B]   = A => B
 }
 
 abstract class ApiValues extends ApiTypes {
@@ -71,9 +72,8 @@ abstract class ApiValues extends ApiTypes {
   def jFile(path: String): jFile                         = new jFile(path)
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
-  def longCmp(diff: Long): Cmp                           = if (diff < 0) Cmp.LT else if (diff > 0) Cmp.GT else Cmp.EQ
-  def max[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) eq Cmp.LT, r, l)
-  def min[A](l: A, r: A)(implicit z: Order[A]): A        = cond(z.cmp(l, r) eq Cmp.LT, l, r)
+  def max[A](l: A, r: A)(implicit z: Order[A]): A        = if (z.less(l, r)) r else l
+  def min[A](l: A, r: A)(implicit z: Order[A]): A        = if (z.less(l, r)) l else r
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = Tuple2(x, y)

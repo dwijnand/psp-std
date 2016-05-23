@@ -12,11 +12,11 @@ import all._
 trait MEq[M[+X], -A] extends Any {
   def eqv(x: M[A], y: M[A]): M[Bool]
 }
-trait MHash[M[+X], -A] extends Any with MEq[M, A] {
+trait MHash[M[+X], -A] extends Any {
   def hash(x: M[A]): M[Long]
 }
-trait MOrder[M[+X], -A] extends Any with MEq[M, A] {
-  def cmp(x: M[A], y: M[A]): M[Cmp]
+trait MOrder[M[+X], -A] extends Any {
+  def less(x: M[A], y: M[A]): M[Bool]
 }
 trait MShow[M[+X], -A] extends Any {
   def show(x: M[A]): M[String]
@@ -68,13 +68,12 @@ trait ACleaver[R] extends Any with AJoiner[R] with ASplitter[R] {
 trait Eq[-A] extends Any with MEq[Id, A] {
   def eqv(x: A, y: A): Bool
 }
-trait Hash[-A] extends Any with MHash[Id, A] with Eq[A] {
+trait Hash[-A] extends Any with MHash[Id, A] {
   def hash(x: A): Long
 }
-trait Order[-A] extends Any with MOrder[Id, A] with Eq[A] {
-  def cmp(x: A, y: A): Cmp
+trait Order[-A] extends Any with MOrder[Id, A] {
+  def less(x: A, y: A): Bool
 }
-trait HashOrder[-A] extends Any with Hash[A] with Order[A]
 
 trait Show[-A] extends Any with MShow[Id, A] {
   def show(x: A): String
@@ -101,36 +100,49 @@ trait Cleaver[R, A, B] extends Any with MCleaver[Id, R, A, B] with Joiner[R, A, 
 }
 
 
-/*********
- *
- *********/
+/*************
+ * Companions.
+ *************/
 
 object Order {
-  val Inherited: HashOrder[String] = comparable[String] hashWith (_.##)
-  val ToString: HashOrder[Any]     = Relation.allBy[Any](_.any_s)(Inherited)
+  def Inherited[A <: Comparable[A]]: Order[A] = apply((x, y) => (x compareTo y) < 0)
 
-  def apply[A](r: OrderRelation[A]): Order[A]      = new OrderImpl(r)
-  def by[A]: OrderBy[A]                            = new OrderBy[A]
-  def comparable[A <: Comparable[A]]: HashOrder[A] = apply[A]((x, y) => longCmp(x compareTo y)) hashWith (_.##)
-  def shown[A](implicit z: Show[A]): Order[A]      = by[A](_.pp)(Inherited)
+  def apply[A](r: Relation[A]): Order[A] = new OrderImpl(r)
+  def by[A]: OrderBy[A]                  = new OrderBy[A]
 
-  class OrderImpl[A](r: OrderRelation[A]) extends Order[A] {
-    def eqv(x: A, y: A): Bool = r(x, y) eq Cmp.EQ
-    def cmp(x: A, y: A): Cmp  = r(x, y)
+  class OrderImpl[A](r: Relation[A]) extends Order[A] {
+    def less(x: A, y: A): Bool = r(x, y)
   }
   final class OrderBy[A] {
     def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = z on f
   }
 }
 object Eq {
-  def apply[A](r: EqRelation[A]): Eq[A] = new EqImpl(r)
+  val Inherited: Eq[Any]    = apply(_ == _)
+  val Reference: Eq[AnyRef] = apply(_ eq _)
+
+  def apply[A](r: Relation[A]): Eq[A] = new EqImpl(r)
   def by[A]: EqBy[A]                    = new EqBy[A]
 
-  class EqImpl[A](r: EqRelation[A]) extends Eq[A] {
+  class EqImpl[A](r: Relation[A]) extends Eq[A] {
     def eqv(x: A, y: A): Bool = r(x, y)
   }
   final class EqBy[A] {
     def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A] = z on f
+  }
+}
+object Hash {
+  val Inherited: Hash[Any]    = apply(_.##)
+  val Reference: Hash[AnyRef] = apply(_.id_##)
+
+  def apply[A](h: ToLong[A]): Hash[A] = new HashImpl(h)
+  def by[A]: HashBy[A]                = new HashBy[A]
+
+  class HashImpl[A](h: ToLong[A]) extends Hash[A] {
+    def hash(x: A): Long = h(x)
+  }
+  final class HashBy[A] {
+    def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A] = z on f
   }
 }
 object Show {

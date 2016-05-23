@@ -97,7 +97,7 @@ trait ViewMethods[R, A] {
   def sliceWhile(p: ToBool[A], q: ToBool[A]): View[A] = this dropWhile p takeWhile q
   def sort(implicit z: Order[A]): View[A]             = xs.toRefArray.inPlace.sort.m
   def sortBy[B: Order](f: A => B): View[A]            = sort(Order by f)
-  def sortWith(cmp: OrderRelation[A]): View[A]        = sort(Order(cmp))
+  def sortWith(isLess: Relation[A]): View[A]          = sort(Order(isLess))
   def tee(f: ToUnit[A]): View[A]                      = this map (x => doto(x)(f))
 
   def max(implicit z: Order[A]): A = reducel(all.max)
@@ -134,15 +134,15 @@ trait ViewMethods[R, A] {
 
   def pairs[B, C](implicit z: Splitter[A, B, C]): MapTo[B->C] = map(z.split)
 
-  def iterator: scIterator[A]                = toScalaStream.iterator
-  def toArray(implicit z: CTag[A]): Array[A] = to[Array]
-  def toPset(implicit z: Eq[A]): Pset[A]     = to[Pset]
-  def toRefArray(): Array[Ref[A]]            = asRefs.force
-  def toScalaStream: sciStream[A]            = to[sciStream]
-  def toVec: Vec[A]                          = to[Vec]
+  def iterator: scIterator[A]                          = toScalaStream.iterator
+  def toArray(implicit z: CTag[A]): Array[A]           = to[Array]
+  def toPset(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = to[Pset]
+  def toRefArray(): Array[Ref[A]]                      = asRefs.force
+  def toScalaStream: sciStream[A]                      = to[sciStream]
+  def toVec: Vec[A]                                    = to[Vec]
 
-  def seq: scSeq[A]                           = to[scSeq] // varargs or unapplySeq, usually
-  def trav: scTraversable[A]                  = to[scTraversable] // scala flatMap, usually
+  def seq: scSeq[A]          = to[scSeq] // varargs or unapplySeq, usually
+  def trav: scTraversable[A] = to[scTraversable] // scala flatMap, usually
 }
 
 class View2DOps[A](private val xss: View2D[A]) {

@@ -21,7 +21,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def *(n: Precise): String                         = Each const self take n joinString
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
-  def capitalize: String                            = self zmap (_ o (_ splitAfter _1 mapLeft toUpper join))
+  def capitalize: String                            = self o (_ splitAfter _1 mapLeft toUpper join)
   def charSeq: scSeq[Char]                          = chars.m.seq
   def collect(pf: Char ?=> Char): String            = chars collect pf force
   def containsChar(ch: Char): Boolean               = chars.m contains ch
@@ -30,6 +30,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def lit: Doc                                      = Doc(self)
   def mapChars(pf: Char ?=> Char): String           = collect(pf orElse { case x => x })
   def mapLines(f: ToSelf[String]): String           = mapSplit('\n')(f)
+  def mapWords(f: ToSelf[String]): String           = mapSplit(' ')(f)
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f joinWith ch
   def prepend(that: String): String                 = that + self
   def processEscapes: String                        = StringContext processEscapes self

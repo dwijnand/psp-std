@@ -56,8 +56,6 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
     def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
 
-    def zmap(f: A => A)(implicit z: Empty[A], eqv: Eq[A]): A = zcond(x =!= z.empty, f(x))
-
     @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
   }
   implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
@@ -241,34 +239,20 @@ class NonValueImplicitClasses extends AllExplicit {
     }
   }
 
-  implicit class EqClassOps[A](private val z: Eq[A]) {
-    def on[B](f: B => A): Eq[B]         = Eq(z.eqv _ on f)
-    def hashWith(f: ToLong[A]): Hash[A] = Relation.hash(z.eqv, f)
-
-    def toHash: Hash[A] = z match {
-      case heq: Hash[A] => heq
-      case _            => hashWith(_ => 0)
-    }
-  }
-  implicit class HashOrderClassOps[A](private val r: HashOrder[A]) {
-    def on[B](f: B => A): HashOrder[B] = Relation.all(r.cmp _ on f, f andThen r.hash)
-  }
   implicit class HashClassOps[A](private val r: Hash[A]) {
-    def on[B](f: B => A): Hash[B] = Relation.hash(r.eqv _ on f, f andThen r.hash)
+    def on[B](f: B => A): Hash[B] = Hash(f andThen r.hash)
+  }
+  implicit class EqClassOps[A](private val z: Eq[A]) {
+    def on[B](f: B => A): Eq[B] = Eq(z.eqv _ on f)
   }
   implicit class ShowClassOps[A](private val r: Show[A]) {
     def on[B](f: B => A): Show[B] = Show(f andThen r.show)
   }
   implicit class OrderClassOps[A](private val r: Order[A]) {
-    import r._
-
-    def flip: Order[A]                                  = Order(cmp _ andThen (_.flip))
-    def hashWith(f: ToLong[A]): HashOrder[A]            = Relation.all(cmp, f)
-    def on[B](f: B => A): Order[B]                      = Order(cmp _ on f)
-    def |[B](f: A => B)(implicit z: Order[B]): Order[A] = Order((x, y) => cmp(x, y) | z.cmp(f(x), f(y)))
-
+    def flip: Order[A]             = Order((x, y) => r.less(y, x))
+    def on[B](f: B => A): Order[B] = Order(r.less _ on f)
     def comparator: Comparator[A] = new scala.math.Ordering[A] {
-      def compare(x: A, y: A): Int = cmp(x, y).intValue
+      def compare(x: A, y: A): Int = if (r.less(x, y)) -1 else if (r.less(y, x)) 1 else 0
     }
   }
   implicit class JavaIteratorOps[A](private val it: jIterator[A]) {
@@ -277,15 +261,6 @@ class NonValueImplicitClasses extends AllExplicit {
       def next(): A     = it.next()
     }
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
-  }
-  implicit class CmpEnumOps(private val cmp: Cmp) {
-    import Cmp._
-    def flip: Cmp = cmp match {
-      case LT => GT
-      case GT => LT
-      case EQ => EQ
-    }
-    def |(that: => Cmp): Cmp = if (cmp eq EQ) that else cmp
   }
   implicit class SplittableValueSameTypeOps[A, R](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
@@ -314,7 +289,7 @@ class NonValueImplicitClasses extends AllExplicit {
     def apply[C](f: (A, B) => C): C = f(_1, _2)
   }
   implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
-    def toPmap(implicit z: Hash[A]): Pmap[A, B]                         = toMap[Pmap]
+    def toPmap(implicit ez: Eq[A], hz: Hash[A]): Pmap[A, B]            = toMap[Pmap]
     def toMap[CC[_, _]](implicit z: Makes[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split make xs
   }
 
@@ -360,10 +335,11 @@ class NonValueImplicitClasses extends AllExplicit {
     def hashInt: Int = hash.toInt
   }
   implicit class OrderOps[A](private val lhs: A)(implicit z: Order[A]) {
-    def <(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.LT
-    def <=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.GT
-    def >(rhs: A): Boolean  = z.cmp(lhs, rhs) eq Cmp.GT
-    def >=(rhs: A): Boolean = z.cmp(lhs, rhs) ne Cmp.LT
+    def <(rhs: A): Boolean = z.less(lhs, rhs)
+    def >(rhs: A): Boolean = z.less(rhs, lhs)
+
+    def <=(rhs: A)(implicit y: Eq[A]): Boolean = (lhs < rhs) || (lhs === rhs)
+    def >=(rhs: A)(implicit y: Eq[A]): Boolean = (lhs > rhs) || (lhs === rhs)
   }
   implicit class SplitterOps[R, A, B](private val lhs: R)(implicit z: Splitter[R, A, B]) {
     def toPair: A -> B = z split lhs
