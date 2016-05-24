@@ -126,8 +126,8 @@ object Operable {
         case Collect(pf)     => xs collect pf
         case Maps(f)         => xs map f
         case FlatMap(f)      => xs flatMap f
-        case Prepend(that)   => Each.join(that, xs).m
-        case Append(that)    => Each.join(xs, that).m
+        case Prepend(that)   => that ++ cast(xs)
+        case Append(that)    => xs ++ cast(that)
         case Compose(o1, o2) => apply(apply(xs)(o1))(o2)
       }
       cast(res)

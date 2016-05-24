@@ -91,7 +91,8 @@ object OperableCounter {
   // show-related accesses not to be counted
   implicit def showCountXs[A: Show] : Show[CountXs[A]] = Show.by(_.xs)
 
-  class CountXs[A](val xs: Direct[A], val counter: OpCount) extends StdDirect[A](xs.size) {
+  class CountXs[A](val xs: Direct[A], val counter: OpCount) extends Direct[A] {
+    def size: Precise       = xs.size
     def apply(idx: Vdex): A = sideEffect(xs(idx), counter access idx)
   }
 

@@ -9,6 +9,8 @@ class ViewOps[A, R](val xs: View[A]) extends ViewMethods[R, A] {
   def view[A](xs: A*): MapTo[A]       = exp.view(xs: _*)
   def apply[B](op: Op[A, B]): View[B] = Operable.OperableView(xs)(op)
 
+  protected def concat(xs: This, ys: This): This  = suspend[A](xs.foreach, ys.foreach)
+
   def inits: Map2D[A]                         = view(xs) ++ zcond(!isEmpty, init.inits)
   def tails: Map2D[A]                         = view(xs) ++ zcond(!isEmpty, tail.tails)
   def init: This                              = this dropRight 1
@@ -30,8 +32,8 @@ class ViewOps[A, R](val xs: View[A]) extends ViewMethods[R, A] {
   def takeWhile(p: ToBool[A]): This         = xs takeWhile p
   def withFilter(p: ToBool[A]): This        = xs withFilter p
   def filterNot(p: ToBool[A]): This         = xs filter !p
-  def append(that: View[A]): This           = Each.join(xs, that).m
-  def prepend(that: View[A]): This          = Each.join(that, xs).m
+  def append(that: View[A]): This           = concat(xs, that)
+  def prepend(that: View[A]): This          = concat(that, xs)
 
   def partition(p: ToBool[A]): Split[A]  = Split(xs filter p, xs filter !p)
   def span(p: ToBool[A]): Split[A]       = Split(xs takeWhile p, xs dropWhile p)
@@ -54,6 +56,7 @@ trait ViewMethods[R, A] {
   type Map2D[B] = MapTo[MapTo[B]]
 
   def view[A](xs: A*): MapTo[A]
+  protected def concat(xs: This, ys: This): This
 
   def collect[B](pf: A ?=> B): MapTo[B]
   def drop(n: Precise): This
@@ -105,7 +108,12 @@ trait ViewMethods[R, A] {
 
   def slice(start: Vdex, len: Precise): View[A] = this drop start.excluding take len
 
-  def head: A = take(1).zfoldl[Opt[A]]((res, x) => some(x)) | abort("empty.head")
+  def headOr(alt: => A): A = this take 1 match {
+    case View(x) => x
+    case _       => alt
+  }
+  def zhead(implicit z: Empty[A]): A = headOr(z.empty)
+  def head: A = this headOr abort("empty")
   def last: A = xs takeRight 1 head
 
   def applyIndex(idx: Vdex): A                        = sliceIndex(idx).head
@@ -116,7 +124,6 @@ trait ViewMethods[R, A] {
   def indexWhere(p: ToBool[A]): Index                 = xs.zipIndex first { case (x, i) if p(x) => i }
   def isEmpty: Boolean                                = xs.size.isZero || !exists(ConstantTrue)
   def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
-  def zhead(implicit z: Empty[A]): A                  = zcond(!isEmpty, xs.head)
   def zlast(implicit z: Empty[A]): A                  = zcond(!isEmpty, last)
 
   def foldl[B](zero: B)(f: (B, A) => B): B           = ll.foldLeft(xs, zero, f)
@@ -158,5 +165,21 @@ class View2DOps[A](private val xss: View2D[A]) {
     val lines = yss map (_ joinWith " ")
 
     lines.joinLines mapLines (_.trim)
+  }
+}
+object View2D {
+  type Coords = PairOf[Vdex]
+
+  def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
+    xs partition p(xs) app ((ls, rs) => suspend[View[A]](ls +: mpartition(rs)(p) foreach _))
+
+  class Live[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
+    def isEmpty: Bool        = basis.isEmpty || functions.isEmpty
+    def apply(xy: Coords): B = xy app (rows applyIndex _ applyIndex _)
+    def rows: View2D[B]      = basis map (r => functions map (_ apply r))
+    def columns: View2D[B]   = rows.transpose
+
+    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.pp.length) max)
+    def lines(implicit z: Show[B]): View[String] = cond(isEmpty, view(), widths zip rows map (lformat(_)(_)))
   }
 }

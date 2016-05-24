@@ -18,7 +18,7 @@ object PChar {
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
   import self.{ toCharArray => chars }
 
-  def *(n: Precise): String                         = Each const self take n joinString
+  def *(n: Precise): String                         = Makes const self take n joinString
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
   def capitalize: String                            = self o (_ splitAfter _1 mapLeft toUpper join)

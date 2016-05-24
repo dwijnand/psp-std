@@ -56,16 +56,16 @@ trait StdEmpty0 {
   implicit def emptyIdView[A, R]: Empty[IdView[A, R]] = Empty(new IdView(vec[A]()))
 }
 trait StdEmpty extends StdEmpty0 {
-  implicit def emptyFromMakes[A, R](implicit z: Makes[A, R]): Empty[R]       = Empty(elems())
   implicit def emptyFromCanBuild[A, R](implicit z: CanBuild[A, R]): Empty[R] = Empty(z().result)
   implicit def emptyFromHeyting[A: Heyting]: Empty[A]                        = Empty(?[Heyting[A]].zero)
-  implicit def emptyRepView[R, A]: Empty[RepView[R, A]]                      = Empty(RepView.empty[R, A])
+  implicit def emptyFromMakes[A, R](implicit z: Makes[A, R]): Empty[R]       = Empty(elems())
+  implicit def emptyJavaList[A]: Empty[jList[A]]                             = Empty(new jArrayList[A])
+  implicit def emptyJavaMap[A, B]: Empty[jMap[A, B]]                         = Empty(new jHashMap[A, B])
+  implicit def emptyJavaSet[A]: Empty[jSet[A]]                               = Empty(new jHashSet[A])
   implicit def emptyOptional[A]: Empty[jOptional[A]]                         = Empty(java.util.Optional.empty[A]())
   implicit def emptyPair[A: Empty, B: Empty]: Empty[(A, B)]                  = Empty(pair(emptyValue[A], emptyValue[B]))
+  implicit def emptyRepView[R, A]: Empty[RepView[R, A]]                      = Empty(RepView.empty[R, A])
   implicit def emptyTriple[A: Empty, B: Empty, C: Empty]: Empty[(A, B, C)]   = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
-  implicit def emptyJavaList[A]: Empty[jList[A]]                             = Empty(new jArrayList[A])
-  implicit def emptyJavaSet[A]: Empty[jSet[A]]                               = Empty(new jHashSet[A])
-  implicit def emptyJavaMap[A, B]: Empty[jMap[A, B]]                         = Empty(new jHashMap[A, B])
 
   implicit lazy val emptyDoc: Empty.Const[Doc]                  = Empty const Doc.empty
   implicit lazy val emptyFile: Empty.Const[jFile]               = Empty const jFile("")
