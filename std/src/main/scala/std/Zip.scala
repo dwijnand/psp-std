@@ -93,10 +93,10 @@ object Zip {
     def iterator: ZipIterator[A1, A2]          = new ZipIterator(lefts.iterator, rights.iterator)
     def mapLeft[B1](f: A1 => B1): Zip[B1, A2]  = zipViews(lefts map f, rights)
     def mapRight[B2](f: A2 => B2): Zip[A1, B2] = zipViews(lefts, rights map f)
-    def map[B](f: MapTo[B]): View[B]           = inView(mf => foreach((x, y) => mf(f(x, y))))
+    def map[B](f: MapTo[B]): View[B]           = suspend[B](mf => foreach((x, y) => mf(f(x, y)))).m
     def take(n: Precise): This                 = zipSplit(pairs take n)
     def unzip: View[A1] -> View[A2]            = lefts -> rights
-    def withFilter(p: PredBoth): This          = zipSplit(inView[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
+    def withFilter(p: PredBoth): This          = zipSplit(suspend[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
 
     def force[R](implicit z: Makes[Both, R]): R = z make pairs
   }

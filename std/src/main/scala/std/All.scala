@@ -27,8 +27,8 @@ object all extends NonValueImplicitClasses with AllImplicit  {
   }
 
   implicit class MakesClassOps[A, R](z: Makes[A, R]) {
-    def apply(xs: A*): R                     = z make Each.elems(xs: _*)
-    def contraMap[B](g: B => A): Makes[B, R] = Makes(xs => z make (xs map g))
+    def apply(xs: A*): R                     = z make Makes.direct(xs: _*)
+    def contraMap[Z](g: Z => A): Makes[Z, R] = Makes(xs => z make (xs map g))
     def map[S](g: R => S): Makes[A, S]       = Makes(g compose z.make)
     def scalaBuilder()                       = scala.Vector.newBuilder[A] mapResult (z make _.m)
   }
@@ -264,7 +264,7 @@ class NonValueImplicitClasses extends AllExplicit {
   }
   implicit class SplittableValueSameTypeOps[A, R](private val x: R)(implicit z: Splitter[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
-    def each: Each[A]              = Each pair x
+    def each: Direct[A]            = elems(x._1, x._2)
   }
   implicit class ProductProductOps[A, B](private val xy: (A->B)->(A->B)) {
     def transpose: (A->A)->(B->B) = {

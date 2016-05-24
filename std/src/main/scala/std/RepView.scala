@@ -8,6 +8,7 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
 
   def view[B](xs: B*): MapTo[B]
   def apply[B](next: Op[A, B]): MapTo[B]
+  protected def concat(xs: This, ys: This): This = RepView.insist("concat")(xs ++ ys)
 
   def init: This            = this dropRight 1
   def tail: This            = this drop 1
@@ -58,7 +59,7 @@ object RepView {
       def rights: M[C]   = pairs map snd
     }
     case class ZipFromViews[B, C](lefts: M[B], rights: M[C]) extends Zip[B, C] {
-      def pairs: M[B->C] = insist("ZipFromViews")( Each scalaOnce new ZipIterator(lefts.iterator, rights.iterator) )
+      def pairs: M[B->C] = RepView.insist("pairs")( Makes iterable this.iterator )
     }
     case class ZipFromPairs[B, C](pairs: M[B->C]) extends Zip[B, C] {
       def lefts: M[B]    = pairs map fst

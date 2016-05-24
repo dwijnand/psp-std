@@ -27,7 +27,7 @@ sealed abstract class Interval extends (Vdex => Long) {
   def apply(vdex: Vdex): Long                  = checkValid(vdex)(startLong + _.indexValue)
   def slice(start: Vdex, len: Precise): Closed = checkValid(start)(this drop _.excluding take len)
   def slice(r: VdexRange): Closed              = zcond(!r.isEmpty, slice(r.head, r.size))
-  def view: View[Long]                         = Each(foreach)
+  // def view: View[Long]                         = Each(foreach)
 }
 object Interval {
   val Empty = new Closed(0L, _0)

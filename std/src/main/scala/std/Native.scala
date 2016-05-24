@@ -30,9 +30,7 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def in: Interval
   def map[B](g: A => B): CC[B]
   def applyLong(x: Long): A
-
-  def zipLongs: Zip[Long, A] = zipMap(in.view, applyLong)
-  def startLong: Long        = in.startLong
+  def startLong: Long = in.startLong
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](Interval.empty, indexOutOfBoundsException)
@@ -62,7 +60,6 @@ object Consecutive {
     def applyLong(x: Long): A        = f(x)
     def containsLong(n: Long): Bool  = in contains n
     def apply(vdex: Vdex): A         = f(in(vdex))
-    def foreach(g: A => Unit): Unit  = in foreach (f andThen g)
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size
 

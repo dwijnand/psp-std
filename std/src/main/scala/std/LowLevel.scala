@@ -30,6 +30,9 @@ object ll {
     }
   }
 
+  @inline def foreachDirect[A](xs: Direct[A], f: A => Unit): Unit =
+    foreachLong(0, xs.size.getLong - 1, n => f(xs(Index(n))))
+
   @inline def foreachLong(start: Long, last: Long, f: Long => Unit): Unit =
     if (start <= last) foreachLongNonEmpty(start, last, f)
 
@@ -141,8 +144,6 @@ object ll {
     private[this] def writePointer: Int   = (seen % cap).toInt
     private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
-
-    @inline def foreach(f: A => Unit): Unit = foreachLong(0, size.lastIndex.indexValue, i => f(apply(Index(i))))
 
     def isFull                      = seen >= cap
     def apply(index: Vdex): A       = cast(buffer((readPointer + index.getInt) % cap))
