@@ -3,7 +3,7 @@ package std
 
 import scala.collection.{ mutable => scm }
 
-abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip with StdConstructors {
+abstract class AllExplicit extends ApiValues with StdRelation with StdConstructors {
   final val ->      = Pair
   final val Array   = scala.Array
   final val Failure = scala.util.Failure
@@ -42,4 +42,10 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdSplitZip w
   def lformat[A](n: Int): A => String              = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)
   def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
   def render[A](x: A)(implicit z: Show[A]): String = z show x
+
+  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                            = new Zip.ZipCross(l, r)
+  def zipProducts[R, A, B](xs: View[R])(implicit z: IsProduct[R, A, B]): Zip[A, B] = new Zip.ZipProducts(xs)
+  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                  = new Zip.ZipPairs(xs)
+  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                            = new Zip.ZipViews(l, r)
+  def zipMap[A, B](l: View[A], f: A => B): Zip[A, B]                               = new Zip.ZipMap(l, f)
 }

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import exp._, Size._
+import exp._, Size._, all.PspLongOps
 
 /** The Size hierarchy is:
   *                     Size
@@ -22,6 +22,30 @@ import exp._, Size._
 sealed trait Size {
   def atLeast: Size = Range(this, Infinite)
   def atMost: Size  = Range(_0, this)
+  def isZero: Bool  = this match {
+    case Precise(0) => true
+    case _          => false
+  }
+  def getInt: Int = this match {
+    case Precise(n) => safeLongToInt(n)
+    case s          => illegalArgumentException(s)
+  }
+  def preciseOrMaxLong: Precise = this match {
+    case n: Precise => n
+    case _          => Precise(MaxLong)
+  }
+  def +(rhs: Size): Size = (this, rhs) match {
+    case (Precise(l), Precise(r))                 => Precise(l + r)
+    case (Infinite, _) | (_, Infinite)            => Infinite
+    case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 + l2, h1 + h2)
+  }
+  def -(rhs: Size): Size = (this, rhs) match {
+    case (Precise(l), Precise(r))                 => Precise(l - r)
+    case (Precise(_), Infinite)                   => _0
+    case (Infinite, Precise(_))                   => Infinite
+    case (Infinite, Infinite)                     => Unknown
+    case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
+  }
 }
 sealed trait Atomic extends Size
 final case object Infinite extends Atomic
@@ -32,6 +56,10 @@ final class Precise private[std](val getLong: Long) extends Atomic {
   def -(n: Long): Precise    = Precise(getLong - n)
   def +(n: Precise): Precise = Precise(getLong + n.getLong)
   def -(n: Precise): Precise = Precise(getLong - n.getLong)
+
+  def exclusive: Index        = Index(getLong)
+  def indices: VdexRange      = 0L indexUntil getLong
+  def lastIndex: Index        = exclusive.prev // effectively maps both undefined and zero to no index.
 }
 final case class Bounded private[std](lo: Precise, hi: Atomic) extends Size
 
@@ -103,18 +131,18 @@ final class Vindex[Base] private[std](val indexValue: Long) extends AnyVal {
 
   private def mapLong(f: Long => Long): This = cond(isInvalid, this, create(f(indexValue)))
 
-  def nthValue: Long     = indexValue + 1
+  def +(n: Long): This   = mapLong(_ + n)
+  def -(n: Long): This   = mapLong(_ - n)
+  def excluding: Precise = Size(indexValue)
+  def getInt: Int        = safeLongToInt(indexValue) // depend on this
+  def including: Precise = Size(nthValue)
   def isEmpty            = indexValue < 0
   def isInvalid          = indexValue < 0
+  def next: This         = this + 1
+  def nthValue: Long     = indexValue + 1
+  def prev: This         = this - 1
   def toIndex: Index     = Index(indexValue)
   def toNth: Nth         = Nth(nthValue)
-  def excluding: Precise = Size(indexValue)
-  def including: Precise = Size(nthValue)
-
-  def +(n: Long): This = mapLong(_ + n)
-  def -(n: Long): This = mapLong(_ - n)
-  def next: This       = this + 1
-  def prev: This       = this - 1
 }
 object Vindex {
   val Zero = new AnyRef

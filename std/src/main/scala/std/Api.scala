@@ -4,11 +4,13 @@ package std
 import scala.{ Tuple3, collection => sc }
 import java.{ lang => jl }
 import java.nio.{ file => jnf }
+import java.util.AbstractMap.SimpleImmutableEntry
 import exp._
 
 trait ApiTypes extends ExternalTypes {
   // Aliases for internal and external types.
   type ->[+A, +B]         = scala.Product2[A, B]        // A less overconstrained product type.
+  type |[+A, +B]          = scala.Either[A, B]          // The missing sum type.
   type Bool               = scala.Boolean
   type GTOnce[+A]         = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
   type Id[+X]             = X
@@ -17,6 +19,7 @@ trait ApiTypes extends ExternalTypes {
   type Opt[+A]            = scala.Option[A]             // Placeholder
   type Pair[+A, +B]       = A -> B
   type PairOf[+A]         = A -> A
+  type Pair2D[+A, +B]     = Pair[A->B, A->B]
   type Ref[+A]            = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
   type Triple[+A, +B, +C] = scala.Product3[A, B, C]
   type Vdex               = Vindex[_]
@@ -70,10 +73,12 @@ abstract class ApiValues extends ApiTypes {
   def identity[A](x: A): A                               = x
   def isInstance[A: CTag](x: Any): Bool                  = classOf[A]() isAssignableFrom x.getClass
   def jFile(path: String): jFile                         = new jFile(path)
+  def jPair[A, B](x: A, y: B): jMapEntry[A, B]           = new SimpleImmutableEntry(x, y)
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
   def max[A](l: A, r: A)(implicit z: Order[A]): A        = if (z.less(l, r)) r else l
   def min[A](l: A, r: A)(implicit z: Order[A]): A        = if (z.less(l, r)) l else r
+  def newArray[A: CTag](len: Int): Array[A]              = new Array[A](len)
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = Tuple2(x, y)
@@ -83,7 +88,6 @@ abstract class ApiValues extends ApiTypes {
   def swap[A, B](x: A, y: B): B -> A                     = Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
   def zcond[A: Empty](p: Bool, thenp: => A): A           = cond(p, thenp, emptyValue[A])
-  def newArray[A: CTag](len: Int): Array[A]              = new Array[A](len)
 
   /** Safe in the senses that it won't silently truncate values,
     *  and will translate MaxLong to MaxInt instead of -1.
@@ -103,6 +107,6 @@ abstract class ApiValues extends ApiTypes {
     java.lang.String.format(s, args map unwrapArg: _*)
   }
 
-  // You can't use string interpolation without a StringContext term in scope.
-  def StringContext = scala.StringContext
+  // You can't use string interpolation without a stringContext term in scope.
+  lazy val StringContext = scala.StringContext
 }

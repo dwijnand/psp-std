@@ -83,7 +83,7 @@ object Zip {
       x filter ((a, b) => f(a) === g(b))
 
     def corresponds(p: PredBoth): Bool         = iterator |> (it => it.forall(_ app p) && !it.hasMore)
-    def drop(n: Precise): This                 = zipSplit(pairs drop n)
+    def drop(n: Precise): This                 = zipProducts(pairs drop n)
     def exists(p: PredBoth): Bool              = !forall(!p)
     def filter(p: PredBoth): This              = withFilter(p)
     def filterLeft(p: LPred): This             = withFilter((x, _) => p(x))
@@ -94,14 +94,14 @@ object Zip {
     def mapLeft[B1](f: A1 => B1): Zip[B1, A2]  = zipViews(lefts map f, rights)
     def mapRight[B2](f: A2 => B2): Zip[A1, B2] = zipViews(lefts, rights map f)
     def map[B](f: MapTo[B]): View[B]           = suspend[B](mf => foreach((x, y) => mf(f(x, y)))).m
-    def take(n: Precise): This                 = zipSplit(pairs take n)
+    def take(n: Precise): This                 = zipProducts(pairs take n)
     def unzip: View[A1] -> View[A2]            = lefts -> rights
-    def withFilter(p: PredBoth): This          = zipSplit(suspend[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
+    def withFilter(p: PredBoth): This          = zipProducts(suspend[Both](mf => foreach((x, y) => if (p(x, y)) mf(x -> y))))
 
     def force[R](implicit z: Makes[Both, R]): R = z make pairs
   }
 
-  final case class ZipSplit[A, A1, A2](xs: View[A])(implicit z: Splitter[A, A1, A2]) extends ZipFromPairs[A1, A2] {
+  final case class ZipProducts[A, A1, A2](xs: View[A])(implicit z: IsProduct[A, A1, A2]) extends ZipFromPairs[A1, A2] {
     def pairs = xs map z.split
   }
   final case class ZipPairs[A1, A2](pairs: View[A1 -> A2]) extends ZipFromPairs[A1, A2]
@@ -113,20 +113,4 @@ object Zip {
   final case class ZipMap[A1, A2](lefts: View[A1], f: A1 => A2) extends ZipFromViews[A1, A2] {
     def rights = lefts map f
   }
-}
-
-trait StdSplitZip {
-  def splitter[R, A, B](f: R => (A -> B)): Splitter[R, A, B] = new Splitter[R, A, B] { def split(x: R): A -> B = f(x) }
-  def joiner[R, A, B](f: (A, B) => R): Joiner[R, A, B]       = new Joiner[R, A, B] { def join(x: A -> B): R    = f(x._1, x._2) }
-
-  def cleaver[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Cleaver[R, A, B] = new Cleaver[R, A, B] {
-    def split(x: R): A -> B = l(x) -> r(x)
-    def join(x: A -> B): R  = x app f
-  }
-
-  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipCross(l, r)
-  def zipSplit[R, A, B](xs: View[R])(implicit z: Splitter[R, A, B]): Zip[A, B] = new Zip.ZipSplit(xs)
-  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                              = new Zip.ZipPairs(xs)
-  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                        = new Zip.ZipViews(l, r)
-  def zipMap[A, B](l: View[A], f: A => B): Zip[A, B]                           = new Zip.ZipMap(l, f)
 }

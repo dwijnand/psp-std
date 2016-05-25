@@ -2,6 +2,7 @@ package psp
 package std
 
 import all._, Show.by
+import StringContext.processEscapes
 
 /** When a Show type class is more trouble than it's worth.
   *  Not overriding toString here to leave open the possibility of
@@ -55,31 +56,34 @@ class FullRenderer(elemRange: SizeRange) extends Renderer {
   }
 }
 
-case class ShowInterpolator(val stringContext: StringContext) {
-  def escapedParts: View[String] = stringContext.parts.toVec map (_.processEscapes)
-  def escaped: String            = escapedParts.join
-
-  def strippedParts: View[String] = escapedParts map (_ mapLines (_.stripMargin))
-  def stripped: String            = strippedParts.join
+trait Interpolators {
+  def stringContext: StringContext
 
   /** TODO. See
    *  https://github.com/scala/scala/blob/2.12.x/src/compiler/scala/tools/reflect/FormatInterpolator.scala
+   *  Can't see any way to call the standard (type-safe) f-interpolator.
+   *
+   *    private val FormatSpec = """%(?:(\d+)\$)?([-#+ 0,(\<]+)?(\d+)?(\.\d+)?([tT]?[%a-zA-Z])?""".r
    */
-  val FormatSpec = """%(?:(\d+)\$)?([-#+ 0,(\<]+)?(\d+)?(\.\d+)?([tT]?[%a-zA-Z])?""".r
+
+  /** Having args of type Doc* forces all the interpolated values
+    * be of a type which is implicitly convertible to Doc.
+    */
+  def log(args: Doc*): Unit   = println(pp(args: _*))
+  def pp(args: Doc*): String  = Pconfig.renderer show doc(args: _*)
+  def fp(args: Doc*): String  = Pconfig.renderer show fdoc(args: _*)
+  def sm(args: Doc*): String  = Pconfig.renderer show sdoc(args: _*)
+  def any(args: Any*): String = pp(args.m asDocs Show.Inherited seq: _*)
+
+  private def escapedParts: View[String]  = stringContext.parts.toVec map processEscapes //(_.processEscapes)
+  private def escaped: String             = escapedParts.join
+  private def strippedParts: View[String] = escapedParts map (_ mapLines (_.stripMargin))
 
   /** There's one more escaped part than argument, so
    *  to collate them we tack an empty Doc onto the arg list.
    */
-  def doc(args: Doc*): Doc = Split(escapedParts.asDocs, args :+ Doc.empty).collate reducel (_ ~ _)
-
-  /** Can't see any way to call the standard (type-safe) f-interpolator, will
-    *  apparently have to reimplement it entirely.
-    */
-  def fdoc(args: Doc*): Doc = {
-    // val fms = FormatSpec findAll escaped
-    escaped.format(args.map(_.pp): _*)
-  }
-
+  def doc(args: Doc*): Doc  = Split(escapedParts.asDocs, args :+ Doc.empty).collate reducel (_ ~ _)
+  def fdoc(args: Doc*): Doc = escaped.format(args.map(_.pp): _*)
   def sdoc(args: Doc*): Doc = new StringContext(strippedParts.seq: _*).raw(args: _*).trim
 }
 
@@ -87,11 +91,6 @@ case class ShowInterpolator(val stringContext: StringContext) {
   *  Not printing the way scala does.
   */
 trait StdShow extends StdShow1 {
-  implicit def showBoolean: Show[Boolean]     = Show.Inherited
-  implicit def showChar: Show[Char]           = Show.Inherited
-  implicit def showDouble: Show[Double]       = Show.Inherited
-  implicit def showInt: Show[Int]             = Show.Inherited
-  implicit def showLong: Show[Long]           = Show.Inherited
   implicit def showString: Show[String]       = Show.Inherited
   implicit def showThrowable: Show[Throwable] = Show.Inherited
 
@@ -125,7 +124,8 @@ trait StdShow extends StdShow1 {
   }
 }
 trait StdShow0 {
-  implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
+  implicit def showPrimitive[A >: Primitive <: AnyVal] : Show[A] = Show.Inherited
+  implicit def showView[A: Show]: Show[View[A]]                  = Show(xs => Doc.Group(xs.asDocs).pp)
 }
 trait StdShow1 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] = by[Pmap[K, V]](_.pairs mapLive (_.pp)) //  xs => funGrid(xs.pairs)(_.show))

@@ -115,16 +115,16 @@ class CollectionsSpec extends ScalacheckBundle {
     vec[NamedProp](
       expectTypes[jList[AB]](
         jseq build,
-        jseq map identity build,
-        jseq map fst map paired build,
+        jseq o (_ map identity),
+        jseq o (_ map fst map paired),
         jseq.m build,
         jseq.m map identity build,
         jseq.m map fst map paired build
       ),
       expectTypes[jSet[AB]](
         jset build,
-        jset map identity build,
-        jset map fst map paired build,
+        jset o (_ map identity),
+        jset o (_ map fst map paired),
         jset.m build,
         jset.m map identity build,
         jset.m map fst map paired build
@@ -132,10 +132,9 @@ class CollectionsSpec extends ScalacheckBundle {
       expectTypes[jMap[A, B]](
         jmap build,
         jmap o (_ map identity),
-        jmap map identity build,
+        jmap o (_ map identity),
         jmap map identity force,
         jmap o (_ map fst map paired),
-        jmap map fst map paired build,
         jmap.m build,
         // jmap.m map identity,
         jmap.m map identity build,

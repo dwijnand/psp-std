@@ -15,6 +15,12 @@ trait StdBuilders1 {
 }
 trait StdBuilders2 extends StdBuilders1 {
   implicit def makesJavaList[A]: Makes[A, jList[A]] = Makes.javaList
+
+  implicit def isFoldedPspSet[A]: IsFolded[Pset[A], A]                       = IsFolded(xs => xs.basis foreach _)
+  implicit def isFoldedForeach[A, CC[X] <: Foreach[X]]: IsFolded[CC[A], A]   = IsFolded(xs => xs foreach _)
+  implicit def isFoldedJava[A, CC[X] <: jIterable[X]]: IsFolded[CC[A], A]    = IsFolded(xs => xs.iterator foreach _)
+  implicit def isFoldedScalaOnce[A, CC[X] <: GTOnce[X]]: IsFolded[CC[A], A]  = IsFolded(xs => xs foreach _)
+  implicit def walksIsFolded[A, R](implicit iz: IsFolded[R, A]): Walks[A, R] = Walks(Makes fromFolded _)
 }
 trait StdBuilders3 extends StdBuilders2 {
   implicit def makesJavaMap[K, V]: Makes[K->V, jMap[K, V]]                                            = Makes.javaMap
@@ -26,20 +32,21 @@ trait StdBuilders3 extends StdBuilders2 {
   implicit def makesPspView[A]: Makes[A, View[A]]                                                     = Makes.pspView
   implicit def makesScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Makes[K->V, That] = Makes.scalaGenericMap
   implicit def makesScala[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                     = Makes.scalaTraversable
-  implicit def viewsJavaIterable[A, CC[X] <: jIterable[X]](xs: CC[A]): RepView[CC[A], A]              = xs.m
-  implicit def viewsJavaMap[K, V, CC[K, V] <: jMap[K, V]](xs: CC[K, V]): RepView[CC[K, V], K->V]      = xs.m
   implicit def viewsJvmString(xs: String): IdView[Char, String]                                       = xs.m2
   implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]]                         = xs.m2
-  implicit def viewsScala[A, CC[X] <: sCollection[X]](xs: CC[A]): RepView[CC[A], A]                   = xs.m
-  implicit def walksJavaIterable[A, CC[X] <: jIterable[X]]: Walks[A, CC[A]]                           = Walks.javaIterable
-  implicit def walksJavaMap[K, V, CC[X, Y] <: jMap[X, Y]]: Walks[K->V, CC[K, V]]                      = Walks.javaMap
-  implicit def walksJvmArray[A]: Walks[A, Array[A]]                                                   = Walks.jvmArray
-  implicit def walksJvmString: Walks[Char, String]                                                    = Walks.jvmString
-  implicit def walksPspEach[A, CC[X] <: Each[X]]: Walks[A, CC[A]]                                     = Walks.pspEach
-  implicit def walksPspSet[A, CC[X] <: Pset[X]]: Walks[A, CC[A]]                                      = Walks.pspSet
-  implicit def walksPspView[A, CC[X] <: View[X]]: Walks[A, CC[A]]                                     = Walks.pspView
-  implicit def walksScalaMap[K, V, CC[X, Y] <: scMap[X, Y]]: Walks[K->V, CC[K, V]]                    = Walks.scalaMap
-  implicit def walksScalaOnce[A, CC[X] <: GTOnce[X]]: Walks[A, CC[A]]                                 = Walks.scalaOnce
+  implicit def viewsScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): RepView[CC[A], A]         = xs.m
+
+  implicit def walksPspEach[A, CC[X] <: Each[X]]: Walks[A, CC[A]] = Walks.pspEach
+  implicit def walksPspView[A, CC[X] <: View[X]]: Walks[A, CC[A]] = Walks.pspView
+
+  implicit def isPairsScalaMap[K, V, M[K, V] <: scMap[K, V]]: IsPairs[M[K, V], K, V] = IsPairs(_.toSeq)
+  implicit def isPairsJavaMap[K, V, M[K, V] <: jMap[K, V]]: IsPairs[M[K, V], K, V]   = IsPairs(_.entrySet.m map (_.toPair))
+  implicit def intIndexedArray[A]: IsIntIndexed[Array[A], A]                         = IsIntIndexed(_.length, _ apply _)
+  implicit def intIndexedScala[A, R <: scIndexedSeq[A]]: IsIntIndexed[R, A]          = IsIntIndexed(_.length, _ apply _)
+  implicit def intIndexedString: IsIntIndexed[String, Char]                          = IsIntIndexed(_.length, _ charAt _)
+
+  implicit def walksIntIndexed[A, R](implicit iz: IsIntIndexed[R, A]): Walks[A, R] = Walks(Makes fromIntIndexed _)
+  implicit def walksPairs[A, B, R](implicit pz: IsPairs[R, A, B]): Walks[A->B, R]  = Walks(Makes fromPairs _)
 }
 trait StdBuilders extends StdBuilders3 {
   implicit def makesPspDirect[A]: Makes[A, Direct[A]] = Makes.pspDirect[A]

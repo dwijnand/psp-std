@@ -17,7 +17,7 @@ import java.nio.{ file => jnf }
   *   - Seq is hardcoded into varargs
   *   - Arrays are everywhere special
   *   - Lists are specially optimized by the compiler
-  *   - StringContext is required for string interpolation
+  *   - stringContext is required for string interpolation
   *   - ClassTags are synthesized by the compiler
   *   - BigDecimal/BigInt are treated specially for equality
   *   - Dynamic has special semantics
@@ -34,15 +34,18 @@ trait ExternalTypes {
   type Nothing = scala.Nothing
 
   // The eight primitive types of the jvm, plus the scala version of void.
-  type Boolean = scala.Boolean
-  type Byte    = scala.Byte
-  type Char    = scala.Char
-  type Double  = scala.Double
-  type Float   = scala.Float
-  type Int     = scala.Int
-  type Long    = scala.Long
-  type Short   = scala.Short
-  type Unit    = scala.Unit
+  type Boolean   = scala.Boolean
+  type Byte      = scala.Byte
+  type Char      = scala.Char
+  type Double    = scala.Double
+  type Float     = scala.Float
+  type Int       = scala.Int
+  type Long      = scala.Long
+  type Short     = scala.Short
+  type Unit      = scala.Unit
+
+  // Useful as a lower bound, e.g. def f[A >: Primitive <: AnyVal].
+  type Primitive = Boolean with Char with Byte with Short with Int with Long with Float with Double with Unit
 
   // scala magic types, mostly not renamed.
   type Array[A]       = scala.Array[A]

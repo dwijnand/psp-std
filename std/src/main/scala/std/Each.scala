@@ -27,33 +27,17 @@ trait Direct[+A] extends Any with Indexed[A] {
   def reverse: Direct[A]          = size.getInt |> (e => Makes.fromInts(n => apply(Index(e - 1 - n)), 0, e))
 }
 
-final class Suspend[A](c: Cont[A]) extends Each[A] {
+final class Suspend[A](c: Folded[A]) extends Each[A] {
   def foreach(f: A => Unit): Unit = c resume f
 }
 
-sealed trait Cont[A] extends Any
-object Cont {
-  def apply[A](mf: Suspended[A]): Cont[A] = Opaque(mf)
+sealed trait Folded[+A] extends Any
+object Folded {
+  def apply[A](mf: Suspended[A]): Folded[A] = Opaque(mf)
 
-  final case class Opaque[A](mf: Suspended[A])                extends Cont[A]
-  final case class Join[A](c1: Cont[A], c2: Cont[A])          extends Cont[A]
-  final case class Filter[A](c: Cont[A], p: ToBool[A])        extends Cont[A]
-  final case class Mapped[A, B](c: Cont[A], g: A => B)        extends Cont[B]
-  final case class FlatMap[A, B](c: Cont[A], g: A => Cont[B]) extends Cont[B]
-
-  implicit class ContOps[A](c: Cont[A]) {
-    def join(that: Cont[A]): Cont[A]         = Join(c, that)
-    def filter(p: ToBool[A]): Cont[A]        = Filter(c, p)
-    def map[B](f: A => B): Cont[B]           = Mapped(c, f)
-    def flatMap[B](f: A => Cont[B]): Cont[B] = FlatMap(c, f)
-
-    def suspend(): Suspend[A] = new Suspend(c)
-    def resume(f: ToUnit[A]): Unit = c match {
-      case Opaque(mf)     => mf(f)
-      case Join(c1, c2)   => c1 resume f; c2 resume f
-      case Filter(c, p)   => c resume (x => if (p(x)) f(x))
-      case Mapped(c, g)   => c resume (x => g andThen f)
-      case FlatMap(c, g)  => c resume (x => g(x) resume f)
-    }
-  }
+  final case class Opaque[A](mf: Suspended[A])                    extends Folded[A]
+  final case class Join[A](c1: Folded[A], c2: Folded[A])          extends Folded[A]
+  final case class Filter[A](c: Folded[A], p: ToBool[A])          extends Folded[A]
+  final case class Mapped[A, B](c: Folded[A], g: A => B)          extends Folded[B]
+  final case class FlatMap[A, B](c: Folded[A], g: A => Folded[B]) extends Folded[B]
 }
