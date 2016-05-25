@@ -11,31 +11,137 @@ object Unsafe {
 /** One import which includes the implicits, one which doesn't.
   *  This choice is mutually exclusive: everything which is in exp is in all.
   */
-object exp extends AllExplicit {
-  implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
-    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
-  }
-}
+object exp extends AllExplicit
 
-object all extends NonValueImplicitClasses with AllImplicit  {
-  implicit class DocOps(private val lhs: Doc) {
-    import Doc._
-    def pp: String         = pp"$lhs"
-    def <>(rhs: Doc): Doc  = lhs ~ rhs
-    def <+>(rhs: Doc): Doc = lhs ~ SP ~ rhs
-    def ~(rhs: Doc): Doc   = Cat(lhs, rhs)
+object all extends AllExplicit with AllImplicit {
+  implicit class PspStringContextOps(val stringContext: StringContext) extends Interpolators
+  implicit class PspAnyOps[A](private val x: A) extends AnyVal {
+    /** Call this on any value. Produce a view.
+     *  If a value of the same type as the original can be
+     *  built from the view, it will be. Otherwise it
+     *  won't compile.
+     */
+    def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
+
+    def any_s: String                     = s"$x"
+    def id_## : Int                       = java.lang.System.identityHashCode(x)
+    def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
+    def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
+
+    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(x, y) // The tupling arrow.
+    @inline def |>[B](f: A => B): B       = f(x)         // The famed forward pipe.
+  }
+  implicit class PspOptionOps[A](private val x: Option[A]) extends AnyVal {
+    def view: View[A]                 = x.seq.m
+    def or(alt: => A): A              = x getOrElse alt
+    def toVec: Vec[A]                 = this zfold (x => vec(x))
+    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
+    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
+    def |(alt: => A): A               = x getOrElse alt
+  }
+  implicit class PspTryOps[A](private val x: Try[A]) extends AnyVal {
+    def |(expr: => A): A = x.toOption | expr
+    def fold[B](f: Throwable => B, g: A => B): B = x match {
+      case Success(x) => g(x)
+      case Failure(t) => f(t)
+    }
+  }
+  implicit class PspInputStreamOps(private val in: InputStream) extends AnyVal {
+    def buffered: BufferedInputStream = in match {
+      case in: BufferedInputStream => in
+      case _                       => new BufferedInputStream(in)
+    }
+    def slurp(): Array[Byte]             = ll.Streams slurp buffered
+    def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
 
-  implicit class MakesClassOps[A, R](z: Makes[A, R]) {
-    def apply(xs: A*): R                     = z make Makes.direct(xs: _*)
-    def contraMap[Z](g: Z => A): Makes[Z, R] = Makes(xs => z make (xs map g))
-    def map[S](g: R => S): Makes[A, S]       = Makes(g compose z.make)
-    def scalaBuilder()                       = scala.Vector.newBuilder[A] mapResult (z make _.m)
+  implicit class PspJavaIteratorOps[A](private val it: jIterator[A]) {
+    def toScala: scIterator[A] = new scIterator[A] {
+      def hasNext: Bool = it.hasNext
+      def next(): A     = it.next()
+    }
+    def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
-  implicit class jMapEntryOps[A, B](private val x: jMapEntry[A, B]) {
-    def toPair: A->B = x.getKey -> x.getValue
+  implicit class PspPartialFunctionOps[A, B](pf: A ?=> B) {
+    def contains(x: A): Bool                  = pf isDefinedAt x
+    def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
+    def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
+    def toPartial: Fun.Partial[A, B]          = Fun partial pf
   }
-  implicit class StringViewOps(private val xs: View[String]) {
+
+  implicit class PspFunction1Ops[A, B](private val f: A => B) {
+    def labeled(label: => String): A => B = new LabeledFunction(f, () => label)
+  }
+  implicit class PspFunction2Ops[A1, A2, R](private val f: (A1, A2) => R) {
+    def toFun1: (A1 -> A2) => R = _ app f
+    def andThen[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
+  }
+  implicit class PspFunction2OpsSame[A, R](private val f: BinTo[A, R]) {
+    def on[B](g: B => A): BinTo[B, R] = (x, y) => f(g(x), g(y))
+  }
+  implicit class PspCharOps(private val ch: Char) {
+    def to_s: String                      = ch.toString
+    def r: Regex                          = Regex(ch)
+    def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
+    def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
+    def until(end: Char): CharRange       = ch.toLong until end.toLong map (_.toChar)
+  }
+  implicit class PspIntOps(private val self: Int) {
+    def to(end: Int): IntRange    = self.toLong to end.toLong map (_.toInt)
+    def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
+  }
+  implicit class PspLongOps(private val self: Long) {
+    def andUp: OpenRange[Long] = Interval open self map identity
+    def index: Index           = Index(self)
+    def nth: Nth               = Nth(self)
+    def size: Precise          = Precise(self)
+
+    def sizeTo(end: Long): SizeRange      = Interval.to(self, end) map Precise
+    def indexUntil(end: Long): VdexRange  = Interval.until(self, end) map Index
+    def nthTo(end: Long): VdexRange       = Interval.to(self, end) map Nth
+    def takeNext(len: Precise): LongRange = Interval.closed(self, len) map identity
+    def to(end: Long): LongRange          = Interval.to(self, end) map identity
+    def until(end: Long): LongRange       = Interval.until(self, end) map identity
+  }
+  implicit class PspArrayByteOps(private val xs: Array[Byte]) {
+    def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs
+    def utf8String: String     = new String(utf8Chars)
+  }
+  implicit class PspArrayCharOps(private val xs: Array[Char]) {
+    def utf8Bytes: Array[Byte] = scala.io.Codec.toUTF8(xs, 0, xs.length)
+    def utf8String: String     = new String(xs)
+  }
+  implicit class PspArrayOps[A](private val xs: Array[A]) {
+    private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
+      java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
+
+    def inPlace: InPlace[A] = new InPlace(xs)
+    def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
+      val arr = newArray[A](xs.length + that.length)
+      arraycopy(xs, 0, arr, 0, xs.length)
+      arraycopy(that, 0, arr, xs.length, that.length)
+      arr
+    }
+  }
+
+  /** Views of specific type.
+   */
+  implicit class ViewViewOps[A](private val xss: View2D[A]) {
+    def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
+    def transpose: View2D[A]          = openIndices map column
+    def flatten: View[A]              = xss flatMap identity
+    def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
+
+    def grid_s(implicit z: Show[A]): String = {
+      val width = xss.mmap(_.show.length).flatten.max
+      val fmt   = lformat(width)
+      val yss   = xss mmap (x => fmt(z show x))
+      val lines = yss map (_ joinWith " ")
+
+      lines.joinLines mapLines (_.trim)
+    }
+  }
+  implicit class ViewStringOps(private val xs: View[String]) {
     def trimmed: View[String]         = xs map (_.trim)
     def joinWith(ch: Char): String    = xs joinWith ch.to_s
     def joinWith(sep: String): String = xs zreducel (_ + sep + _)
@@ -47,44 +153,62 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def inBrackets: String            = joinList surround "[" -> "]"
     def inBraces: String              = joinList surround "{" -> "}"
   }
-
-  implicit class AnyOps[A](private val x: A) extends AnyVal {
-    def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
-
-    def any_s: String                     = s"$x"
-    def id_## : Int                       = java.lang.System.identityHashCode(x)
-    def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
-    def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
-
-    @inline def |>[B](f: A => B): B = f(x) // The famed forward pipe.
+  implicit class ViewHasIsProductOps[R, A, B](private val xs: View[R])(implicit sp: IsProduct[R, A, B]) {
+    def toPmap(implicit ez: Eq[A], hz: Hash[A]): Pmap[A, B]            = toMap[Pmap]
+    def toMap[CC[_, _]](implicit z: Makes[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split make xs
   }
-  implicit class ArrowAssocRef[A](private val self: A) extends AnyVal {
-    @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(self, y)
+  implicit class ViewHasShowOps[A](private val xs: View[A])(implicit z: Show[A]) {
+    def mkDoc(sep: Doc): Doc          = xs.asDocs zreducel (_ ~ sep ~ _)
+    def joinWith(sep: String): String = pp"${mkDoc(sep.lit)}"
+    def joinString: String            = joinWith("")
   }
-  implicit class OptionOps[A](private val x: Option[A]) extends AnyVal {
-    def view: View[A]                 = x.seq.m
-    def or(alt: => A): A              = x getOrElse alt
-    def toVec: Vec[A]                 = this zfold (x => vec(x))
-    def zfold[B: Empty](f: A => B): B = x.fold[B](emptyValue)(f)
-    def zget(implicit z: Empty[A]): A = x getOrElse z.empty
-    def |(alt: => A): A               = x getOrElse alt
-  }
-  implicit class TryOps[A](private val x: Try[A]) extends AnyVal {
-    def |(expr: => A): A = x.toOption | expr
-    def fold[B](f: Throwable => B, g: A => B): B = x match {
-      case Success(x) => g(x)
-      case Failure(t) => f(t)
+  implicit class ViewHasEqOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
+    def contains(x: A): Boolean = xs exists (_ === x)
+    def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
+    def indexOf(x: A): Index    = xs indexWhere (_ === x)
+
+    def hashFun(): HashFun[A] = eqv match {
+      case heq: Hash[A] =>
+        val buf = bufferMap[Long, View[A]]()
+        xs foreach (x => (heq hash x) |> (h => buf(h) = buf(h) :+ x))
+        Fun(buf.result mapValues (_.distinct))
+      case _ =>
+        Fun const xs
     }
   }
-  implicit class InputStreamOps(private val in: InputStream) extends AnyVal {
-    def buffered: BufferedInputStream = in match {
-      case in: BufferedInputStream => in
-      case _                       => new BufferedInputStream(in)
+
+  /** Other psp classes.
+   */
+  implicit class PspFoldedOps[A](c: Folded[A]) {
+    import Folded._
+    def join(that: Folded[A]): Folded[A]         = Join(c, that)
+    def filter(p: ToBool[A]): Folded[A]          = Filter(c, p)
+    def map[B](f: A => B): Folded[B]             = Mapped(c, f)
+    def flatMap[B](f: A => Folded[B]): Folded[B] = FlatMap(c, f)
+
+    def suspend(): Suspend[A] = new Suspend(c)
+    def resume(f: ToUnit[A]): Unit = c match {
+      case Opaque(mf)     => mf(f)
+      case Join(c1, c2)   => c1 resume f; c2 resume f
+      case Filter(c, p)   => c resume (x => if (p(x)) f(x))
+      case Mapped(c, g)   => c resume (x => g andThen f)
+      case FlatMap(c, g)  => c resume (x => g(x) resume f)
     }
-    def slurp(): Array[Byte]             = ll.Streams slurp buffered
-    def slurp(len: Precise): Array[Byte] = ll.Streams.slurp(buffered, len)
   }
-  implicit class FunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
+  implicit class Pair2DOps[A, B](private val x: Pair2D[A, B]) {
+    def transpose: (A->A) -> (B->B) = pair(
+      fst(fst(x)) -> fst(snd(x)),
+      snd(fst(x)) -> snd(snd(x))
+    )
+  }
+  implicit class PspDocOps(private val lhs: Doc) {
+    import Doc._
+    def pp: String         = pp"$lhs"
+    def <>(rhs: Doc): Doc  = lhs ~ rhs
+    def <+>(rhs: Doc): Doc = lhs ~ SP ~ rhs
+    def ~(rhs: Doc): Doc   = Cat(lhs, rhs)
+  }
+  implicit class PspFunOps[A, B](private val f: Fun[A, B]) extends AnyVal {
     type This = Fun[A, B]
 
     import Fun._
@@ -112,133 +236,15 @@ object all extends NonValueImplicitClasses with AllImplicit  {
     def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
     def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
-}
 
-class NonValueImplicitClasses extends AllExplicit {
-  self: all.type =>
-
-  implicit class HasWalker[A, R](val repr: R)(implicit z: Walks[A, R]) {
-    def m: RepView[R, A] = RepView(repr)
-    def m2: IdView[A, R] = z walk repr
+  /** Ops directly on type class instances.
+   */
+  implicit class MakesClassOps[A, R](private val z: Makes[A, R]) {
+    def apply(xs: A*): R                     = z make Makes.fromArgs(xs: _*)
+    def contraMap[Z](g: Z => A): Makes[Z, R] = Makes(xs => z make (xs map g))
+    def map[S](g: R => S): Makes[A, S]       = Makes(g compose z.make)
+    def scalaBuilder()                       = scala.Vector.newBuilder[A] mapResult (z make _.m)
   }
-  /** The type of args forces all the interpolation variables to
-    * be of a type which is implicitly convertible to Doc.
-    */
-  implicit class DocInterpolators(private val sc: StringContext) {
-    import StdShow._
-
-    /** The type of args forces all the interpolation variables to
-      *  be of a type which is implicitly convertible to Doc.
-      */
-    def doc(args: Doc*): Doc    = ShowInterpolator(sc).doc(args: _*)
-    def fdoc(args: Doc*): Doc   = ShowInterpolator(sc).fdoc(args: _*)
-    def sdoc(args: Doc*): Doc   = ShowInterpolator(sc).sdoc(args: _*)
-    def log(args: Doc*): Unit   = println(pp(args: _*))
-    def any(args: Any*): String = pp(args.m asDocs Show.Inherited seq: _*)
-
-    def pp(args: Doc*): String = Pconfig.renderer show doc(args: _*)
-    def fp(args: Doc*): String = Pconfig.renderer show fdoc(args: _*)
-    def sm(args: Doc*): String = Pconfig.renderer show sdoc(args: _*)
-  }
-  implicit class VindexOps(private val vdex: Vdex) {
-    def getInt: Int = vdex.indexValue.safeToInt
-  }
-  implicit class SizeOps(private val lhs: Size)  {
-    import Size._
-
-    def getInt: Int = lhs match {
-      case Precise(n) => n.toInt
-      case s          => illegalArgumentException(s)
-    }
-    def isZero = lhs === _0
-
-    def preciseOrMaxLong: Precise = lhs match {
-      case n: Precise => n
-      case _          => Precise(MaxLong)
-    }
-    def +(rhs: Size): Size = (lhs, rhs) match {
-      case (Precise(l), Precise(r))                 => Precise(l + r)
-      case (Infinite, _) | (_, Infinite)            => Infinite
-      case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 + l2, h1 + h2)
-    }
-    def -(rhs: Size): Size = (lhs, rhs) match {
-      case (Precise(l), Precise(r))                 => Precise(l - r)
-      case (Precise(_), Infinite)                   => _0
-      case (Infinite, Precise(_))                   => Infinite
-      case (Infinite, Infinite)                     => Unknown
-      case (Size.Range(l1, h1), Size.Range(l2, h2)) => Size.Range(l1 - h2, h1 - l2)
-    }
-  }
-
-  implicit class CharOps(private val ch: Char) {
-    def to_s: String                      = ch.toString
-    def r: Regex                          = Regex(ch)
-    def takeNext(len: Precise): CharRange = ch.toLong takeNext len map (_.toChar)
-    def to(end: Char): CharRange          = ch.toLong to end.toLong map (_.toChar)
-    def until(end: Char): CharRange       = ch.toLong until end.toLong map (_.toChar)
-  }
-  implicit class IntOps(private val self: Int) {
-    def to(end: Int): IntRange    = self.toLong to end.toLong map (_.toInt)
-    def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
-  }
-  implicit class LongOps(private val self: Long) {
-    /** Safe in the senses that it won't silently truncate values,
-      *  and will translate MaxLong to MaxInt instead of -1.
-      *  We depend on this!
-      */
-    def safeToInt: Int = self match {
-      case MaxLong => MaxInt
-      case MinLong => MinInt
-      case _       => assertInIntRange(); self.toInt
-    }
-    def andUp: OpenRange[Long]            = Interval open self map identity
-    def takeNext(len: Precise): LongRange = Interval.closed(self, len) map identity
-    def to(end: Long): LongRange          = Interval.to(self, end) map identity
-    def until(end: Long): LongRange       = Interval.until(self, end) map identity
-    def indexUntil(end: Long): VdexRange  = Interval.until(self, end) map Index
-    def nthTo(end: Long): VdexRange       = Interval.to(self, end) map Nth
-
-    def size: Precise = Precise(self)
-    def index: Index  = Index(self)
-    def nth: Nth      = Nth(self)
-
-    private def assertInIntRange(): Unit = assert(MinInt <= self && self <= MaxInt, s"$self out of range")
-  }
-  implicit class PreciseOps(private val size: Precise) {
-    private def ls = size.getLong
-    def to(hi: Long): SizeRange = ls to hi map (n => Size(n))
-    def exclusive: Index        = Index(ls)
-    def indices: VdexRange      = 0L indexUntil ls
-    def lastIndex: Index        = Index(ls - 1) // effectively maps both undefined and zero to no index.
-  }
-  implicit class PartialOps[A, B](pf: A ?=> B) {
-    def contains(x: A): Bool                  = pf isDefinedAt x
-    def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
-    def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
-    def toPartial: Fun.Partial[A, B]          = Fun partial pf
-  }
-
-  implicit class ByteArrayOps(private val xs: Array[Byte]) {
-    def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs
-    def utf8String: String     = new String(utf8Chars)
-  }
-  implicit class CharArrayOps(private val xs: Array[Char]) {
-    def utf8Bytes: Array[Byte] = scala.io.Codec.toUTF8(xs, 0, xs.length)
-    def utf8String: String     = new String(xs)
-  }
-  implicit class ArrayOps[A](private val xs: Array[A]) {
-    private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
-      java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
-
-    def inPlace: InPlace[A] = new InPlace(xs)
-    def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
-      val arr = newArray[A](xs.length + that.length)
-      arraycopy(xs, 0, arr, 0, xs.length)
-      arraycopy(that, 0, arr, xs.length, that.length)
-      arr
-    }
-  }
-
   implicit class HashClassOps[A](private val r: Hash[A]) {
     def on[B](f: B => A): Hash[B] = Hash(f andThen r.hash)
   }
@@ -255,70 +261,32 @@ class NonValueImplicitClasses extends AllExplicit {
       def compare(x: A, y: A): Int = if (r.less(x, y)) -1 else if (r.less(y, x)) 1 else 0
     }
   }
-  implicit class JavaIteratorOps[A](private val it: jIterator[A]) {
-    def toScala: scIterator[A] = new scIterator[A] {
-      def hasNext: Bool = it.hasNext
-      def next(): A     = it.next()
+  implicit class BoolAlgebraClassOps[A](private val z: BoolAlgebra[A]) {
+    def xmap[B](f: A => B, g: B => A): BoolAlgebra[B] = new BoolAlgebra[B] {
+      def and(x: B, y: B): B  = f(z.and(g(x), g(y)))
+      def or(x: B, y: B): B   = f(z.or(g(x), g(y)))
+      def complement(x: B): B = f(z.complement(g(x)))
+      def zero: B             = f(z.zero)
+      def one: B              = f(z.one)
     }
-    def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
-  implicit class SplittableValueSameTypeOps[A, R](private val x: R)(implicit z: Splitter[R, A, A]) {
+
+  /** "Has" implicit methods on values for which a type class is present.
+   */
+  implicit class HasIsProductOpsSame[A, R](private val x: R)(implicit z: IsProduct[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Direct[A]            = elems(x._1, x._2)
   }
-  implicit class ProductProductOps[A, B](private val xy: (A->B)->(A->B)) {
-    def transpose: (A->A)->(B->B) = {
-      val (l1 -> r1) -> (l2 -> r2) = xy
-      (l1 -> l2) -> (r1 -> r2)
-    }
+  implicit class HasWalksOps[A, R](val repr: R)(implicit z: Walks[A, R]) {
+    def m: RepView[R, A] = RepView(repr)
+    def m2: IdView[A, R] = z walk repr
   }
-
-  implicit class SplittableValueOps[R, A, B](private val x: R)(implicit z: Splitter[R, A, B]) {
-    def mkDoc(sep: Doc)(implicit za: Show[A], zb: Show[B]): Doc      = _1.doc ~ sep <> _2
-    def mk_s(sep: String)(implicit za: Show[A], zb: Show[B]): String = mkDoc(sep.lit).pp
-
-    def _1: A                                    = fst(z split x)
-    def _2: B                                    = snd(z split x)
-    def appLeft[C](f: A => C): C                 = f(_1)
-    def appRight[C](f: B => C): C                = f(_2)
-    def app[C](f: (A, B) => C): C                = f(_1, _2)
-    def mapEach[C](f: A => C, g: B => C): C -> C = f(_1) -> g(_2)
-    def mapLeft[C](f: A => C): C -> B            = f(_1) -> _2
-    def mapRight[C](f: B => C): A -> C           = _1 -> f(_2)
-
-    def apply[C](f: (A, B) => C): C = f(_1, _2)
-  }
-  implicit class SplittableViewOps[R, A, B](private val xs: View[R])(implicit sp: Splitter[R, A, B]) {
-    def toPmap(implicit ez: Eq[A], hz: Hash[A]): Pmap[A, B]            = toMap[Pmap]
-    def toMap[CC[_, _]](implicit z: Makes[A -> B, CC[A, B]]): CC[A, B] = z contraMap sp.split make xs
-  }
-
-  implicit class ShowableViewOps[A](private val xs: View[A])(implicit z: Show[A]) {
-    def mkDoc(sep: Doc): Doc          = xs.asDocs zreducel (_ ~ sep ~ _)
-    def joinWith(sep: String): String = pp"${mkDoc(sep.lit)}"
-    def joinString: String            = joinWith("")
-  }
-
-  implicit class EqViewOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
-    def contains(x: A): Boolean = xs exists (_ === x)
-    def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
-    def indexOf(x: A): Index    = xs indexWhere (_ === x)
-
-    def hashFun(): HashFun[A] = eqv match {
-      case heq: Hash[A] =>
-        val buf = bufferMap[Long, View[A]]()
-        xs foreach (x => (heq hash x) |> (h => buf(h) = buf(h) :+ x))
-        Fun(buf.result mapValues (_.distinct))
-      case _ =>
-        Fun const xs
-    }
-  }
-  implicit class ShowableDocOps[A](private val lhs: A)(implicit z: Show[A]) {
+  implicit class HasShowOps[A](private val lhs: A)(implicit z: Show[A]) {
     def doc: Doc     = Doc(lhs)
     def show: String = z show lhs
     def pp: String   = pp"$doc"
   }
-  implicit class HeytingAlgebraOps[A](private val lhs: A)(implicit z: Heyting[A]) {
+  implicit class HasHeytingOps[A](private val lhs: A)(implicit z: Heyting[A]) {
     def unary_! : A     = z complement lhs
     def &&(rhs: A): A   = z.and(lhs, rhs)
     def ||(rhs: A): A   = z.or(lhs, rhs)
@@ -326,29 +294,36 @@ class NonValueImplicitClasses extends AllExplicit {
     def meet(rhs: A): A = this && rhs
     def join(rhs: A): A = this || rhs
   }
-  implicit class EqOps[A](private val lhs: A)(implicit z: Eq[A]) {
-    def ===(rhs: A): Boolean = z.eqv(lhs, rhs)
-    def =!=(rhs: A): Boolean = !z.eqv(lhs, rhs)
+  implicit class HasEqNegationOps[A](private val lhs: A) {
+    def =!=[R](rhs: A)(implicit z: MEq[A, R], ba: BoolAlgebra[R]): R = !z.eqv(lhs, rhs)
   }
-  implicit class HashOps[A](private val lhs: A)(implicit z: Hash[A]) {
+  implicit class HasMEqOps[A](private val lhs: A) {
+    def ===[R](rhs: A)(implicit z: MEq[A, R]): R = z.eqv(lhs, rhs)
+  }
+  implicit class HasHashOps[A](private val lhs: A)(implicit z: Hash[A]) {
     def hash: Long   = z hash lhs
     def hashInt: Int = hash.toInt
   }
-  implicit class OrderOps[A](private val lhs: A)(implicit z: Order[A]) {
+  implicit class HasOrderOps[A](private val lhs: A)(implicit z: Order[A]) {
     def <(rhs: A): Boolean = z.less(lhs, rhs)
     def >(rhs: A): Boolean = z.less(rhs, lhs)
 
     def <=(rhs: A)(implicit y: Eq[A]): Boolean = (lhs < rhs) || (lhs === rhs)
     def >=(rhs: A)(implicit y: Eq[A]): Boolean = (lhs > rhs) || (lhs === rhs)
   }
-  implicit class SplitterOps[R, A, B](private val lhs: R)(implicit z: Splitter[R, A, B]) {
-    def toPair: A -> B = z split lhs
-  }
-  implicit class Function2Ops[A1, A2, R](private val f: (A1, A2) => R) {
-    def toFun1: (A1 -> A2) => R = _ app f
-    def andThen[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
-  }
-  implicit class Function2SameOps[A, R](private val f: BinTo[A, R]) {
-    def on[B](g: B => A): BinTo[B, R] = (x, y) => f(g(x), g(y))
+  implicit class HasIsProductOps[R, A, B](private val x: R)(implicit z: IsProduct[R, A, B]) {
+    def _1: A = fst(z split x)
+    def _2: B = snd(z split x)
+    def mkDoc(sep: Doc)(implicit za: Show[A], zb: Show[B]): Doc      = _1.doc ~ sep <> _2
+    def mk_s(sep: String)(implicit za: Show[A], zb: Show[B]): String = mkDoc(sep.lit).pp
+
+    def appLeft[C](f: A => C): C                 = f(_1)
+    def appRight[C](f: B => C): C                = f(_2)
+    def app[C](f: (A, B) => C): C                = f(_1, _2)
+    def mapEach[C](f: A => C, g: B => C): C -> C = f(_1) -> g(_2)
+    def mapLeft[C](f: A => C): C -> B            = f(_1) -> _2
+    def mapRight[C](f: B => C): A -> C           = _1 -> f(_2)
+    def apply[C](f: (A, B) => C): C              = f(_1, _2)
+    def toPair: A->B                             = _1 -> _2
   }
 }

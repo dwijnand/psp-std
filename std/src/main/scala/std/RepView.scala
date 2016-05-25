@@ -47,13 +47,13 @@ object RepView {
     type V    = M[A]
     type Pred = ToBool[A]
 
-    def zipCross[B, C](l: M[B], r: M[C]): Zip[B, C]                           = new ZipFromCross(l, r)
-    def zipSplit[A, B, C](xs: M[A])(implicit z: Splitter[A, B, C]): Zip[B, C] = new ZipFromSplit(xs)
-    def zipViews[B, C](l: M[B], r: M[C]): Zip[B, C]                           = new ZipFromViews(l, r)
-    def zipPairs[B, C](xs: M[B->C]): Zip[B, C]                                = new ZipFromPairs(xs)
-    def zipMap[B](f: A => B): Zip[A, B]                                       = new ZipFromFun(self, f)
+    def zipCross[B, C](l: M[B], r: M[C]): Zip[B, C]                               = new ZipFromCross(l, r)
+    def zipProducts[A, B, C](xs: M[A])(implicit z: IsProduct[A, B, C]): Zip[B, C] = new ZipFromProducts(xs)
+    def zipViews[B, C](l: M[B], r: M[C]): Zip[B, C]                               = new ZipFromViews(l, r)
+    def zipPairs[B, C](xs: M[B->C]): Zip[B, C]                                    = new ZipFromPairs(xs)
+    def zipMap[B](f: A => B): Zip[A, B]                                           = new ZipFromFun(self, f)
 
-    class ZipFromSplit[A, B, C](xs: M[A])(implicit z: Splitter[A, B, C]) extends Zip[B, C] {
+    class ZipFromProducts[A, B, C](xs: M[A])(implicit z: IsProduct[A, B, C]) extends Zip[B, C] {
       def pairs: M[B->C] = xs map z.split
       def lefts: M[B]    = pairs map fst
       def rights: M[C]   = pairs map snd
@@ -96,7 +96,7 @@ object RepView {
       }
 
       def corresponds(p: BPred): Bool          = iterator |> (it => it.forall(_ app p) && !it.hasMore)
-      def drop(n: Precise): This               = zipSplit(pairs drop n)
+      def drop(n: Precise): This               = zipProducts(pairs drop n)
       def exists(p: BPred): Bool               = !forall(!p)
       def filter(p: BPred): This               = withFilter(p)
       def filterLeft(p: ToBool[B]): This       = withFilter((x, _) => p(x))
@@ -107,7 +107,7 @@ object RepView {
       def mapLeft[B1](f: B => B1): Zip[B1, C]  = zipViews(lefts map f, rights)
       def mapRight[C1](f: C => C1): Zip[B, C1] = zipViews(lefts, rights map f)
       def map[D](f: (B, C) => D): M[D]         = pairs map (_ app f)
-      def take(n: Precise): This               = zipSplit(pairs take n)
+      def take(n: Precise): This               = zipProducts(pairs take n)
       def unzip: M[B] -> M[C]                  = lefts -> rights
       def withFilter(p: BPred): This           = zipPairs(pairs filter (_ app p))
 

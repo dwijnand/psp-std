@@ -85,10 +85,10 @@ trait ViewMethods[R, A] {
   def asDocs(implicit z: Show[A]): MapTo[Doc]
   def asShown(implicit z: Show[A]): MapTo[String] = this map z.show
 
-  def by(eqv: Eq[A]): EqViewOps[A]              = new EqViewOps[A](xs)(eqv)
-  def byEquals: EqViewOps[A]                    = by(Relation.Inherited)
-  def byRef: EqViewOps[Ref[A]]                  = new EqViewOps[Ref[A]](asRefs)(Relation.Reference)
-  def byShow(implicit z: Show[A]): EqViewOps[A] = by(Eq.by[A](_.pp))
+  def by(eqv: Eq[A]): ViewHasEqOps[A]              = new ViewHasEqOps[A](xs)(eqv)
+  def byEquals: ViewHasEqOps[A]                    = by(Relation.Inherited)
+  def byRef: ViewHasEqOps[Ref[A]]                  = new ViewHasEqOps[Ref[A]](asRefs)(Relation.Reference)
+  def byShow(implicit z: Show[A]): ViewHasEqOps[A] = by(Eq.by[A](_.pp))
 
   def ++(ys: View[A]): This = append(ys)
   def +:(head: A): This     = prepend(view(head))
@@ -139,7 +139,7 @@ trait ViewMethods[R, A] {
   def force[R](implicit z: Makes[A, R]): R          = z make xs
   def build(implicit z: Makes[A, R]): R             = force[R]
 
-  def pairs[B, C](implicit z: Splitter[A, B, C]): MapTo[B->C] = map(z.split)
+  def pairs[B, C](implicit z: IsProduct[A, B, C]): MapTo[B->C] = map(z.split)
 
   def iterator: scIterator[A]                          = toScalaStream.iterator
   def toArray(implicit z: CTag[A]): Array[A]           = to[Array]
@@ -150,22 +150,6 @@ trait ViewMethods[R, A] {
 
   def seq: scSeq[A]          = to[scSeq] // varargs or unapplySeq, usually
   def trav: scTraversable[A] = to[scTraversable] // scala flatMap, usually
-}
-
-class View2DOps[A](private val xss: View2D[A]) {
-  def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
-  def transpose: View2D[A]          = openIndices map column
-  def flatten: View[A]              = xss flatMap identity
-  def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
-
-  def grid_s(implicit z: Show[A]): String = {
-    val width = xss.mmap(_.show.length).flatten.max
-    val fmt   = lformat(width)
-    val yss   = xss mmap (x => fmt(z show x))
-    val lines = yss map (_ joinWith " ")
-
-    lines.joinLines mapLines (_.trim)
-  }
 }
 object View2D {
   type Coords = PairOf[Vdex]

@@ -33,7 +33,6 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def mapWords(f: ToSelf[String]): String           = mapSplit(' ')(f)
   def mapSplit(ch: Char)(f: ToSelf[String]): String = splitChar(ch) map f joinWith ch
   def prepend(that: String): String                 = that + self
-  def processEscapes: String                        = StringContext processEscapes self
   def r: Regex                                      = Regex(self)
   def removeAll(regex: Regex): String               = regex matcher self replaceAll ""
   def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""

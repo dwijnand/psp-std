@@ -6,7 +6,7 @@ import all._
 /** Holding area for things which should later be made configurable.
  */
 object Pconfig {
-  val renderer = new FullRenderer(Size(3) to 9)
+  val renderer = new FullRenderer(3L sizeTo 9)
 }
 
 /** Motley objects for which a file of residence is not obvious.
@@ -39,12 +39,12 @@ final class ZipIterator[A1, A2](ls: scIterator[A1], rs: scIterator[A2]) extends 
 /** Various objects for construction, extraction, alias storage.
  */
 object Pair {
-  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R          = z.join(pair(x, y))
-  def unapply[R, A, B](x: R)(implicit z: Splitter[R, A, B]): Some[A -> B] = scala.Some(z split x)
+  def apply[R, A, B](x: A, y: B)(implicit z: MakesProduct[R, A, B]): R     = z.join(pair(x, y))
+  def unapply[R, A, B](x: R)(implicit z: IsProduct[R, A, B]): Some[A -> B] = scala.Some(z split x)
 }
 object :: {
-  def apply[R, A, B](x: A, y: B)(implicit z: Joiner[R, A, B]): R = Pair(x, y)
-  def unapply[R, A, B](x: R)(implicit z1: Splitter[R, A, B], z2: Empty[R], z3: Eq[R]): Option[A -> B] =
+  def apply[R, A, B](x: A, y: B)(implicit z: MakesProduct[R, A, B]): R = Pair(x, y)
+  def unapply[R, A, B](x: R)(implicit z1: IsProduct[R, A, B], z2: Empty[R], z3: Eq[R]): Option[A -> B] =
     if (z3.eqv(x, z2.empty)) none() else some(z1 split x)
 }
 object IsClass {
@@ -79,13 +79,4 @@ object Nth extends (Long => Nth) {
   def invalid: Nth            = new Nth(-1L)
   def apply(value: Long): Nth = if (value <= 0) invalid else new Nth(value - 1)
   def unapply(x: Vdex)        = new Extractor(x.nthValue)
-}
-object Inv {
-  /** Scala, so aggravating.
-   *  [error] could not find implicit value for parameter equiv: Eq[A => Bool]
-   *  The parameter can be given explicitly, it just won't be found unless the
-   *  function type is invariant. The same issue arises with intensional sets.
-   */
-  type Pred[A]     = A => scala.Boolean
-  type Pred2[A, B] = (A, B) => scala.Boolean
 }

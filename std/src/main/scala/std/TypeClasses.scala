@@ -3,102 +3,84 @@ package std
 
 import all._
 
-/** Type classes for "inside" a context.
-  *  The more familiar type classes extends these with M[X] = X.
+/**  Fully generalized type classes.
   *
-  *  TODO: Investigate utility of further generalization of the
-  *  ground types which appear here: Bool, Long, Vdex, Cmp, String
+  *  The more familiar type classes extends these with
+  *  R specialized in the conventional way.
   */
-trait MEq[M[+X], -A] extends Any {
-  def eqv(x: M[A], y: M[A]): M[Bool]
+trait MEq[-A, +R] extends Any {
+  def eqv(x: A, y: A): R
 }
-trait MHash[M[+X], -A] extends Any {
-  def hash(x: M[A]): M[Long]
+trait MHash[-A, +R] extends Any {
+  def hash(x: A): R
 }
-trait MOrder[M[+X], -A] extends Any {
-  def less(x: M[A], y: M[A]): M[Bool]
+trait MOrder[-A, +R] extends Any {
+  def less(x: A, y: A): R
 }
-trait MShow[M[+X], -A] extends Any {
-  def show(x: M[A]): M[String]
+trait MShow[-A, +R] extends Any {
+  def show(x: A): R
 }
-trait MIndexer[M[+X], -R, +A] extends Any {
-  def elemAt(x: M[R], index: M[Vdex]): M[A]
+trait MIndexed[-R, -I, +A] extends Any {
+  def elem(x: R, index: I): A
 }
-trait MEmpty[M[+X], +A] extends Any {
-  def empty: M[A]
-}
-
-/** Splitter/Joiner type classes for composing and decomposing an R into A -> B.
-  *  Somewhat conveniently for us, "cleave" is a word which has among its meanings
-  *  "to adhere firmly and closely as though evenly and securely glued" as well
-  *  as "to divide into two parts by a cutting blow".
-  */
-trait MSplitter[M[+X], -R, +A, +B] extends Any {
-  // Consider: what is the significance of M[A] -> M[B], not M[A -> B] ?
-  def split(x: M[R]): M[A] -> M[B]
-}
-trait MJoiner[M[+X], +R, -A, -B] extends Any {
-  def join(x: M[A] -> M[B]): M[R]
-}
-trait MCleaver[M[+X], R, A, B] extends Any with MJoiner[M, R, A, B] with MSplitter[M, R, A, B]
-
-/** Scala makes certain things impossible with type parameters and a
-  *  nearly disjoint set of ambitions impossible with type members.
-  *  We are left with building them in redundantly so we always have
-  *  what we need.
-  */
-trait ASplitter[-R] extends Any {
-  type Left
-  type Right
-  type Pair >: R
-}
-trait AJoiner[+R] extends Any {
-  type Left
-  type Right
-  type Pair <: R
-}
-trait ACleaver[R] extends Any with AJoiner[R] with ASplitter[R] {
-  type Pair = R
+trait MEmpty[+A] extends Any {
+  def empty: A
 }
 
 /** The classic type classes for encoding equality, inequality,
   *  and display, and less classic ones for split/join, indexed access,
   *  emptiness.
   */
-trait Eq[-A] extends Any with MEq[Id, A] {
+trait Eq[-A] extends Any with MEq[A, Bool] {
   def eqv(x: A, y: A): Bool
 }
-trait Hash[-A] extends Any with MHash[Id, A] {
+trait Hash[-A] extends Any with MHash[A, Long] {
   def hash(x: A): Long
 }
-trait Order[-A] extends Any with MOrder[Id, A] {
+trait Order[-A] extends Any with MOrder[A, Bool] {
   def less(x: A, y: A): Bool
 }
-
-trait Show[-A] extends Any with MShow[Id, A] {
+trait Show[-A] extends Any with MShow[A, String] {
   def show(x: A): String
 }
-trait Indexer[-R, +A] extends Any with MIndexer[Id, R, A] {
-  def elemAt(x: R, index: Vdex): A
+trait VIndexed[-R, +A] extends Any with MIndexed[R, Vdex, A] {
+  def elem(x: R, index: Vdex): A
 }
-trait Empty[+A] extends Any with MEmpty[Id, A] {
+trait Empty[+A] extends Any with MEmpty[A] {
   def empty: A
 }
-trait Splitter[-R, +A, +B] extends Any with MSplitter[Id, R, A, B] with ASplitter[R] {
+
+
+trait IsProduct[-R, +A, +B] extends Any {
   type Left <: A
   type Right <: B
   def split(x: R): A -> B
 }
-trait Joiner[+R, -A, -B] extends Any with MJoiner[Id, R, A, B] with AJoiner[R] {
+trait MakesProduct[+R, -A, -B] extends Any {
   type Left >: A
   type Right >: B
   def join(x: A -> B): R
 }
-trait Cleaver[R, A, B] extends Any with MCleaver[Id, R, A, B] with Joiner[R, A, B] with Splitter[R, A, B] with ACleaver[R] {
+trait Productize[R, A, B] extends Any with MakesProduct[R, A, B] with IsProduct[R, A, B] {
   type Left  = A
   type Right = B
 }
 
+sealed trait IsCollection[-R, +A] extends Any
+sealed trait IsIndexed[-R, -I, +A] extends Any with IsCollection[R, A] with MIndexed[R, I, A]
+
+trait IsFolded[-R, +A] extends Any with IsCollection[R, A] {
+  def resume(xs: R): Folded[A]
+}
+trait IsPairs[R, +A, +B] extends Any with IsCollection[R, A->B] {
+  def pairs(xs: R): View[A->B]
+}
+trait IsIntIndexed[-R, +A] extends Any with IsIndexed[R, Int, A] {
+  def length(x: R): Int
+}
+trait IsFunction[-R, -A, +B] extends Any {
+  def apply(xs: R): Fun[A, B]
+}
 
 /*************
  * Companions.
@@ -169,4 +151,34 @@ object Empty {
   final class Throws[+A](msg: String) extends Empty[A] { def empty: A = abort(msg) }
   final class Impl[+A](expr: => A)    extends Empty[A] { def empty: A = expr }
   final class Const[+A](val empty: A) extends Empty[A] {}
+}
+object IsIntIndexed {
+  def apply[R, A](len: R => Int, get: (R, Int) => A): IsIntIndexed[R, A] = new Impl(len, get)
+
+  final class Impl[R, A](len: R => Int, get: (R, Int) => A) extends IsIntIndexed[R, A] {
+    def length(xs: R): Int      = len(xs)
+    def elem(xs: R, i: Int): A  = get(xs, i)
+  }
+}
+object IsPairs {
+  def apply[R, A, B](f: R => View[A->B]): IsPairs[R, A, B] = new Impl(f)
+
+  final class Impl[R, A, B](f: R => View[A->B]) extends IsPairs[R, A, B] {
+    def pairs(xs: R): View[A->B] = f(xs)
+  }
+}
+object IsFolded {
+  def apply[R, A](f: R => Suspended[A]): IsFolded[R, A] = new Impl(x => Folded(f(x)))
+
+  final class Impl[R, A](f: R => Folded[A]) extends IsFolded[R, A] {
+    def resume(xs: R): Folded[A] = f(xs)
+  }
+}
+object Productize {
+  def apply[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Productize[R, A, B] = new Impl(f, l, r)
+
+  final class Impl[R, A, B](f: (A, B) => R, l: R => A, r: R => B) extends Productize[R, A, B] {
+    def split(x: R): A->B = l(x) -> r(x)
+    def join(x: A->B): R  = x app f
+  }
 }

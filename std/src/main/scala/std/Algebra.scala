@@ -93,3 +93,4 @@ trait StdAlgebra extends StdAlgebra1 {
   implicit def predicate1BoolAlgebra[A]: BoolAlgebra[ToBool[A]]         = new Algebra.Predicate1[A]
   implicit def predicate2BoolAlgebra[A, B]: BoolAlgebra[(A, B) => Bool] = new Algebra.Predicate2[A, B]
 }
+object StdAlgebra extends StdAlgebra

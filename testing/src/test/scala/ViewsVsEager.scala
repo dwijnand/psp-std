@@ -22,12 +22,10 @@ class OperationCounts extends ScalacheckBundle {
   def genSmall  = 1L upTo max / 20
   def genRange  = (genSmall zipWith fullRange)(_ indexUntil _)
 
-  private def lop[A, B](label: String, f: A => B): A => B = new LabeledFunction(f, () => label)
-
-  private def divides(n: Long)  = lop(pp"/$n", (_: Long) % n === 0)
-  private def less(n: Long)     = lop(pp"<$n", (_: Long) < n)
-  private def multiply(n: Long) = lop(pp"*$n", (_: Long) * n)
-  private def pairup            = lop(pp"=>(x,x)", (x: Long) => view(x, x))
+  private def divides(n: Long)  = ((_: Long) % n === 0) labeled pp"/$n"
+  private def less(n: Long)     = ((_: Long) < n) labeled pp"<$n"
+  private def multiply(n: Long) = ((_: Long) * n) labeled pp"*$n"
+  private def pairup            = ((x: Long) => view(x, x)) labeled pp"=>(x,x)"
 
   def genOneOp: Gen[LongOp] = oneOf(
     lowHalf   ^^ (n => Drop[Long](n)),
