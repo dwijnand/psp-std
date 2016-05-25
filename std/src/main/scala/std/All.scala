@@ -245,18 +245,8 @@ object all extends AllExplicit with AllImplicit {
     def map[S](g: R => S): Makes[A, S]       = Makes(g compose z.make)
     def scalaBuilder()                       = scala.Vector.newBuilder[A] mapResult (z make _.m)
   }
-  implicit class HashClassOps[A](private val r: Hash[A]) {
-    def on[B](f: B => A): Hash[B] = Hash(f andThen r.hash)
-  }
-  implicit class EqClassOps[A](private val z: Eq[A]) {
-    def on[B](f: B => A): Eq[B] = Eq(z.eqv _ on f)
-  }
-  implicit class ShowClassOps[A](private val r: Show[A]) {
-    def on[B](f: B => A): Show[B] = Show(f andThen r.show)
-  }
   implicit class OrderClassOps[A](private val r: Order[A]) {
-    def flip: Order[A]             = Order((x, y) => r.less(y, x))
-    def on[B](f: B => A): Order[B] = Order(r.less _ on f)
+    def flip: Order[A] = Order((x, y) => r.less(y, x))
     def comparator: Comparator[A] = new scala.math.Ordering[A] {
       def compare(x: A, y: A): Int = if (r.less(x, y)) -1 else if (r.less(y, x)) 1 else 0
     }
