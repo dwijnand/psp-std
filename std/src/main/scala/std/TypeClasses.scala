@@ -86,61 +86,49 @@ trait IsFunction[-R, -A, +B] extends Any {
  * Companions.
  *************/
 
-object Order {
+object Order extends RelationCompanion[Order] {
   def Inherited[A <: Comparable[A]]: Order[A] = apply((x, y) => (x compareTo y) < 0)
 
-  def apply[A](r: Relation[A]): Order[A] = new OrderImpl(r)
-  def by[A]: OrderBy[A]                  = new OrderBy[A]
+  def wrap[A](r: Relation[A]): Order[A]   = new Impl(r)
+  def unwrap[A](r: Order[A]): Relation[A] = r.less _
 
-  class OrderImpl[A](r: Relation[A]) extends Order[A] {
+  class Impl[A](r: Relation[A]) extends Order[A] {
     def less(x: A, y: A): Bool = r(x, y)
   }
-  final class OrderBy[A] {
-    def apply[B](f: A => B)(implicit z: Order[B]): Order[A] = z on f
-  }
 }
-object Eq {
+object Eq extends RelationCompanion[Eq] {
   val Inherited: Eq[Any]    = apply(_ == _)
   val Reference: Eq[AnyRef] = apply(_ eq _)
 
-  def apply[A](r: Relation[A]): Eq[A] = new EqImpl(r)
-  def by[A]: EqBy[A]                    = new EqBy[A]
+  def wrap[A](r: Relation[A]): Eq[A]   = new Impl(r)
+  def unwrap[A](r: Eq[A]): Relation[A] = r.eqv _
 
-  class EqImpl[A](r: Relation[A]) extends Eq[A] {
+  class Impl[A](r: Relation[A]) extends Eq[A] {
     def eqv(x: A, y: A): Bool = r(x, y)
   }
-  final class EqBy[A] {
-    def apply[B](f: A => B)(implicit z: Eq[B]): Eq[A] = z on f
-  }
 }
-object Hash {
+object Hash extends UnaryClassCompanion[Hash, Long] {
   val Inherited: Hash[Any]    = apply(_.##)
   val Reference: Hash[AnyRef] = apply(_.id_##)
 
-  def apply[A](h: ToLong[A]): Hash[A] = new HashImpl(h)
-  def by[A]: HashBy[A]                = new HashBy[A]
+  def wrap[A](f: ToLong[A]): Hash[A]   = new Impl[A](f)
+  def unwrap[A](r: Hash[A]): ToLong[A] = r hash _
 
-  class HashImpl[A](h: ToLong[A]) extends Hash[A] {
+  class Impl[A](h: ToLong[A]) extends Hash[A] {
     def hash(x: A): Long = h(x)
   }
-  final class HashBy[A] {
-    def apply[B](f: A => B)(implicit z: Hash[B]): Hash[A] = z on f
-  }
 }
-object Show {
+object Show extends UnaryClassCompanion[Show, String] {
   /** This of course is not implicit as that would defeat the purpose of the endeavor.
-    *  There is however an implicit universal instance in the Unsafe object.
+    * There is however an implicit universal instance in the Unsafe object.
     */
   val Inherited: Show[Any] = apply[Any](s => zcond(s != null, s.toString))
 
-  def apply[A](f: ToString[A]): Show[A] = new Impl[A](f)
-  def by[A]: ShowBy[A]                  = new ShowBy[A]
+  def wrap[A](f: ToString[A]): Show[A]   = new Impl[A](f)
+  def unwrap[A](r: Show[A]): ToString[A] = r show _
 
   final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] {
     def show(x: A) = f(x)
-  }
-  final class ShowBy[A] {
-    def apply[B](f: A => B)(implicit z: Show[B]): Show[A] = z on f
   }
 }
 object Empty {
@@ -180,5 +168,37 @@ object Productize {
   final class Impl[R, A, B](f: (A, B) => R, l: R => A, r: R => B) extends Productize[R, A, B] {
     def split(x: R): A->B = l(x) -> r(x)
     def join(x: A->B): R  = x app f
+  }
+}
+
+/** Some common boilerplate.
+ */
+trait UnaryClassCompanion[M[X], R] {
+  def wrap[A](f: A => R): M[A]
+  def unwrap[A](r: M[A]): A => R
+
+  def apply[A](f: A => R): M[A] = wrap(f)
+  def by[A]: By[A]              = new By[A]
+
+  implicit class UnaryClassOps[A](private val z: M[A]) {
+    def on[B](f: B => A): M[B] = by[B](f)(z)
+  }
+  final class By[A] {
+    def apply[B](f: A => B)(implicit z: M[B]): M[A] = wrap(f andThen unwrap(z))
+  }
+}
+
+trait RelationCompanion[M[X]] {
+  def wrap[A](f: Relation[A]): M[A]
+  def unwrap[A](r: M[A]): Relation[A]
+
+  def apply[A](f: Relation[A]): M[A] = wrap(f)
+  def by[A]: By[A]                   = new By[A]
+
+  implicit class RelationClassOps[A](private val z: M[A]) {
+    def on[B](f: B => A): M[B] = by[B](f)(z)
+  }
+  final class By[A] {
+    def apply[B](f: A => B)(implicit z: M[B]): M[A] = wrap(unwrap(z) on f)
   }
 }
