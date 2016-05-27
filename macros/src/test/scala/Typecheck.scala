@@ -7,6 +7,8 @@ import Expressions._
 class Typecheck extends ScalacheckBundle {
   def bundle = "Verifying Expected Failures"
 
+  implicit def showTypechecked = Show[Typechecked](_.to_s)
+
   /** These are here so we do not accidentally rename them, making the shadowing below
    *  useless.
    */
@@ -28,10 +30,10 @@ class Typecheck extends ScalacheckBundle {
    *  Will make this more robust. For now this makes it easy to put the expectation of
    *  success or failure next to the code in question.
    */
-  def divide(what: String, xs: Vec[Typechecked]): NamedProp = divide(what, xs, xs count (_.code startsWith "/* ok */"))
+  def divide(what: String, xs: sciVector[Typechecked]): NamedProp = divide(what, xs, xs count (_.code startsWith "/* ok */"))
 
-  def divide(what: String, xs: Vec[Typechecked], expectedTypecheck: Precise): NamedProp = {
-    val good -> bad = xs partition (_.typechecks) mapBoth (_.force)
+  def divide(what: String, xs: sciVector[Typechecked], expectedTypecheck: Precise): NamedProp = {
+    val good -> bad = xs.toVec partition (_.typechecks) mapBoth (_.force)
 
     def good_s = "good: " + (good.asShown joinWith "\n  ")
     def bad_s  = "bad: "  + (bad.asShown joinWith "\n  ")

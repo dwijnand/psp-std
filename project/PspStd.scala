@@ -3,8 +3,9 @@ package psp
 import sbt._, Keys._
 
 object PspStd {
-  type SettingOf[A] = Def.Initialize[A]
-  type TaskOf[A]    = Def.Initialize[Task[A]]
+  type SettingOf[A]   = Def.Initialize[A]
+  type TaskOf[A]      = Def.Initialize[Task[A]]
+  type InputTaskOf[A] = Def.Initialize[InputTask[A]]
 
   def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-predef -Yno-adapted-args")
   def ammoniteArgs: Seq[String] = baseArgs ++ wordSeq("-Yno-imports")
@@ -18,8 +19,7 @@ object PspStd {
 
   def testDependencies = Seq(
     "org.scalacheck" %% "scalacheck"      % "1.12.5",
-    "com.novocode"    % "junit-interface" %  "0.11",
-    "org.scala-lang"  % "scala-reflect"   % "2.11.8"
+    "com.novocode"    % "junit-interface" %  "0.11"
   )
 
   // To sync with Maven central, you need to supply the following information:
@@ -52,17 +52,6 @@ object PspStd {
            triggeredMessage :=  Watched.clearWhenTriggered,
                  incOptions ~=  (_ withNameHashing false) // supposedly we can remove this after sbt commit 65f7958898
   )
-
-  def ammoniteTask: TaskOf[Unit] = Def task {
-    val forker    = new Fork("java", Some("psprepl.Main"))
-    val files     = (fullClasspath in Compile in LocalProject("root")).value.files filterNot (_.toString contains "scoverage")
-    val classpath = files mkString ":"
-    val jvmArgs   = Vector(s"-Xbootclasspath/a:$classpath") // boot classpath way faster
-    val forkOpts  = ForkOptions(outputStrategy = Some(StdoutOutput), connectInput = true, runJVMOptions = jvmArgs)
-
-    forker(forkOpts, "-usejavacp" +: ammoniteArgs)
-    ()
-  }
 
   def wordSeq(s: String): Vector[String] = scala.Vector(s split "\\s+" filterNot (_ == ""): _*)
 
