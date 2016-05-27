@@ -4,6 +4,12 @@
 set -o pipefail
 set -e
 GREP="egrep --line-buffered"
+SBT="sbt ++$TRAVIS_SCALA_VERSION -no-colors"
+
+# restore stty settings (echo in particular)
+onRunnerExit() {
+  [[ -f project/scoverage.sbt ]] || git checkout HEAD -- project/scoverage.sbt
+}
 
 run211 () {
   # Look ma I'm testing pipefail.
@@ -11,22 +17,20 @@ run211 () {
     echo "Failing pipe didn't fail!" && exit 1
   fi
 
-  if sbt console <.ci/repl.txt |& grep -q 'Compilation Failed'; then
+  if $SBT console <.ci/repl.txt |& grep -q 'Compilation Failed'; then
     echo "console smoke test encountered error" && exit 1
   fi
 
-  sbt ++$TRAVIS_SCALA_VERSION -batch -no-colors cover
+  $SBT -batch cover
+  $SBT -batch macros/test
   codecov
 }
 run212 () {
   # High fucking tech right here.
   # https://github.com/scoverage/sbt-scoverage/issues/96
-  SED="sed"
-  which gsed >/dev/null && SED="gsed"
-  $SED --in-place 's/.*coverage.*//' ./project/plugins.sbt
-
-  sbt ++$TRAVIS_SCALA_VERSION -batch -no-colors test
-  git checkout HEAD -- ./project/plugins.sbt
+  trap onRunnerExit EXIT
+  rm ./project/scoverage.sbt
+  $SBT -batch test
 }
 runTests () {
   case $TRAVIS_SCALA_VERSION in
