@@ -111,6 +111,6 @@ trait StdConstructors {
   def hashFun[A](xs: View[A])(implicit ez: Eq[A], hz: Hash[A]): HashFun[A] = {
     val buf = bufferMap[Long, View[A]]()
     zipMap(xs)(hz.hash) foreach ((x, h) => buf(h) :+= x)
-    Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))))
+    Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x)))) defaulted (_ => view())
   }
 }

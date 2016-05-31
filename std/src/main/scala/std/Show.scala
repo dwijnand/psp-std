@@ -128,8 +128,8 @@ trait StdShow0 {
   implicit def showView[A: Show]: Show[View[A]]                  = Show(xs => Doc.Group(xs.asDocs).pp)
 }
 trait StdShow1 extends StdShow0 {
-  implicit def showPmap[K: Show, V: Show] = by[Pmap[K, V]](_.pairs mapLive (_.pp))
-  implicit def showPset[A: Show]          = by[Pset[A]](_.basis.asShown.inBraces)
+  implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
+  implicit def showPset[A: Show] : Show[Pset[A]]             = by(_.basis.asShown.inBraces)
 
   implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)
   implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(_.m.asShown.inBrackets)
