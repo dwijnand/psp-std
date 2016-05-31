@@ -22,7 +22,7 @@ final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
   def map[C](f: B => C): Pmap[A, C] = Pmap(keySet, lookup andThen f)
   def pairs: View[A -> B]           = zipped.pairs
   def values: View[B]               = keys map lookup.fn
-  def zipped: Zip[A, B]             = zipMap(keys, lookup.fn)
+  def zipped: Zip[A, B]             = zipMap(keys)(lookup.fn)
 }
 final case class Pset[A](basis: View[A], table: HashFun[A])(implicit hz: Hash[A], ez: Eq[A]) {
   def map[B](f: A => B): Pmap[A, B]               = Pmap(this, Fun(f))
@@ -31,7 +31,7 @@ final case class Pset[A](basis: View[A], table: HashFun[A])(implicit hz: Hash[A]
 }
 
 object Pset {
-  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, xs.hashFun)
+  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, viewHasEqOps(xs).hashFun)
 }
 
 sealed abstract class Fun[-A, +B] { self =>

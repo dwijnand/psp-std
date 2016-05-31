@@ -126,16 +126,19 @@ object all extends AllExplicit with AllImplicit {
 
   /** Views of specific type.
    */
-  implicit class ViewViewOps[A](private val xss: View2D[A]) {
-    def column(vdex: Vdex): View[A]   = xss flatMap (_ sliceIndex vdex)
-    def transpose: View2D[A]          = openIndices map column
-    def flatten: View[A]              = xss flatMap identity
-    def mmap[B](f: A => B): View2D[B] = xss map (_ map f)
+  implicit class RepView2DOps[R, A](xss: RepView2D[R, A]) {
+    type Sliver[R] = RepView[R, A]
+    type MapTo[B]  = RepView2D[R, B]
+
+    def column(vdex: Vdex): Sliver[R] = xss flatMap (_ sliceIndex vdex)
+    def transpose: MapTo[A]           = openIndices.as[R] map column map (_.as) //(x =>  RepView.as(column(x)))
+    def flatten: Sliver[R]            = xss flatMap (x => x)
+    def mmap[B](f: A => B): MapTo[B]  = xss map (_ map f)
 
     def grid_s(implicit z: Show[A]): String = {
-      val width = xss.mmap(_.show.length).flatten.max
+      val width = xss.mmap(_.pp.length).flatten.max
       val fmt   = lformat(width)
-      val yss   = xss mmap (x => fmt(z show x))
+      val yss   = xss mmap (x => fmt(x.pp))
       val lines = yss map (_ joinWith " ")
 
       lines.joinLines mapLines (_.trim)
@@ -159,42 +162,15 @@ object all extends AllExplicit with AllImplicit {
   }
   implicit class ViewHasShowOps[A](private val xs: View[A])(implicit z: Show[A]) {
     def mkDoc(sep: Doc): Doc          = xs.asDocs zreducel (_ ~ sep ~ _)
-    def joinWith(sep: String): String = pp"${mkDoc(sep.lit)}"
+    def joinWith(sep: String): String = mkDoc(sep.lit).pp
     def joinString: String            = joinWith("")
   }
-  implicit class ViewHasEqOps[A](private val xs: View[A])(implicit eqv: Eq[A]) {
-    def contains(x: A): Boolean = xs exists (_ === x)
-    def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
-    def indexOf(x: A): Index    = xs indexWhere (_ === x)
 
-    def hashFun(): HashFun[A] = eqv match {
-      case heq: Hash[A] =>
-        val buf = bufferMap[Long, View[A]]()
-        xs foreach (x => (heq hash x) |> (h => buf(h) = buf(h) :+ x))
-        Fun(buf.result mapValues (_.distinct))
-      case _ =>
-        Fun const xs
-    }
-  }
+  implicit def viewHasEqOps[R, A](xs: ViewMethods[R, A])(implicit eqv: Eq[A]): xs.EqOps = new xs.EqOps
 
   /** Other psp classes.
    */
-  implicit class PspFoldedOps[A](c: Folded[A]) {
-    import Folded._
-    def join(that: Folded[A]): Folded[A]         = Join(c, that)
-    def filter(p: ToBool[A]): Folded[A]          = Filter(c, p)
-    def map[B](f: A => B): Folded[B]             = Mapped(c, f)
-    def flatMap[B](f: A => Folded[B]): Folded[B] = FlatMap(c, f)
 
-    def suspend(): Suspend[A] = new Suspend(c)
-    def resume(f: ToUnit[A]): Unit = c match {
-      case Opaque(mf)     => mf(f)
-      case Join(c1, c2)   => c1 resume f; c2 resume f
-      case Filter(c, p)   => c resume (x => if (p(x)) f(x))
-      case Mapped(c, g)   => c resume (x => g andThen f)
-      case FlatMap(c, g)  => c resume (x => g(x) resume f)
-    }
-  }
   implicit class Pair2DOps[A, B](private val x: Pair2D[A, B]) {
     def transpose: (A->A) -> (B->B) = pair(
       fst(fst(x)) -> fst(snd(x)),
@@ -268,8 +244,9 @@ object all extends AllExplicit with AllImplicit {
     def each: Direct[A]            = elems(x._1, x._2)
   }
   implicit class HasWalksOps[A, R](val repr: R)(implicit z: Walks[A, R]) {
-    def m: RepView[R, A] = RepView(repr)
-    def m2: IdView[A, R] = z walk repr
+    def as[R] : RepView[R, A] = RepView.as[R](Folded each repr suspend)
+    def m: RepView[R, A]      = RepView(repr)
+    def m2: RView[A, R]       = z walk repr
   }
   implicit class HasShowOps[A](private val lhs: A)(implicit z: Show[A]) {
     def doc: Doc     = Doc(lhs)

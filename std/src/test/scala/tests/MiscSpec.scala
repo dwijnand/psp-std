@@ -108,12 +108,11 @@ class StringExtensions extends ScalacheckBundle {
 class GridSpec extends ScalacheckBundle {
   def bundle = "Grid Operations"
 
-  type LongGrid = View2D[Long]
-  implicit def showLongGrid = Show.by[LongGrid](_.grid_s)
+  type LongGrid[R] = RepView2D[R, Long]
 
-  def primePartition: LongGrid               = View2D.mpartition(2L.andUp)(xs => _ % xs.head === 0)
-  def primePartitionGrid(n: Int): LongGrid   = primePartition take n map (_ take n)
-  def primePartitionGrid_t(n: Int): LongGrid = primePartition.transpose take n map (_ take n)
+  def primePartition: LongGrid[_]               = 2L.andUp.m mpartition (xs => _ % xs.head === 0)
+  def primePartitionGrid(n: Int): LongGrid[_]   = primePartition take n map (_ take n)
+  def primePartitionGrid_t(n: Int): LongGrid[_] = primePartition.transpose take n map (_ take n)
 
   def primePartition6 = sm"""
   |2   4   6   8   10  12
@@ -134,7 +133,8 @@ class GridSpec extends ScalacheckBundle {
 
   def props = vec(
     seqShows("[ 2, 4, 6, ... ], [ 3, 9, 15, ... ], [ 5, 25, 35, ... ]", primePartition take 3),
-    showsAs(primePartition6, primePartitionGrid(6)),
-    showsAs(primePartition6_t, primePartitionGrid_t(6))
+    showsAs(primePartition6, primePartitionGrid(6).grid_s),
+    showsAs(primePartition6_t, primePartitionGrid_t(6).grid_s)
   )
 }
+//

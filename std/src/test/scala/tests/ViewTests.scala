@@ -91,7 +91,7 @@ class IntViewTests {
     same(ints.init.last, 9)
     same(ints3.tails, view(view(1, 2, 3), view(2, 3), view(3), view()))
     same(ints3.inits, view(view(1, 2, 3), view(1, 2), view(1), view()))
-    same(ints3.tails.flatten, view(1, 2, 3, 2, 3, 3))
+    same(ints3.tails.flatMap(x => x), view(1, 2, 3, 2, 3, 3))
     same(ints applyIndex _0, 1)
     same(ints applyIndex Nth(2), 2)
     same(ints sliceIndex Nth(2), view(2))

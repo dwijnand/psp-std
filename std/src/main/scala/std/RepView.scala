@@ -8,7 +8,7 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
 
   def view[B](xs: B*): MapTo[B]
   def apply[B](next: Op[A, B]): MapTo[B]
-  protected def concat(xs: This, ys: This): This = RepView.insist("concat")(xs ++ ys)
+  protected def concat(xs: This, ys: This): This = xs ++ ys
 
   def init: This            = this dropRight 1
   def tail: This            = this drop 1
@@ -38,14 +38,15 @@ trait RepView[R, A] extends ViewMethods[R, A] with View[A] with RepView.Derived[
 }
 
 object RepView {
-  type View2D[R, A] = RepView[R, RepView[R, A]]
-
   trait Derived[R, A] {
     self: RepView[R, A] =>
 
     type M[X] = RepView[R, X]
     type V    = M[A]
     type Pred = ToBool[A]
+
+    def mpartition(p: M[A] => ToBool[A]): RepView2D[R, A] =
+      self partition p(self) app ((ls, rs) => RepView.as[R](suspend[RepView[R, A]](ls +: (rs mpartition p) foreach _)))
 
     def zipCross[B, C](l: M[B], r: M[C]): Zip[B, C]                               = new ZipFromCross(l, r)
     def zipProducts[A, B, C](xs: M[A])(implicit z: IsProduct[A, B, C]): Zip[B, C] = new ZipFromProducts(xs)
@@ -59,7 +60,7 @@ object RepView {
       def rights: M[C]   = pairs map snd
     }
     case class ZipFromViews[B, C](lefts: M[B], rights: M[C]) extends Zip[B, C] {
-      def pairs: M[B->C] = RepView.insist("pairs")( Makes iterable this.iterator )
+      def pairs: M[B->C] = RepView as (Makes iterable this.iterator)
     }
     case class ZipFromPairs[B, C](pairs: M[B->C]) extends Zip[B, C] {
       def lefts: M[B]    = pairs map fst
@@ -137,21 +138,21 @@ object RepView {
     def takeToFirst(p: Pred): V         = this span !p app ((x, y) => x ++ (y take 1))
 
     def zipTail: Zip[A, A]      = zipViews(self, tail)
-    def zipIndex: Zip[A, Index] = zipViews(self, insist("zipIndex")(openIndices))
-    def zip[B](ys: View[B]): Zip[A, B] = zipViews(self, insist("zip")(ys))
+    def zipIndex: Zip[A, Index] = zipViews(self, openIndices.as)
+    def zip[B](ys: View[B]): Zip[A, B] = zipViews(self, ys.as)
   }
 
-  def empty[R, A]: RepView[R, A]                                 = insist("empty")(view())
-  def apply[R, A](xs: R)(implicit z: Walks[A, R]): RepView[R, A] = insist("apply")(z walk xs)
-  def insist[R](str: String): ImplHelper[R]                      = new ImplHelper[R](str)
+  def empty[R, A]: RepView[R, A]                                 = as(elems())
+  def apply[R, A](xs: R)(implicit z: Walks[A, R]): RepView[R, A] = new Impl(Op[A]("apply"), Folded each xs suspend)
+  def as[R] : ImplHelper[R]                                      = new ImplHelper[R]("as")
 
   class ImplHelper[R](str: String) {
-    def apply[A](body: View[A]): RepView[R, A] = new Impl[R, A, A](Op[A](str), body)
+    def apply[A](body: Each[A]): RepView[R, A] = new Impl(Op[A](str), body)
   }
 
-  class Impl[R, Z, A](val op: Op[Z, A], val basis: View[Z]) extends RepView[R, A] {
+  class Impl[R, Z, A](val op: Op[Z, A], val basis: Each[Z]) extends RepView[R, A] {
     def apply[B](next: Op[A, B]): MapTo[B] = new Impl(op ~ next, basis)
-    def view[B](xs: B*): RepView[R, B]     = insist(any"view(<${xs.length} elems>)")(exp.view(xs: _*))
+    def view[B](xs: B*): RepView[R, B]     = exp.view(xs: _*).as
 
     def xs: View[A] = op[View](basis)
     def opDoc: Doc  = op[ConstDoc](Doc.empty)
@@ -159,24 +160,14 @@ object RepView {
     // log"$opDoc: ${ Doc(this map (_.any_s) joinWords) }"
     def foreach(f: A => Unit): Unit = xs foreach f
   }
-  implicit class RepView2DOps[R, Z, A](xss: View2D[R, A]) {
-    import all._
 
-    type Sliver   = RepView[R, A]
-    type MapTo[B] = RepView.View2D[R, B]
+  class Live[R, A, B](basis: RepView[R, A], functions: RepView[_, A => B]) extends (Coords => B) {
+    def isEmpty: Bool            = basis.isEmpty || functions.isEmpty
+    def apply(xy: Coords): B     = xy app (rows applyIndex _ applyIndex _)
+    def rows: RepView2D[R, B]    = basis map (r => functions.as[R] map (_ apply r))
+    def columns: RepView2D[R, B] = rows.transpose
 
-    def column(vdex: Vdex): Sliver   = xss flatMap (_ sliceIndex vdex)
-    def transpose: MapTo[A]          = ??? // RepView(openIndices)(???) map column // ??? // RepWithOp(openIndices)(???) map column
-    def flatten: Sliver              = xss flatMap (x => x)
-    def mmap[B](f: A => B): MapTo[B] = xss map (_ map f)
-
-    def grid_s(implicit z: Show[A]): String = {
-      val width = xss.mmap(z show _ length).flatten.max
-      val fmt   = lformat(width)
-      val yss   = xss mmap (x => fmt(z show x))
-      val lines = yss map (_ joinWith " ")
-
-      lines.joinLines mapLines (_.trim)
-    }
+    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.pp.length) max)
+    def lines(implicit z: Show[B]): View[String] = cond(isEmpty, view(), widths zip rows map (lformat(_)(_)))
   }
 }

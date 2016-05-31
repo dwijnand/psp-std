@@ -32,8 +32,8 @@ trait StdBuilders3 extends StdBuilders2 {
   implicit def makesPspView[A]: Makes[A, View[A]]                                                     = Makes.pspView
   implicit def makesScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Makes[K->V, That] = Makes.scalaGenericMap
   implicit def makesScala[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                     = Makes.scalaTraversable
-  implicit def viewsJvmString(xs: String): IdView[Char, String]                                       = xs.m2
-  implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): IdView[A, CC[A]]                         = xs.m2
+  implicit def viewsJvmString(xs: String): RView[Char, String]                                        = xs.m2
+  implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): RView[A, CC[A]]                          = xs.m2
   implicit def viewsScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): RepView[CC[A], A]         = xs.m
 
   implicit def walksPspEach[A, CC[X] <: Each[X]]: Walks[A, CC[A]] = Walks.pspEach
@@ -60,7 +60,7 @@ trait StdBuilders extends StdBuilders3 {
   * instance can also be created explicitly.
   */
 trait StdEmpty0 {
-  implicit def emptyIdView[A, R]: Empty[IdView[A, R]] = Empty(new IdView(vec[A]()))
+  implicit def emptyRView[A, R]: Empty[RView[A, R]] = Empty(View(vec[A]()))
 }
 trait StdEmpty extends StdEmpty0 {
   implicit def emptyFromCanBuild[A, R](implicit z: CanBuild[A, R]): Empty[R] = Empty(z().result)

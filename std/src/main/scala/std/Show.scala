@@ -101,7 +101,7 @@ trait StdShow extends StdShow1 {
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
   implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc]("".lit).pp)
 
-  implicit def showView2DLive[A, B](implicit z: Show[B]): Show[View2D.Live[A, B]] = by(_.lines.joinLines)
+  implicit def showView2DLive[A, B](implicit z: Show[B]): Show[View.Live[A, B]] = by(_.lines.joinLines)
 
   implicit def showSize: Show[Size] = Show[Size] {
     case Precise(size)         => pp"$size"
@@ -128,7 +128,7 @@ trait StdShow0 {
   implicit def showView[A: Show]: Show[View[A]]                  = Show(xs => Doc.Group(xs.asDocs).pp)
 }
 trait StdShow1 extends StdShow0 {
-  implicit def showPmap[K: Show, V: Show] = by[Pmap[K, V]](_.pairs mapLive (_.pp)) //  xs => funGrid(xs.pairs)(_.show))
+  implicit def showPmap[K: Show, V: Show] = by[Pmap[K, V]](_.pairs mapLive (_.pp))
   implicit def showPset[A: Show]          = by[Pset[A]](_.basis.asShown.inBraces)
 
   implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)

@@ -30,7 +30,10 @@ sealed abstract class Consecutive[+A] extends Indexed[A] {
   def in: Interval
   def map[B](g: A => B): CC[B]
   def applyLong(x: Long): A
-  def startLong: Long = in.startLong
+  def isAfter(n: Long): Bool
+
+  def startLong: Long             = in.startLong
+  def containsLong(n: Long): Bool = in contains n
 }
 object Consecutive {
   private val Empty = new Closed[Nothing](Interval.empty, indexOutOfBoundsException)
@@ -48,6 +51,7 @@ object Consecutive {
   final class Open[+A](val in: Interval.Open, f: Long => A) extends Consecutive[A] with Indexed[A] {
     type CC[X] = Open[X]
 
+    def isAfter(n: Long): Bool      = false
     def applyLong(x: Long): A       = f(x)
     def size                        = Infinite
     def apply(vdex: Vdex): A        = f(in(vdex))
@@ -57,8 +61,8 @@ object Consecutive {
   final class Closed[+A](val in: Interval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
 
+    def isAfter(n: Long)             = in.exclusiveEnd <= n
     def applyLong(x: Long): A        = f(x)
-    def containsLong(n: Long): Bool  = in contains n
     def apply(vdex: Vdex): A         = f(in(vdex))
     def map[B](g: A => B): Closed[B] = in map (f andThen g)
     def size: Precise                = in.size

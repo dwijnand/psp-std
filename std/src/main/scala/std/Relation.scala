@@ -78,7 +78,7 @@ trait StdRelation1 extends StdRelation0 {
   implicit def classHashEqOrder: Hash[jClass]           = Relation.Inherited
 
   implicit def viewHash[A: Hash]: Hash[View[A]] = Hash(_.map(_.hash).foldl(0L)(_ + _))
-  implicit def viewEq[A: Eq]: Eq[View[A]]       = Eq((xs, ys) => xs zip ys corresponds (_ === _))
+  implicit def viewEq[A: Eq]: Eq[View[A]]       = Eq(_ zip _ corresponds (_ === _))
   implicit def viewOrder[A: Order]: Order[View[A]] = Order { (xs, ys) =>
     val ls = xs.iterator
     val rs = ys.iterator

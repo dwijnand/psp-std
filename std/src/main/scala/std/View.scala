@@ -58,6 +58,33 @@ trait ViewMethods[R, A] {
   def view[A](xs: A*): MapTo[A]
   protected def concat(xs: This, ys: This): This
 
+  class EqOps(implicit eqv: Eq[A]) {
+    def contains(x: A): Boolean = xs exists (_ === x)
+    def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
+    def indexOf(x: A): Index    = xs indexWhere (_ === x)
+
+    def hashFun(): HashFun[A] = eqv match {
+      case heq: Hash[A] =>
+        val buf = bufferMap[Long, RepView[R, A]]()
+        zipMap(xs)(heq.hash) foreach ((x, h) => buf(h) :+= x)
+        Fun(buf.result mapValues (_.distinct))
+      case _ =>
+        Fun const xs
+    }
+  }
+  def zipTail: Zip[A, A]
+  def zipIndex: Zip[A, Index]
+  def zip[B](ys: View[B]): Zip[A, B]
+
+  def partition(p: ToBool[A]): SplitView[This]
+  def span(p: ToBool[A]): SplitView[This]
+  def splitAround(idx: Vdex): SplitView[This]
+  def splitAt(idx: Vdex): SplitView[This]
+  def splitAfter(len: Precise): SplitView[This]
+  def dropIndex(idx: Vdex): MapTo[A]
+  def takeToFirst(p: ToBool[A]): MapTo[A]
+
+
   def collect[B](pf: A ?=> B): MapTo[B]
   def drop(n: Precise): This
   def dropRight(n: Precise): This
@@ -79,20 +106,21 @@ trait ViewMethods[R, A] {
   def tail: This
   def inits: Map2D[A]
   def tails: Map2D[A]
-  def mapLive[B](columns: (A => B)*): View2D.Live[A, B] = new View2D.Live(xs, view(columns: _*))
 
   def asRefs: MapTo[Ref[A]]
   def asDocs(implicit z: Show[A]): MapTo[Doc]
   def asShown(implicit z: Show[A]): MapTo[String] = this map z.show
 
-  def by(eqv: Eq[A]): ViewHasEqOps[A]              = new ViewHasEqOps[A](xs)(eqv)
-  def byEquals: ViewHasEqOps[A]                    = by(Relation.Inherited)
-  def byRef: ViewHasEqOps[Ref[A]]                  = new ViewHasEqOps[Ref[A]](asRefs)(Relation.Reference)
-  def byShow(implicit z: Show[A]): ViewHasEqOps[A] = by(Eq.by[A](_.pp))
+  def by(eqv: Eq[A]): EqOps              = new EqOps()(eqv)
+  def byEquals: EqOps                    = by(Relation.Inherited)
+  def byRef                              = asRefs by Relation.Reference
+  def byShow(implicit z: Show[A]): EqOps = by(Eq.by[A](_.pp))
 
   def ++(ys: View[A]): This = append(ys)
   def +:(head: A): This     = prepend(view(head))
   def :+(last: A): This     = append(view(last))
+
+  def mapLive[B](columns: (A => B)*): View.Live[A, B] = new View.Live(xs, view(columns: _*))
 
   def grep(re: Regex)(implicit z: Show[A]): This      = this filter (re isMatch _)
   def mapIf(pf: A ?=> A): View[A]                     = this map (x => pf.applyOr(x, x))
@@ -150,20 +178,4 @@ trait ViewMethods[R, A] {
 
   def seq: scSeq[A]          = to[scSeq] // varargs or unapplySeq, usually
   def trav: scTraversable[A] = to[scTraversable] // scala flatMap, usually
-}
-object View2D {
-  type Coords = PairOf[Vdex]
-
-  def mpartition[A](xs: View[A])(p: View[A] => ToBool[A]): View2D[A] =
-    xs partition p(xs) app ((ls, rs) => suspend[View[A]](ls +: mpartition(rs)(p) foreach _))
-
-  class Live[-A, +B](basis: View[A], functions: View[A => B]) extends (Coords => B) {
-    def isEmpty: Bool        = basis.isEmpty || functions.isEmpty
-    def apply(xy: Coords): B = xy app (rows applyIndex _ applyIndex _)
-    def rows: View2D[B]      = basis map (r => functions map (_ apply r))
-    def columns: View2D[B]   = rows.transpose
-
-    def widths(implicit z: Show[B]): View[Int]   = columns map (_ map (_.pp.length) max)
-    def lines(implicit z: Show[B]): View[String] = cond(isEmpty, view(), widths zip rows map (lformat(_)(_)))
-  }
 }

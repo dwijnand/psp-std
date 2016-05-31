@@ -113,26 +113,23 @@ object ll {
     }
     dropped
   }
-  def foreachSlice[A](xs: View[A], range: VdexRange, f: A => Unit): Unit = {
-    if (range.isEmpty) return
-    val start = range.head.indexValue
-    val last  = range.last.indexValue
+  def foreachSlice[A](xs: View[A], range: Consecutive[Vdex], f: A => Unit): Unit = {
     var current = 0L
-
     xs foreach { x =>
-      if (start <= current && current <= last) f(x)
+      if (range containsLong current) f(x)
       current += 1
-      if (current > last) return
+      if (range isAfter current) return
     }
   }
 
-  // Precondition: n > 0
-  def foreachTakeRight[A](xs: View[A], f: A => Unit, n: Precise): Unit =
-    (CBuf[A](n) ++= xs) foreach f
-
-  // Precondition: n > 0
-  def foreachDropRight[A](xs: View[A], f: A => Unit, n: Precise): Unit =
-    foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
+  def foreachTakeRight[A](xs: View[A], f: ToUnit[A], n: Precise): Unit = n match {
+    case Precise(0L) => ()
+    case _           => (CBuf[A](n) ++= xs) foreach f
+  }
+  def foreachDropRight[A](xs: View[A], f: ToUnit[A], n: Precise): Unit = n match {
+    case Precise(0L) => xs foreach f
+    case _           => foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
+  }
 
   /** Circular Buffer. */
   private case class CBuf[A](capacity: Precise) extends Direct[A] {
