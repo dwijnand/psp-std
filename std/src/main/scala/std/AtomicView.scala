@@ -97,8 +97,7 @@ object View {
   }
 
   def sizeOf[A](xs: View[A]): Size = xs match {
-    case IdView(xs: Direct[_])   => xs.size
-    case IdView(_: Indexed[_])   => Infinite
+    case IdView(xs: Indexed[_])  => xs.size
     case Joined(xs, ys)          => sizeOf(xs) + sizeOf(ys)
     case View0(xs, Reverse)      => sizeOf(xs)
     case View2(xs, Mapped(_))    => sizeOf(xs)

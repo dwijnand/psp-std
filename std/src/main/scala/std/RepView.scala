@@ -137,8 +137,8 @@ object RepView {
     def dropIndex(idx: Vdex):V          = splitAround(idx).join
     def takeToFirst(p: Pred): V         = this span !p app ((x, y) => x ++ (y take 1))
 
-    def zipTail: Zip[A, A]      = zipViews(self, tail)
-    def zipIndex: Zip[A, Index] = zipViews(self, openIndices.as)
+    def zipTail: Zip[A, A]             = zipViews(self, tail)
+    def zipIndex: Zip[A, Index]        = zipViews(self, openIndices.as)
     def zip[B](ys: View[B]): Zip[A, B] = zipViews(self, ys.as)
   }
 
