@@ -31,7 +31,7 @@ final case class Pset[A](basis: View[A], table: HashFun[A])(implicit hz: Hash[A]
 }
 
 object Pset {
-  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, viewHasEqOps(xs).hashFun)
+  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, hashFun(xs))
 }
 
 sealed abstract class Fun[-A, +B] { self =>

@@ -62,15 +62,6 @@ trait ViewMethods[R, A] {
     def contains(x: A): Boolean = xs exists (_ === x)
     def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
     def indexOf(x: A): Index    = xs indexWhere (_ === x)
-
-    def hashFun(): HashFun[A] = eqv match {
-      case heq: Hash[A] =>
-        val buf = bufferMap[Long, RepView[R, A]]()
-        zipMap(xs)(heq.hash) foreach ((x, h) => buf(h) :+= x)
-        Fun(buf.result mapValues (_.distinct))
-      case _ =>
-        Fun const xs
-    }
   }
   def zipTail: Zip[A, A]
   def zipIndex: Zip[A, Index]

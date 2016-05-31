@@ -107,4 +107,10 @@ trait StdConstructors {
   def closedIndices: ClosedRange[Index]               = Interval.closed(0, MaxLong) map Index
   def vec[A](xs: A*): Vec[A]                          = elems(xs: _*)
   def view[A](xs: A*): RepView[Vec[A], A]             = vec(xs: _*).m
+
+  def hashFun[A](xs: View[A])(implicit ez: Eq[A], hz: Hash[A]): HashFun[A] = {
+    val buf = bufferMap[Long, View[A]]()
+    zipMap(xs)(hz.hash) foreach ((x, h) => buf(h) :+= x)
+    Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))))
+  }
 }
