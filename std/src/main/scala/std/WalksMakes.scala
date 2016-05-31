@@ -4,7 +4,7 @@ package std
 import all._
 
 trait Walks[A, R] {
-  def walk(xs: R): IdView[A, R]
+  def walk(xs: R): RView[A, R]
   def sizeOf(xs: R): Size
 }
 trait Makes[-A, +R] {
@@ -13,12 +13,8 @@ trait Makes[-A, +R] {
 
 object Walks extends StdWalks {
   def apply[A, R](f: R => Each[A]): Walks[A, R] = new Walks[A, R] {
-    def walk(xs: R): IdView[A, R] = new IdView(f(xs))
-    def sizeOf(xs: R): Size = f(xs) match {
-      case xs: Direct[_] => xs.size
-      case _: Indexed[_] => Infinite
-      case _             => Size.Unknown
-    }
+    def walk(xs: R): RView[A, R] = View(f(xs))
+    def sizeOf(xs: R): Size      = walk(xs).size
   }
 }
 object Makes extends StdMakes {
@@ -108,6 +104,7 @@ trait StdConstructors {
   def suspend[A](mfs: Suspended[A]*): Each[A]         = Folded[A](f => mfs foreach (_ apply f)).suspend
   def make[R]: Makes.Helper[R]                        = new Makes.Helper[R]
   def openIndices: OpenRange[Index]                   = 0.andUp map Index
+  def closedIndices: ClosedRange[Index]               = Interval.closed(0, MaxLong) map Index
   def vec[A](xs: A*): Vec[A]                          = elems(xs: _*)
   def view[A](xs: A*): RepView[Vec[A], A]             = vec(xs: _*).m
 }

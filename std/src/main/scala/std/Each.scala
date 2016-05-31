@@ -27,17 +27,19 @@ trait Direct[+A] extends Any with Indexed[A] {
   def reverse: Direct[A]          = size.getInt |> (e => Makes.fromInts(n => apply(Index(e - 1 - n)), 0, e))
 }
 
-final class Suspend[A](c: Folded[A]) extends Each[A] {
-  def foreach(f: A => Unit): Unit = c resume f
+final class Suspend[+A](c: Folded[A]) extends Each[A] {
+  def foreach(f: A => Unit): Unit = c.foldl(())((xs, x) => f(x))
 }
 
-sealed trait Folded[+A] extends Any
+final class Folded[+A](mf: Suspended[A]) {
+  def suspend(): Suspend[A] = new Suspend(this)
+  def foldl[B](zero: B)(f: (B, A) => B): B = {
+    var z = zero
+    mf(x => z = f(z, x))
+    z
+  }
+}
 object Folded {
-  def apply[A](mf: Suspended[A]): Folded[A] = Opaque(mf)
-
-  final case class Opaque[A](mf: Suspended[A])                    extends Folded[A]
-  final case class Join[A](c1: Folded[A], c2: Folded[A])          extends Folded[A]
-  final case class Filter[A](c: Folded[A], p: ToBool[A])          extends Folded[A]
-  final case class Mapped[A, B](c: Folded[A], g: A => B)          extends Folded[B]
-  final case class FlatMap[A, B](c: Folded[A], g: A => Folded[B]) extends Folded[B]
+  def apply[A](mf: Suspended[A]): Folded[A]                 = new Folded(mf)
+  def each[R, A](xs: R)(implicit z: Walks[A, R]): Folded[A] = new Folded(z walk xs foreach _)
 }

@@ -26,6 +26,7 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   type ClosedRange[+A]      = Consecutive.Closed[A]
   type ConstDoc[X]          = Doc
   type ConstSize[X]         = Size
+  type Coords               = PairOf[Vdex]
   type HashFun[+A]          = Fun[Long, View[A]]
   type Heyting[A]           = spire.Heyting[A]
   type IntRange             = ClosedRange[Int]
@@ -34,7 +35,8 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   type Renderer             = Show[Doc]
   type SizeRange            = ClosedRange[Precise]
   type VdexRange            = ClosedRange[Vdex]
-  type View2D[+A]           = View[View[A]]
+  type RepView2D[R, A]      = RepView[R, RepView[R, A]]
+  type View2D[A]            = View[View[A]]
   type Vec[A]               = Direct[A]
 
   def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
@@ -47,5 +49,5 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   def zipProducts[R, A, B](xs: View[R])(implicit z: IsProduct[R, A, B]): Zip[A, B] = new Zip.ZipProducts(xs)
   def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                  = new Zip.ZipPairs(xs)
   def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                            = new Zip.ZipViews(l, r)
-  def zipMap[A, B](l: View[A], f: A => B): Zip[A, B]                               = new Zip.ZipMap(l, f)
+  def zipMap[A, B](l: View[A])(f: A => B): Zip[A, B]                               = new Zip.ZipMap(l, f)
 }

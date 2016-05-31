@@ -8,10 +8,10 @@ trait AllImplicit extends AllImplicit0 with StdEmpty with StdBuilders with StdAl
   implicit def productizeScalaProduct[A, B]: Productize[A -> B, A, B]          = Productize(pair, fst, snd)
 
   // Conversions.
-  implicit def longToPrecise(x: Long): Precise                     = Size(x)
-  implicit def hasShowToDoc[A](x: A)(implicit z: Show[A]): Doc     = Doc(x)
-  implicit def stringToPstring(x: String): Pstring                 = new Pstring(x)
-  implicit def apiViewToIdView[A](xs: View[A]): IdView[A, View[A]] = new IdView(xs)
+  implicit def longToPrecise(x: Long): Precise                   = Size(x)
+  implicit def hasShowToDoc[A](x: A)(implicit z: Show[A]): Doc   = Doc(x)
+  implicit def stringToPstring(x: String): Pstring               = new Pstring(x)
+  implicit def apiViewToRView[A](xs: View[A]): RView[A, View[A]] = View(xs)
 }
 
 trait AllImplicit0 {
