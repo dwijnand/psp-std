@@ -43,9 +43,9 @@ class ViewOps[A, R](val xs: View[A]) extends ViewMethods[R, A] {
   def dropIndex(idx: Vdex): View[A]      = splitAround(idx).join
   def takeToFirst(p: ToBool[A]): View[A] = this span !p app ((x, y) => x ++ (y take 1))
 
-  def zipTail: Zip[A, A]                  = zipViews(xs, xs.tail) // like "xs sliding 2" but better
-  def zipIndex: Zip[A, Index]             = zipViews(xs, openIndices)
-  def zip[B](ys: View[B]): Zip[A, B]      = zipViews[A, B](xs, ys)
+  def zipTail: Zip[A, A]             = zipViews(xs, xs.tail) // like "xs sliding 2" but better
+  def zipIndex: Zip[A, Index]        = zipViews(xs, openIndices)
+  def zip[B](ys: View[B]): Zip[A, B] = zipViews[A, B](xs, ys)
 }
 
 trait ViewMethods[R, A] {
@@ -61,16 +61,7 @@ trait ViewMethods[R, A] {
   class EqOps(implicit eqv: Eq[A]) {
     def contains(x: A): Boolean = xs exists (_ === x)
     def distinct: View[A]       = xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x))
-    def indexOf(x: A): Index    = xs indexWhere (_ === x)
-
-    def hashFun(): HashFun[A] = eqv match {
-      case heq: Hash[A] =>
-        val buf = bufferMap[Long, RepView[R, A]]()
-        zipMap(xs)(heq.hash) foreach ((x, h) => buf(h) :+= x)
-        Fun(buf.result mapValues (_.distinct))
-      case _ =>
-        Fun const xs
-    }
+    def indexOf(x: A): Vdex     = xs indexWhere (_ === x)
   }
   def zipTail: Zip[A, A]
   def zipIndex: Zip[A, Index]
@@ -149,7 +140,7 @@ trait ViewMethods[R, A] {
   def exists(p: ToBool[A]): Boolean                   = foldl(false)((res, x) => cond(p(x), return true, res))
   def find(p: ToBool[A]): Option[A]                   = foldl(none[A])((res, x) => cond(p(x), return some(x), res))
   def forall(p: ToBool[A]): Boolean                   = !exists(!p)
-  def indexWhere(p: ToBool[A]): Index                 = xs.zipIndex first { case (x, i) if p(x) => i }
+  def indexWhere(p: ToBool[A]): Vdex                  = xs.zipIndex first { case (x, i) if p(x) => i }
   def isEmpty: Boolean                                = xs.size.isZero || !exists(ConstantTrue)
   def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
   def zlast(implicit z: Empty[A]): A                  = zcond(!isEmpty, last)

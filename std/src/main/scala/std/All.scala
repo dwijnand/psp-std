@@ -90,18 +90,19 @@ object all extends AllExplicit with AllImplicit {
     def to(end: Int): IntRange    = self.toLong to end.toLong map (_.toInt)
     def until(end: Int): IntRange = self.toLong until end.toLong map (_.toInt)
   }
-  implicit class PspLongOps(private val self: Long) {
-    def andUp: OpenRange[Long] = Interval open self map identity
-    def index: Index           = Index(self)
-    def nth: Nth               = Nth(self)
-    def size: Precise          = Precise(self)
+  implicit class PspLongOps(private val n: Long) {
+    def andUp: OpenRange[Long] = Interval(n) map identity
+    def index: Index           = Index(n)
+    def nth: Nth               = Nth(n)
+    def size: Precise          = Precise(n)
 
-    def sizeTo(end: Long): SizeRange      = Interval.to(self, end) map Precise
-    def indexUntil(end: Long): VdexRange  = Interval.until(self, end) map Index
-    def nthTo(end: Long): VdexRange       = Interval.to(self, end) map Nth
-    def takeNext(len: Precise): LongRange = Interval.closed(self, len) map identity
-    def to(end: Long): LongRange          = Interval.to(self, end) map identity
-    def until(end: Long): LongRange       = Interval.until(self, end) map identity
+    def takeNext(len: Precise): LongRange = Interval(n, len) map identity
+    def to(end: Long): LongRange          = takeNext(Size(end - n + 1))
+    def until(end: Long): LongRange       = takeNext(Size(end - n))
+
+    def sizeTo(end: Long): SizeRange              = to(end) map Precise
+    def indexUntil(end: Long): ClosedRange[Index] = until(end) map Index
+    def nthTo(end: Long): ClosedRange[Nth]        = to(end) map Nth
   }
   implicit class PspArrayByteOps(private val xs: Array[Byte]) {
     def utf8Chars: Array[Char] = scala.io.Codec fromUTF8 xs

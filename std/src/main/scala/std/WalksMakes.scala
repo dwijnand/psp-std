@@ -18,11 +18,11 @@ object Walks extends StdWalks {
   }
 }
 object Makes extends StdMakes {
-  class Const[A](elem: A) extends Indexed[A] {
+  class Const[A](elem: A) extends Generated[A] {
     def apply(idx: Vdex): A         = elem
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
-  class Continually[A](elem: => A) extends Indexed[A] {
+  class Continually[A](elem: => A) extends Generated[A] {
     def apply(idx: Vdex): A         = elem
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
@@ -47,8 +47,8 @@ object Makes extends StdMakes {
   def fromInts[A](f: Int => A, start: Int, end: Int): Direct[A]               = new FromInts(f, start, end)
   def fromArgs[A](xs: A*): Direct[A]                                          = fromInts(xs.apply, 0, xs.length)
 
-  def const[A](elem: A): Indexed[A]                = new Const(elem)
-  def continually[A](expr: => A): Indexed[A]       = new Continually(expr)
+  def const[A](elem: A): Generated[A]              = new Const(elem)
+  def continually[A](expr: => A): Generated[A]     = new Continually(expr)
   def iterable[A](expr: => scIterator[A]): Each[A] = new Iterable(() => expr)
 }
 
@@ -104,7 +104,13 @@ trait StdConstructors {
   def suspend[A](mfs: Suspended[A]*): Each[A]         = Folded[A](f => mfs foreach (_ apply f)).suspend
   def make[R]: Makes.Helper[R]                        = new Makes.Helper[R]
   def openIndices: OpenRange[Index]                   = 0.andUp map Index
-  def closedIndices: ClosedRange[Index]               = Interval.closed(0, MaxLong) map Index
+  def closedIndices: ClosedRange[Index]               = 0 indexUntil MaxLong
   def vec[A](xs: A*): Vec[A]                          = elems(xs: _*)
   def view[A](xs: A*): RepView[Vec[A], A]             = vec(xs: _*).m
+
+  def hashFun[A](xs: View[A])(implicit ez: Eq[A], hz: Hash[A]): HashFun[A] = {
+    val buf = bufferMap[Long, View[A]]()
+    zipMap(xs)(hz.hash) foreach ((x, h) => buf(h) :+= x)
+    Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x)))) defaulted (_ => view())
+  }
 }

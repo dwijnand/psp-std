@@ -128,7 +128,7 @@ object Show extends UnaryClassCompanion[Show, String] {
   def unwrap[A](r: Show[A]): ToString[A] = r show _
 
   final class Impl[-A](val f: ToString[A]) extends AnyVal with Show[A] {
-    def show(x: A) = f(x)
+    def show(x: A): String = f(x)
   }
 }
 object Empty {

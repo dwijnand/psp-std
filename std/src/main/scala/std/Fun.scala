@@ -31,14 +31,14 @@ final case class Pset[A](basis: View[A], table: HashFun[A])(implicit hz: Hash[A]
 }
 
 object Pset {
-  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, viewHasEqOps(xs).hashFun)
+  def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, hashFun(xs))
 }
 
 sealed abstract class Fun[-A, +B] { self =>
   final def apply(x: A): B = this match {
     case Opaque(g)       => g(x)
     case OrElse(u1, u2)  => if (u1 contains x) u1(x) else u2(x)
-    case Defaulted(g, u) => if (u contains x) u(x) else g(x)
+    case Defaulted(g, u) => if (u contains x) Try(u(x)) | g(x) else g(x)
     case Filtered(_, u)  => u(x) // filter is checked at contains
     case AndThen(u1, u2) => u2(u1(x))
     case FiniteMap(pm)   => pm(x)

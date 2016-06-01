@@ -17,7 +17,11 @@ trait Foreach[+A] extends Any {
 trait Each[+A] extends Any with Foreach[A]
 
 trait Indexed[+A] extends Any with Each[A] {
+  def size: Atomic
   def apply(idx: Vdex): A
+}
+trait Generated[+A] extends Any with Indexed[A] {
+  def size = Infinite
 }
 trait Direct[+A] extends Any with Indexed[A] {
   def size: Precise

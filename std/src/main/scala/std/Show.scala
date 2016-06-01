@@ -96,7 +96,7 @@ trait StdShow extends StdShow1 {
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
-  implicit def showVdex: Show[Vdex]                     = by(_.indexValue)
+  implicit def showIndex: Show[Index]                   = by(_.indexValue)
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
   implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc]("".lit).pp)
@@ -126,10 +126,11 @@ trait StdShow extends StdShow1 {
 trait StdShow0 {
   implicit def showPrimitive[A >: Primitive <: AnyVal] : Show[A] = Show.Inherited
   implicit def showView[A: Show]: Show[View[A]]                  = Show(xs => Doc.Group(xs.asDocs).pp)
+  implicit def showNth: Show[Nth]                                = by(_.nthValue)
 }
 trait StdShow1 extends StdShow0 {
-  implicit def showPmap[K: Show, V: Show] = by[Pmap[K, V]](_.pairs mapLive (_.pp))
-  implicit def showPset[A: Show]          = by[Pset[A]](_.basis.asShown.inBraces)
+  implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
+  implicit def showPset[A: Show] : Show[Pset[A]]             = by(_.basis.asShown.inBraces)
 
   implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)
   implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(_.m.asShown.inBrackets)

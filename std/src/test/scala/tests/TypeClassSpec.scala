@@ -55,7 +55,7 @@ class ViewBasic extends ScalacheckBundle {
   def pvector: Vec[Int]  = elems(1, 2, 3)
   def parray: Array[Int] = elems(1, 2, 3)
   def pseq: Each[Int]    = elems(1, 2, 3)
-  def punfold: Interval  = Interval open 1
+  def punfold: Interval  = Interval(1)
 
   case class Bippy(to_s: String, i: Int) extends ShowSelf
 

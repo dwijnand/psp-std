@@ -27,18 +27,17 @@ sealed abstract class Interval extends (Vdex => Long) {
   def apply(vdex: Vdex): Long                  = checkValid(vdex)(startLong + _.indexValue)
   def slice(start: Vdex, len: Precise): Closed = checkValid(start)(this drop _.excluding take len)
   def slice(r: VdexRange): Closed              = zcond(!r.isEmpty, slice(r.head, r.size))
-  // def view: View[Long]                         = Each(foreach)
 }
 object Interval {
   val Empty = new Closed(0L, _0)
 
+  def apply(start: Long): Open                   = Open(start)
+  def apply(start: Long, size: Precise): Closed  = if (size.isZero) empty else Closed(start, size)
   def unapply(r: Interval): Some[Long -> Atomic] = Some(r.startLong -> r.size)
 
-  def empty: Closed                                  = Empty
-  def closed(startLong: Long, size: Precise): Closed = if (size.isZero) empty else Closed(startLong, size)
-  def until(start: Long, end: Long): Closed          = closed(start, Size(end - start))
-  def to(start: Long, end: Long): Closed             = closed(start, Size(end - start + 1))
-  def open(start: Long): Open                        = Open(start)
+  def empty: Closed                         = Empty
+  def until(start: Long, end: Long): Closed = Interval(start, Size(end - start))
+  def to(start: Long, end: Long): Closed    = Interval(start, Size(end - start + 1))
 
   final case class Closed private[Interval](startLong: Long, size: Precise) extends Interval {
     type This = Closed
@@ -50,14 +49,14 @@ object Interval {
     def lastLong: Long     = exclusiveEnd - 1
 
     def contains(n: Long): Bool              = startLong <= n && n <= lastLong
-    def drop(n: Precise): Closed             = closed(startLong + n.getLong, size - n)
-    def dropRight(n: Precise): Closed        = closed(startLong, size - n)
+    def drop(n: Precise): Closed             = Interval(startLong + n.getLong, size - n)
+    def dropRight(n: Precise): Closed        = Interval(startLong, size - n)
     def foreach(f: Long => Unit): Unit       = ll.foreachLong(startLong, lastLong, f)
     def isEmpty: Bool                        = size.isZero
     def isPoint: Bool                        = size.getLong === 1L
     def map[A](f: Long => A): ClosedRange[A] = Consecutive(this, f)
-    def take(n: Precise): Closed             = closed(startLong, min(size, n))
-    def takeRight(n: Precise): Closed        = min(size, n) |> (s => closed(exclusiveEnd - s.getLong, s))
+    def take(n: Precise): Closed             = Interval(startLong, min(size, n))
+    def takeRight(n: Precise): Closed        = min(size, n) |> (s => Interval(exclusiveEnd - s.getLong, s))
   }
 
   final case class Open private[Interval](startLong: Long) extends Interval {
@@ -68,12 +67,12 @@ object Interval {
 
     def lastLong: Long                     = MaxLong
     def contains(n: Long): Bool            = startLong <= n
-    def drop(n: Precise): Open             = open(startLong + n.getLong)
+    def drop(n: Precise): Open             = this >> n
     def dropRight(n: Precise): Open        = this
     def foreach(f: Long => Unit): Unit     = ll.foreachLong(startLong, MaxLong, f)
     def map[A](f: Long => A): OpenRange[A] = Consecutive(this, f)
     def isEmpty: Bool                      = false
     def size                               = Infinite
-    def take(n: Precise): Closed           = closed(startLong, n)
+    def take(n: Precise): Closed           = Interval(startLong, n)
   }
 }

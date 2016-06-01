@@ -61,6 +61,7 @@ trait StdBuilders extends StdBuilders3 {
   */
 trait StdEmpty0 {
   implicit def emptyRView[A, R]: Empty[RView[A, R]] = Empty(View(vec[A]()))
+  implicit lazy val emptyNth: Empty.Const[Nth]      = Empty const Nth.invalid
 }
 trait StdEmpty extends StdEmpty0 {
   implicit def emptyFromCanBuild[A, R](implicit z: CanBuild[A, R]): Empty[R] = Empty(z().result)
@@ -78,7 +79,6 @@ trait StdEmpty extends StdEmpty0 {
   implicit lazy val emptyFile: Empty.Const[jFile]               = Empty const jFile("")
   implicit lazy val emptyIndex: Empty.Const[Index]              = Empty const Index.invalid
   implicit lazy val emptyInterval: Empty.Const[Interval.Closed] = Empty const Interval.empty
-  implicit lazy val emptyNth: Empty.Const[Nth]                  = Empty const Nth.invalid
   implicit lazy val emptyOption: Empty.Const[Option[Nothing]]   = Empty const None
   implicit lazy val emptyPath: Empty.Const[jPath]               = Empty const jPath("")
   implicit lazy val emptyPredicate: Empty[ToBool[Any]]          = Empty const ConstantFalse
