@@ -108,11 +108,9 @@ class StringExtensions extends ScalacheckBundle {
 class GridSpec extends ScalacheckBundle {
   def bundle = "Grid Operations"
 
-  type LongGrid[R] = RepView2D[R, Long]
-
-  def primePartition: LongGrid[_]               = 2L.andUp.m mpartition (xs => _ % xs.head === 0)
-  def primePartitionGrid(n: Int): LongGrid[_]   = primePartition take n map (_ take n)
-  def primePartitionGrid_t(n: Int): LongGrid[_] = primePartition.transpose take n map (_ take n)
+  def primePartition               = 2L.andUp mpartition { case HeadTailView(n, _) => _ % n === 0 }
+  def primePartitionGrid(n: Int)   = primePartition take n map (_ take n)
+  def primePartitionGrid_t(n: Int) = primePartition.transpose take n map (_ take n)
 
   def primePartition6 = sm"""
   |2   4   6   8   10  12
@@ -137,4 +135,3 @@ class GridSpec extends ScalacheckBundle {
     showsAs(primePartition6_t, primePartitionGrid_t(6).grid_s)
   )
 }
-//

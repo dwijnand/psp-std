@@ -13,6 +13,7 @@ lazy val std = project.setup settings (
                 testOptions +=  Tests.Argument(TestFrameworks.JUnit, "-s"),
   parallelExecution in Test :=  false,
         logBuffered in Test :=  false,
+        // libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         libraryDependencies ++= testDependencies map (_ % "test")
 )
 

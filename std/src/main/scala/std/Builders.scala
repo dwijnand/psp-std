@@ -26,15 +26,16 @@ trait StdBuilders3 extends StdBuilders2 {
   implicit def makesJavaMap[K, V]: Makes[K->V, jMap[K, V]]                                            = Makes.javaMap
   implicit def makesJvmArray[A: CTag]: Makes[A, Array[A]]                                             = Makes.jvmArray
   implicit def makesJvmString: Makes[Char, String]                                                    = Makes.jvmString
+  implicit def makesPspStream[A]: Makes[A, Pstream[A]]                                                = Makes.pspStream
   implicit def makesPspList[A]: Makes[A, Plist[A]]                                                    = Makes.pspList
   implicit def makesPspMap[K : Hash : Eq, V]: Makes[K->V, Pmap[K, V]]                                 = Makes.pspMap
   implicit def makesPspSet[A : Hash : Eq]: Makes[A, Pset[A]]                                          = Makes.pspSet
   implicit def makesPspView[A]: Makes[A, View[A]]                                                     = Makes.pspView
   implicit def makesScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Makes[K->V, That] = Makes.scalaGenericMap
   implicit def makesScala[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                     = Makes.scalaTraversable
-  implicit def viewsJvmString(xs: String): RView[Char, String]                                        = xs.m2
-  implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): RView[A, CC[A]]                          = xs.m2
-  implicit def viewsScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): RepView[CC[A], A]         = xs.m
+  implicit def viewsJvmString(xs: String): RView[Char, String]                                        = xs.m
+  implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): RView[A, CC[A]]                          = xs.m
+  implicit def viewsScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): RView[A, CC[A]]           = xs.m
 
   implicit def walksPspEach[A, CC[X] <: Each[X]]: Walks[A, CC[A]] = Walks.pspEach
   implicit def walksPspView[A, CC[X] <: View[X]]: Walks[A, CC[A]] = Walks.pspView
@@ -60,19 +61,18 @@ trait StdBuilders extends StdBuilders3 {
   * instance can also be created explicitly.
   */
 trait StdEmpty0 {
-  implicit def emptyRView[A, R]: Empty[RView[A, R]] = Empty(View(vec[A]()))
-  implicit lazy val emptyNth: Empty.Const[Nth]      = Empty const Nth.invalid
+  implicit def emptyView[A, R]: Empty[RView[A, R]]                     = Empty(View(vec[A]()))
+  implicit def emptyFromMakes[A, R](implicit z: Makes[A, R]): Empty[R] = Empty(elems())
+  implicit lazy val emptyNth: Empty.Const[Nth]                         = Empty const Nth.invalid
 }
 trait StdEmpty extends StdEmpty0 {
   implicit def emptyFromCanBuild[A, R](implicit z: CanBuild[A, R]): Empty[R] = Empty(z().result)
   implicit def emptyFromHeyting[A: Heyting]: Empty[A]                        = Empty(?[Heyting[A]].zero)
-  implicit def emptyFromMakes[A, R](implicit z: Makes[A, R]): Empty[R]       = Empty(elems())
   implicit def emptyJavaList[A]: Empty[jList[A]]                             = Empty(new jArrayList[A])
   implicit def emptyJavaMap[A, B]: Empty[jMap[A, B]]                         = Empty(new jHashMap[A, B])
   implicit def emptyJavaSet[A]: Empty[jSet[A]]                               = Empty(new jHashSet[A])
   implicit def emptyOptional[A]: Empty[jOptional[A]]                         = Empty(java.util.Optional.empty[A]())
   implicit def emptyPair[A: Empty, B: Empty]: Empty[(A, B)]                  = Empty(pair(emptyValue[A], emptyValue[B]))
-  implicit def emptyRepView[R, A]: Empty[RepView[R, A]]                      = Empty(RepView.empty[R, A])
   implicit def emptyTriple[A: Empty, B: Empty, C: Empty]: Empty[(A, B, C)]   = Empty(triple(emptyValue[A], emptyValue[B], emptyValue[C]))
 
   implicit lazy val emptyDoc: Empty.Const[Doc]                  = Empty const Doc.empty
