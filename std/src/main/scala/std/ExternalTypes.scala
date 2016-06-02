@@ -107,6 +107,7 @@ trait ExternalTypes {
   type Comparator[-A]         = ju.Comparator[A @uV]
   type InputStream            = jio.InputStream
   type OutputStream           = jio.OutputStream
+  type PrintStream            = jio.PrintStream
   type String                 = jl.String
   type StringBuilder          = jl.StringBuilder
   type Thread                 = jl.Thread

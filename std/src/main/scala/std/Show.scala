@@ -4,6 +4,17 @@ package std
 import all._, Show.by
 import StringContext.processEscapes
 
+abstract class Printing {
+  def pstream: PrintStream
+  def println[A](x: A)(implicit z: Show[A]): Unit = pstream println (z show x)
+}
+object out extends Printing {
+  def pstream = scala.Console.out
+}
+object err extends Printing {
+  def pstream = scala.Console.err
+}
+
 /** When a Show type class is more trouble than it's worth.
   *  Not overriding toString here to leave open the possibility of
   *  using a synthetic toString, e.g. of case classes.
@@ -69,7 +80,7 @@ trait Interpolators {
   /** Having args of type Doc* forces all the interpolated values
     * be of a type which is implicitly convertible to Doc.
     */
-  def log(args: Doc*): Unit   = println(pp(args: _*))
+  def log(args: Doc*): Unit   = err println pp(args: _*)
   def pp(args: Doc*): String  = Pconfig.renderer show doc(args: _*)
   def fp(args: Doc*): String  = Pconfig.renderer show fdoc(args: _*)
   def sm(args: Doc*): String  = Pconfig.renderer show sdoc(args: _*)

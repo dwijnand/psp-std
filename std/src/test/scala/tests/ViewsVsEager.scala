@@ -67,9 +67,9 @@ class OperationCounts extends ScalacheckBundle {
 
     private def maybeShow(): Unit = {
       if (!isPass)
-        println(fail_s)
+        err.println(fail_s)
       else if (isTestDebug || displaysRemaining > 0)
-        sideEffect(println(pass_s), displaysRemaining -= 1)
+        sideEffect(err.println(pass_s), displaysRemaining -= 1)
     }
   }
 
