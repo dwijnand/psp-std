@@ -35,19 +35,16 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   type Renderer             = Show[Doc]
   type SizeRange            = ClosedRange[Precise]
   type VdexRange            = ClosedRange[Vdex]
-  type RepView2D[R, A]      = RepView[R, RepView[R, A]]
-  type View2D[A]            = View[View[A]]
   type Vec[A]               = Direct[A]
+
+  type SplitView[A, R]   = ViewClasses[A, R]#Split
+  type LiveView[A, B, R] = ViewClasses[A, R]#Live[B]
+  type View2D[A]         = View[View[A]] //ViewClasses[A, R]#Map2D[View[A]]
 
   def classFilter[A: CTag]: Any ?=> A              = Fun.partial(isInstance[A], cast[A])
   def classNameOf(x: Any): String                  = JvmName asScala x.getClass short
   def lformat[A](n: Int): A => String              = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)
   def println[A: Show](x: A): Unit                 = scala.Console.out println render(x)
+  def dump(xs: Any*): Unit                         = scala.Console.err println (xs mkString ", ")
   def render[A](x: A)(implicit z: Show[A]): String = z show x
-
-  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                            = new Zip.ZipCross(l, r)
-  def zipProducts[R, A, B](xs: View[R])(implicit z: IsProduct[R, A, B]): Zip[A, B] = new Zip.ZipProducts(xs)
-  def zipPairs[A, B](xs: View[A -> B]): Zip[A, B]                                  = new Zip.ZipPairs(xs)
-  def zipViews[A, B](l: View[A], r: View[B]): Zip[A, B]                            = new Zip.ZipViews(l, r)
-  def zipMap[A, B](l: View[A])(f: A => B): Zip[A, B]                               = new Zip.ZipMap(l, f)
 }

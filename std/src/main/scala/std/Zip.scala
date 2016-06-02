@@ -3,64 +3,28 @@ package std
 
 import all._
 
-/** When a View is split into two disjoint views.
-  * Notably, that's span, partition, and splitAt.
-  */
-final case class Split[A](leftView: View[A], rightView: View[A]) extends SplitView[View[A]] {
-  type V = View[A]
-
-  type This = Split[A]
-  def remake(l: V, r: V): This = Split(l, r)
-
-  def pairs: View[PairOf[A]] = zip.pairs
-  def collate: V             = pairs flatMap (_.each)
-  def join: V                = app(_ ++ _)
-  def cross: Zip[A, A]       = app(zipCross)
-  def zip: Zip[A, A]         = app(zipViews)
-}
-
-trait SplitView[V] {
-  type This <: SplitView[V]
-
-  def leftView: V
-  def rightView: V
-  def remake(l: V, r: V): This
-
-  def views: PairOf[V]                 = leftView -> rightView
-  def appLeft[B](f: V => B): B         = f(leftView)
-  def appRight[B](f: V => B): B        = f(rightView)
-  def app[B](f: (V, V) => B): B        = views app f
-  def mapBoth[B](f: V => B): PairOf[B] = views map2 f
-  def mapEach(f: ToSelf[V]): This      = remake(f(leftView), f(rightView))
-  def mapLeft(f: ToSelf[V]): This      = remake(f(leftView), rightView)
-  def mapRight(f: ToSelf[V]): This     = remake(leftView, f(rightView))
-}
-object SplitView {
-  def unapply[R](x: SplitView[R]) = some(x.leftView -> x.rightView)
-}
-
 /** When a View presents as a sequence of pairs.
-  *  There may be two underlying views being zipped, or one view holding pairs.
+  * There may be two underlying views being zipped, or one view holding pairs.
   */
 trait Zip[+A1, +A2] extends Any {
   def lefts: View[A1]       // the left element of each pair. Moral equivalent of pairs map fst.
   def rights: View[A2]      // the right element of each pair. Moral equivalent of pairs map snd.
   def pairs: View[A1 -> A2] // the pairs. Moral equivalent of lefts zip rights.
 }
-trait ZipFromViews[+A1, +A2] extends Any with Zip[A1, A2] {
-  def pairs: View[A1 -> A2] = this map (_ -> _)
+final class ZipPairs[+A, +B](ps: => View[A->B]) extends Zip[A, B] {
+  def pairs: View[A->B] = ps
+  def lefts: View[A]    = pairs map fst
+  def rights: View[B]   = pairs map snd
 }
-trait ZipFromPairs[+A1, +A2] extends Any with Zip[A1, A2] {
-  def lefts: View[A1]  = pairs map fst
-  def rights: View[A2] = pairs map snd
+final class ZipViews[+A, +B](ls: => View[A], rs: => View[B]) extends Zip[A, B] {
+  def pairs: View[A->B] = this map (_ -> _)
+  def lefts: View[A]    = ls
+  def rights: View[B]   = rs
 }
 
 object Zip {
-  /** A Zip has similar operations to a View, but with the benefit of
-    *  being aware each element has a left and a right.
-    */
-  implicit class ZipOps[A1, A2](private val x: Zip[A1, A2]) extends AnyVal {
-    import x.{ lefts, rights, pairs }
+  implicit class ZipOps[A1, A2](private val zip: Zip[A1, A2]) extends AnyVal {
+    import zip._
 
     type MapTo[R] = (A1, A2) => R
     type Both     = A1 -> A2
@@ -80,7 +44,7 @@ object Zip {
       lefts.iterator |> (it => rights foreach (y => cond(it.hasNext, f(it.next, y), return )))
 
     def eqBy[B: Eq](f: A1 => B, g: A2 => B): Zip[A1, A2] =
-      x filter ((a, b) => f(a) === g(b))
+      filter((a, b) => f(a) === g(b))
 
     def corresponds(p: PredBoth): Bool         = iterator |> (it => it.forall(_ app p) && !it.hasMore)
     def drop(n: Precise): This                 = zipProducts(pairs drop n)
@@ -100,17 +64,6 @@ object Zip {
 
     def force[R](implicit z: Makes[Both, R]): R = z make pairs
   }
-
-  final case class ZipProducts[A, A1, A2](xs: View[A])(implicit z: IsProduct[A, A1, A2]) extends ZipFromPairs[A1, A2] {
-    def pairs = xs map z.split
-  }
-  final case class ZipPairs[A1, A2](pairs: View[A1 -> A2]) extends ZipFromPairs[A1, A2]
-
-  final case class ZipCross[A1, A2](lv: View[A1], rv: View[A2]) extends ZipFromPairs[A1, A2] {
-    def pairs = for (x <- lv; y <- rv) yield x -> y
-  }
-  final case class ZipViews[A1, A2](lefts: View[A1], rights: View[A2]) extends ZipFromViews[A1, A2]
-  final case class ZipMap[A1, A2](lefts: View[A1], f: A1 => A2) extends ZipFromViews[A1, A2] {
-    def rights = lefts map f
-  }
 }
+
+

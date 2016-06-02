@@ -84,6 +84,7 @@ trait StdMakes {
   def pspList[A]: Makes[A, Plist[A]]                    = Makes(xs => ll.foldRight[A, Plist[A]](xs, Pnil(), _ :: _))
   def pspMap[K : Hash : Eq, V]: Makes[K->V, Pmap[K, V]] = pspDirect[K->V] map (kvs => kvs.m.toMap[sciMap](scalaMap) |> (f => Pmap(kvs map fst toPset, Fun(f))))
   def pspSet[A : Hash : Eq]: Makes[A, Pset[A]]          = Makes(Pset apply _)
+  def pspStream[A]: Makes[A, Pstream[A]]                = Makes(_ match { case HeadTailView(hd, tl) => new Pscons(hd, tl.toStream) ; case _ => Psnil() })
   def pspDirect[A]: Makes[A, Direct[A]]                 = scalaVector[A] map (xs => Makes.fromInts(xs.apply, 0, xs.length))
   def pspView[A]: Makes[A, View[A]]                     = Makes(identity)
   def scalaList[A]: Makes[A, sciList[A]]                = scalaTraversable
@@ -106,11 +107,17 @@ trait StdConstructors {
   def openIndices: OpenRange[Index]                   = 0.andUp map Index
   def closedIndices: ClosedRange[Index]               = 0 indexUntil MaxLong
   def vec[A](xs: A*): Vec[A]                          = elems(xs: _*)
-  def view[A](xs: A*): RepView[Vec[A], A]             = vec(xs: _*).m
+  def view[A](xs: A*): View[A]                        = xs.m
 
   def hashFun[A](xs: View[A])(implicit ez: Eq[A], hz: Hash[A]): HashFun[A] = {
     val buf = bufferMap[Long, View[A]]()
     zipMap(xs)(hz.hash) foreach ((x, h) => buf(h) :+= x)
     Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x)))) defaulted (_ => view())
   }
+
+  def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                            = zipPairs( for (x <- l; y <- r) yield x -> y )
+  def zipProducts[R, A, B](xs: View[R])(implicit z: IsProduct[R, A, B]): Zip[A, B] = zipPairs(xs map z.split)
+  def zipMap[A, B](ls: => View[A])(f: A => B): Zip[A, B]                           = zipViews(ls, ls map f)
+  def zipPairs[A, B](ps: => View[A -> B]): Zip[A, B]                               = new ZipPairs(ps)
+  def zipViews[A, B](ls: => View[A], rs: => View[B]): Zip[A, B]                    = new ZipViews(ls, rs)
 }

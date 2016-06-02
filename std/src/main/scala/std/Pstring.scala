@@ -11,8 +11,6 @@ import PChar._
 object PChar {
   val toUpper: Char => Char   = jl.Character toUpperCase _
   val isControl: Char => Bool = jl.Character isISOControl _
-
-  implicit def translateToMap[A, B](f: A => B): View[A] => View[B] = _ map f // experiment
 }
 
 final class Pstring(val self: String) extends AnyVal with ShowSelf {
@@ -21,7 +19,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def *(n: Precise): String                         = Makes const self take n joinString
   def append(that: String): String                  = self + that /** Note to self: don't touch this `+`. */
   def bytes: Array[Byte]                            = self.getBytes
-  def capitalize: String                            = self o (_ splitAfter _1 mapLeft toUpper join)
+  def capitalize: String                            = self o (_ splitAfter _1 mapLeft (_ map toUpper) join)
   def charSeq: scSeq[Char]                          = chars.m.seq
   def collect(pf: Char ?=> Char): String            = chars collect pf force
   def containsChar(ch: Char): Boolean               = chars.m contains ch
@@ -40,7 +38,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def reverseChars: String                          = chars.inPlace.reverse.utf8String
   def sanitize: String                              = this mapChars Fun.partial(isControl, _ => '?')
   def splitChar(ch: Char): View[String]             = splitRegex(Regex quote ch.any_s)
-  def splitRegex(r: Regex): View[String]            = RepView(r.pattern split self)
+  def splitRegex(r: Regex): View[String]            = View(r.pattern split self)
   def stripMargin(ch: Char): String                 = mapLines(_ stripPrefix WS <> ch.r)
   def stripMargin: String                           = stripMargin('|')
   def stripPrefix(prefix: String): String           = stripPrefix(prefix.r.literal)

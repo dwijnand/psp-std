@@ -127,20 +127,17 @@ object all extends AllExplicit with AllImplicit {
 
   /** Views of specific type.
    */
-  implicit class RepView2DOps[R, A](xss: RepView2D[R, A]) {
-    type Sliver[R] = RepView[R, A]
-    type MapTo[B]  = RepView2D[R, B]
-
-    def column(vdex: Vdex): Sliver[R] = xss flatMap (_ sliceIndex vdex)
-    def transpose: MapTo[A]           = openIndices.as[R] map column map (_.as) //(x =>  RepView.as(column(x)))
-    def flatten: Sliver[R]            = xss flatMap (x => x)
-    def mmap[B](f: A => B): MapTo[B]  = xss map (_ map f)
+  implicit class View2DOps[A](xss: View2D[A]) {
+    def column(vdex: Vdex) = View(xss) flatMap (_ sliceIndex vdex)
+    def transpose          = View(openIndices map column)
+    def flatten            = View(xss) flatMap (x => x)
+    def mmap[B](f: A => B) = View(xss) map (_ map f)
 
     def grid_s(implicit z: Show[A]): String = {
       val width = xss.mmap(_.pp.length).flatten.max
       val fmt   = lformat(width)
       val yss   = xss mmap (x => fmt(x.pp))
-      val lines = yss map (_ joinWith " ")
+      val lines = View(yss) map (_ joinWith " ")
 
       lines.joinLines mapLines (_.trim)
     }
@@ -167,7 +164,7 @@ object all extends AllExplicit with AllImplicit {
     def joinString: String            = joinWith("")
   }
 
-  implicit def viewHasEqOps[R, A](xs: ViewMethods[R, A])(implicit eqv: Eq[A]): xs.EqOps = new xs.EqOps
+  implicit def viewHasEqOps[A : Eq, R](xs: RView[A, R]): xs.EqOps = new xs.EqOps()
 
   /** Other psp classes.
    */
@@ -245,9 +242,8 @@ object all extends AllExplicit with AllImplicit {
     def each: Direct[A]            = elems(x._1, x._2)
   }
   implicit class HasWalksOps[A, R](val repr: R)(implicit z: Walks[A, R]) {
-    def as[R] : RepView[R, A] = RepView.as[R](Folded each repr suspend)
-    def m: RepView[R, A]      = RepView(repr)
-    def m2: RView[A, R]       = z walk repr
+    def as[S] : RView[A, S] = View(repr)
+    def m: RView[A, R]      = View(repr)
   }
   implicit class HasShowOps[A](private val lhs: A)(implicit z: Show[A]) {
     def doc: Doc     = Doc(lhs)

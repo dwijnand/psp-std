@@ -75,14 +75,14 @@ trait Interpolators {
   def sm(args: Doc*): String  = Pconfig.renderer show sdoc(args: _*)
   def any(args: Any*): String = pp(args.m asDocs Show.Inherited seq: _*)
 
-  private def escapedParts: View[String]  = stringContext.parts.toVec map processEscapes //(_.processEscapes)
+  private def escapedParts: View[String]  = stringContext.parts.toVec map processEscapes
   private def escaped: String             = escapedParts.join
   private def strippedParts: View[String] = escapedParts map (_ mapLines (_.stripMargin))
 
   /** There's one more escaped part than argument, so
    *  to collate them we tack an empty Doc onto the arg list.
    */
-  def doc(args: Doc*): Doc  = Split(escapedParts.asDocs, args :+ Doc.empty).collate reducel (_ ~ _)
+  def doc(args: Doc*): Doc  = escapedParts.asDocs.zip(args :+ Doc.empty).pairs flatMap (_.each) reducel (_ ~ _)
   def fdoc(args: Doc*): Doc = escaped.format(args.map(_.pp): _*)
   def sdoc(args: Doc*): Doc = new StringContext(strippedParts.seq: _*).raw(args: _*).trim
 }
@@ -90,18 +90,35 @@ trait Interpolators {
 /** An incomplete selection of show compositors.
   *  Not printing the way scala does.
   */
-trait StdShow extends StdShow1 {
+trait StdShow0 {
+  implicit def showPrimitive[A >: Primitive <: AnyVal] : Show[A] = Show.Inherited
+  implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
+  implicit def showNth: Show[Nth]               = by(_.nthValue)
+}
+trait StdShow1 extends StdShow0 {
+  implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
+  implicit def showPset[A: Show] : Show[Pset[A]]             = by(_.basis.asShown.inBraces)
+
+  implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)
+  implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(_.m.asShown.inBrackets)
+  implicit def showScalaIterable[A: Show]: Show[scIterable[A]]   = Show(xs => xs.m.asShown.inParens prepend xs.stringPrefix)
+  implicit def showEach[A: Show]: Show[Each[A]]                  = by(_.m)
+  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]] = by(_.pairs)
+  implicit def showArray[A: Show]: Show[Array[A]]                = by(_.m)
+  implicit def showSplit[A: Show, R]: Show[SplitView[A, R]]      = Show(_ app (_.doc <+> "/" <+> _ pp))
+}
+trait StdShow2 extends StdShow1 {
   implicit def showString: Show[String]       = Show.Inherited
   implicit def showThrowable: Show[Throwable] = Show.Inherited
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
-  implicit def showIndex: Show[Index]                   = by(_.indexValue)
+  implicit def showIndex: Show[Vdex]                    = by(_.indexValue)
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
   implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc]("".lit).pp)
 
-  implicit def showView2DLive[A, B](implicit z: Show[B]): Show[View.Live[A, B]] = by(_.lines.joinLines)
+  implicit def showLiveView[A, B: Show]: Show[LiveView[A, B, _]] = by(_.lines.joinLines)
 
   implicit def showSize: Show[Size] = Show[Size] {
     case Precise(size)         => pp"$size"
@@ -116,27 +133,11 @@ trait StdShow extends StdShow1 {
     case Interval(start, Size.One) => pp"[$start]"
     case Interval(start, end)      => pp"[$start..${ end - 1 }]"
   }
-
+}
+trait StdShow extends StdShow2 {
   implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
     case Consecutive(s, None)    => pp"[$s..)"
     case Consecutive(s, Some(e)) => pp"[$s..$e]"
     case _                       => "[]"
   }
-}
-trait StdShow0 {
-  implicit def showPrimitive[A >: Primitive <: AnyVal] : Show[A] = Show.Inherited
-  implicit def showView[A: Show]: Show[View[A]]                  = Show(xs => Doc.Group(xs.asDocs).pp)
-  implicit def showNth: Show[Nth]                                = by(_.nthValue)
-}
-trait StdShow1 extends StdShow0 {
-  implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
-  implicit def showPset[A: Show] : Show[Pset[A]]             = by(_.basis.asShown.inBraces)
-
-  implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)
-  implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(_.m.asShown.inBrackets)
-  implicit def showScalaIterable[A: Show]: Show[scIterable[A]]   = Show(xs => xs.m.asShown.inParens prepend xs.stringPrefix)
-  implicit def showEach[A: Show]: Show[Each[A]]                  = by(_.m)
-  implicit def showZipped[A1: Show, A2: Show]: Show[Zip[A1, A2]] = by(_.pairs)
-  implicit def showArray[A: Show]: Show[Array[A]]                = by(_.m)
-  implicit def showSplit[A: Show]: Show[Split[A]]                = Show(_ app (_.doc <+> "/" <+> _ pp))
 }

@@ -17,8 +17,34 @@ sealed abstract class Plist[A] extends Each[A] {
 }
 final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A]
 final case object Pnil extends Plist[Nothing] {
-  def apply[A](): Plist[A] = cast(Pnil)
+  def apply[A](): Plist[A] = cast(this)
 }
+
+object Pstream {
+  def empty[A] : Pstream[A] = Psnil()
+  def apply[A](hd: => A, tl: => Pstream[A]): Pscons[A] = new Pscons(hd, tl)
+  def unapply[A](x: Pstream[A]): Opt[A -> Pstream[A]] = x match {
+    case x: Pscons[A] => some(x.head -> x.tail)
+    case _            => none()
+  }
+}
+sealed abstract class Pstream[+A] extends Each[A] {
+  @inline final def foreach(f: A => Unit): Unit = {
+    @tailrec def loop(xs: Pstream[A]): Unit = xs match {
+      case Pstream(hd, tl) => f(hd); loop(tl)
+      case _               =>
+    }
+    loop(this)
+  }
+}
+final class Pscons[A](h: => A, t: => Pstream[A]) extends Pstream[A] {
+  lazy val head = h
+  lazy val tail = t
+}
+final case object Psnil extends Pstream[Nothing] {
+  def apply[A](): Pstream[A] = cast(this)
+}
+
 sealed class PunapplySeq[A](it: () => scIterator[A]) extends scSeq[A] {
   def iterator        = it()
   def apply(idx: Int) = iterator drop idx next
