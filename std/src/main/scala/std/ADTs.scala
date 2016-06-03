@@ -60,6 +60,8 @@ final class Precise private[std](val getLong: Long) extends Atomic {
   def exclusive: Index        = Index(getLong)
   def indices: VdexRange      = 0L indexUntil getLong
   def lastIndex: Index        = exclusive.prev // effectively maps both undefined and zero to no index.
+
+  override def toString = s"$getLong"
 }
 final case class Bounded private[std](lo: Precise, hi: Atomic) extends Size
 

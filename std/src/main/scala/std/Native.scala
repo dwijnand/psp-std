@@ -15,8 +15,11 @@ sealed abstract class Plist[A] extends Each[A] {
     loop(this)
   }
 }
-final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A]
+final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A] {
+  def size = Size.One.atLeast
+}
 final case object Pnil extends Plist[Nothing] {
+  def size = _0
   def apply[A](): Plist[A] = cast(this)
 }
 
@@ -38,10 +41,12 @@ sealed abstract class Pstream[+A] extends Each[A] {
   }
 }
 final class Pscons[A](h: => A, t: => Pstream[A]) extends Pstream[A] {
+  def size = Size.One.atLeast
   lazy val head = h
   lazy val tail = t
 }
 final case object Psnil extends Pstream[Nothing] {
+  def size = _0
   def apply[A](): Pstream[A] = cast(this)
 }
 

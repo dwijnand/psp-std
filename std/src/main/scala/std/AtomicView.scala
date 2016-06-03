@@ -1,18 +1,21 @@
 package psp
 package std
 
-import all._, View._
+import all._, View._, StdShow._
+import views._
 
 trait View[+A] extends Any with Foreach[A] {
   def size: Size = SizeOfView(this)
 }
 
-final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R]
+final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R] {
+  override def toString = s"Id(${ underlying.size.pp })"
+}
 
-sealed trait RView[A, R] extends View[A] with ViewClasses[A, R] {
+trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   self =>
 
-  def ++(that: View[A]): This                         = Joined(this, that)
+  def ++(that: View[A]): This                         = Joined(this, View(that))
   def +:(head: A): This                               = self prepend view(head)
   def :+(last: A): This                               = self append view(last)
   def append(that: View[A]): This                     = self ++ that
@@ -46,7 +49,7 @@ sealed trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def max(implicit z: Order[A]): A                    = reducel(all.max)
   def min(implicit z: Order[A]): A                    = reducel(all.min)
   def partition(p: Pred): Split                       = Split(self filter p, self filter !p)
-  def prepend(that: View[A]): This                    = Joined(that, this)
+  def prepend(that: View[A]): This                    = Joined(View(that), this)
   def reducel(f: BinOp[A]): A                         = tail.foldl(head)(f)
   def reducer(f: BinOp[A]): A                         = init.foldr(last)(f)
   def slice(r: VdexRange): This                       = zcond(!r.isEmpty, slice(r.head, r.size))
@@ -80,7 +83,7 @@ sealed trait RView[A, R] extends View[A] with ViewClasses[A, R] {
 
   def build(implicit z: Makes[A, R]): R                        = force[R]
   def force[R](implicit z: Makes[A, R]): R                     = z make self
-  def foreach(f: ToUnit[A]): Unit                              = foreachView(this)(f)
+  def foreach(f: ToUnit[A]): Unit                              = views.Run.optimized(this)(f)
   def iterator: scIterator[A]                                  = toScalaStream.iterator
   def pairs[B, C](implicit z: IsProduct[A, B, C]): MapTo[B->C] = map(z.split)
   def toArray(implicit z: CTag[A]): Array[A]                   = to[Array]
@@ -102,65 +105,54 @@ sealed trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def dropWhile(p: Pred): This              = View1(this, DropWhile(p))
   def flatMap[B](f: A => View[B]): MapTo[B] = View2(this, FlatMap(f))
   def map[B](f: A => B): MapTo[B]           = View2(this, Mapped(f))
-  def reverseView: This                     = View0(this, Reverse)
+  def reverse: This                         = View0(this, Reverse)
   def take(n: Precise): This                = View0(this, Take(n))
   def takeRight(n: Precise): This           = View0(this, TakeRight(n))
   def takeWhile(p: Pred): This              = View1(this, TakeWhile(p))
   def withFilter(p: Pred): This             = View1(this, Filter(p))
+
+  def opDoc: Doc = new ViewToDoc(x => fp"$x%-15s")(this)
 }
 
 object View {
-  def apply[A, R](xs: Foreach[A]): RView[A, R]                 = IdView(xs)
-  def walks[A, R](xs: R)(implicit z: Walks[A, R]): RView[A, R] = apply(z walk xs)
-
-  sealed trait Op0
-  sealed trait Op1[A]
-  sealed trait Op2[A, B]
-
-  final case class Joined[A, R](ls: View[A], rs: View[A])           extends RView[A, R]
-  final case class View0[A, R](prev: RView[A, R], op: Op0)          extends RView[A, R]
-  final case class View1[A, R](prev: RView[A, R], op: Op1[A])       extends RView[A, R]
-  final case class View2[A, B, R](prev: RView[A, R], op: Op2[A, B]) extends RView[B, R]
-
-  final case class Drop(n: Precise)      extends Op0
-  final case class DropRight(n: Precise) extends Op0
-  final case class Take(n: Precise)      extends Op0
-  final case class TakeRight(n: Precise) extends Op0
-  final case object Reverse              extends Op0
-
-  final case class Filter[A](p: ToBool[A])        extends Op1[A]
-  final case class TakeWhile[A](p: ToBool[A])     extends Op1[A]
-  final case class DropWhile[A](p: ToBool[A])     extends Op1[A]
-
-  final case class Mapped[A, B](f: A => B)        extends Op2[A, B]
-  final case class FlatMap[A, B](f: A => View[B]) extends Op2[A, B]
-  final case class Collect[A, B](pf: A ?=> B)     extends Op2[A, B]
-
-  def eachifyView[A](xs: View[A]): Each[A]            = suspend(runView(xs) _)
-  def foreachView[A](xs: View[A])(f: ToUnit[A]): Unit = runView(xs)(x => f(x))
-
-  def foldView[A, B](xs: View[A])(zero: B)(f: (B, A) => B): B = {
-    var res = zero
-    runView(xs)(x => res = f(res, x))
-    res
+  def apply[A, R](xs: Foreach[A]): RView[A, R] = xs match {
+    case xs: RView[A @unchecked, R @unchecked] => xs
+    case _                                     => IdView(xs)
   }
 
-  def runView[C](xs: View[C])(f: ToUnit[C]): Unit = xs match {
-    case OptimizeView(xs)        => runView(xs)(f)
-    case IdView(xs)              => xs foreach f
-    case Joined(xs, ys)          => runView(xs)(f); runView(ys)(f)
-    case View0(xs, Reverse)      => runView(xs.toVec.reverse)(f)
-    case View2(xs, Mapped(g))    => runView(xs)(g andThen f)
-    case View2(xs, FlatMap(g))   => runView(xs)(x => g(x) foreach f)
-    case View1(xs, Filter(p))    => runView(xs)(x => if (p(x)) f(x))
-    case View2(xs, Collect(pf))  => runView(xs)(x => if (pf isDefinedAt x) f(pf(x)))
-    case SlicedView(xs, range)   => ll.foreachSlice(xs, range, f)
-    case View1(xs, TakeWhile(p)) => ll.foreachTakeWhile(xs, f, p)
-    case View1(xs, DropWhile(p)) => ll.foreachDropWhile(xs, f, p)
-    case View0(xs, DropRight(n)) => ll.foreachDropRight(xs, f, n)
-    case View0(xs, TakeRight(n)) => ll.foreachTakeRight(xs, f, min(n, xs.size.preciseOrMaxLong))
-    case View0(xs, Drop(n))      => ll.foreachSlice(xs, n.getLong.andUp map Index, f)
-    case View0(xs, Take(n))      => ll.foreachSlice(xs, n.indices, f)
+  class ViewToDoc(fmt: Doc => Doc) {
+    import Unsafe.showFunction1
+    def apply[A](v: View[A]): Doc = v match {
+      case View0(xs, Drop(n))      => apply(xs) <+> fmt("drop" <+> n)
+      case View0(xs, Take(n))      => apply(xs) <+> fmt("take" <+> n)
+      case View0(xs, DropRight(n)) => apply(xs) <+> fmt("dropRight" <+> n)
+      case View0(xs, TakeRight(n)) => apply(xs) <+> fmt("takeRight" <+> n)
+      case View0(xs, Reverse)      => apply(xs) <+> fmt("reverse")
+      case View1(xs, Filter(p))    => apply(xs) <+> fmt("filter" <+> p)
+      case View1(xs, TakeWhile(p)) => apply(xs) <+> fmt("takeWhile" <+> p)
+      case View1(xs, DropWhile(p)) => apply(xs) <+> fmt("dropWhile" <+> p)
+      case View2(xs, Mapped(g))    => apply(xs) <+> fmt("map" <+> g)
+      case View2(xs, FlatMap(g))   => apply(xs) <+> fmt("flatMap" <+> g)
+      case View2(xs, Collect(pf))  => apply(xs) <+> fmt("collect" <+> pf)
+      case Joined(xs, ys)          => apply(xs) <+> fmt("++" <+> apply(ys))
+      case IdView(_)               => fmt("[S:" <> v.size <> "]")
+    }
+  }
+
+  def foldAst[B](xs: View[_])(zero: B)(f: (B, View[_]) => B): B = {
+    var res = zero
+    walkAst(xs)(x => res = f(res, x))
+    res
+  }
+  def walkAst[A](v: View[_])(f: View[_] => A): Vec[A] = {
+    def deeper = v match {
+      case IdView(_)      => view()
+      case Joined(xs, ys) => walkAst(xs)(f) ++ walkAst(ys)(f)
+      case View2(xs, _)   => walkAst(xs)(f)
+      case View1(xs, _)   => walkAst(xs)(f)
+      case View0(xs, _)   => walkAst(xs)(f)
+    }
+    deeper :+ f(v) force
   }
 
   // XXX Figure out how to maintain laziness here.

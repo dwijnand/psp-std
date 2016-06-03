@@ -47,11 +47,11 @@ object INREPL {
    */
   implicit class ReplShowWalks[A, R](repr: R)(implicit z: Walks[A, R]) {
     def xs = z walk repr
-    def >>(implicit z: Show[A])                      = xs foreach println
-    def !>(implicit ord: Order[A], z: Show[A]): Unit = xs.sort foreach println
+    def >>(implicit z: Show[A])                      = xs foreach out.println
+    def !>(implicit ord: Order[A], z: Show[A]): Unit = xs.sort foreach out.println
   }
   implicit class ReplShowRepr[R](repr: R) {
-    def > (implicit z: Show[R] = Show.Inherited) = println(repr.pp)
+    def > (implicit z: Show[R] = Show.Inherited) = out.println(repr.pp)
   }
 
   implicit def showToAmmonite[A](implicit z: Show[A]): pprint.PPrinter[A] =

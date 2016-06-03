@@ -6,6 +6,11 @@ import java.io.BufferedInputStream
 object Unsafe {
   implicit def promoteIndex(x: scala.Long) = Index(x)
   implicit def inheritedShow[A]: Show[A]   = Show.Inherited
+  implicit def showFunction1[A, B] : Show[A => B] = Show {
+
+    case x: LabeledFunction[_, _] => x.to_s
+    case _                        => "<f>"
+  }
 }
 
 /** One import which includes the implicits, one which doesn't.
@@ -63,6 +68,7 @@ object all extends AllExplicit with AllImplicit {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
   implicit class PspPartialFunctionOps[A, B](pf: A ?=> B) {
+    def filter(p: ToBool[A]): A ?=> B         = { case x if p(x) && contains(x) => pf(x) }
     def contains(x: A): Bool                  = pf isDefinedAt x
     def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
     def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
@@ -112,11 +118,16 @@ object all extends AllExplicit with AllImplicit {
     def utf8Bytes: Array[Byte] = scala.io.Codec.toUTF8(xs, 0, xs.length)
     def utf8String: String     = new String(xs)
   }
+  implicit class PspPrimitiveArrayOps[A >: Primitive <: AnyVal](private val xs: Array[A]) {
+    def inPlace: InPlacePrimitive[A] = new InPlacePrimitive(xs)
+  }
+  implicit class PspReferenceArrayOps[A <: AnyRef](private val xs: Array[A]) {
+    def inPlace: InPlaceReference[A] = new InPlaceReference(xs)
+  }
   implicit class PspArrayOps[A](private val xs: Array[A]) {
     private def arraycopy[A](src: Array[A], srcPos: Int, dst: Array[A], dstPos: Int, len: Int): Unit =
       java.lang.System.arraycopy(src, srcPos, dst, dstPos, len)
 
-    def inPlace: InPlace[A] = new InPlace(xs)
     def ++(that: Array[A])(implicit z: CTag[A]): Array[A] = {
       val arr = newArray[A](xs.length + that.length)
       arraycopy(xs, 0, arr, 0, xs.length)
@@ -221,7 +232,7 @@ object all extends AllExplicit with AllImplicit {
   }
   implicit class OrderClassOps[A](private val r: Order[A]) {
     def flip: Order[A] = Order((x, y) => r.less(y, x))
-    def comparator: Comparator[A] = new scala.math.Ordering[A] {
+    def comparator: Comparator[A] = new Comparator[A] {
       def compare(x: A, y: A): Int = if (r.less(x, y)) -1 else if (r.less(y, x)) 1 else 0
     }
   }

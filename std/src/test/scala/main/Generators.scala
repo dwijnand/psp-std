@@ -31,6 +31,7 @@ trait GenTransform[M[X], A] {
 
   def ^^^[B](x: B): M[B]          = transform(_ => Gen const x)
   def ^^[B](f: A => B): M[B]      = transform(_ map f)
+  def reduce(f: BinOp[A]): M[A]   = transform(_ reduce f)
   def ?(p: ToBool[A]): M[A]       = transform(_ filter p)
   def >>[B](f: A => Gen[B]): M[B] = transform(_ flatMap f)
   def ^?[B](pf: A ?=> B): M[B]    = transform(_ collect pf)

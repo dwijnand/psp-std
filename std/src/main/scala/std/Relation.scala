@@ -4,10 +4,10 @@ package std
 import all._
 
 object Relation {
-  val Lexical: HashEqOrder[String] = all(Hash.Inherited, Eq.Inherited, Order.Inherited[String])
-  val Inherited: HashEq[Any]       = hasheq(Hash.Inherited, Eq.Inherited)
-  val Reference: HashEq[AnyRef]    = hasheq(Hash.Reference, Eq.Reference)
-  val Longs: HashEqOrder[Long]     = all(Hash(x => x), Eq(_ == _), Order(_ < _))
+  val Lexical: HashEqOrder[String]   = all(Hash.Inherited, Eq.Inherited, Order.Inherited[String])
+  val Reference: HashEqOrder[AnyRef] = all(Hash.Reference, Eq.Reference, Order.Reference)
+  val Inherited: HashEq[Any]         = hasheq(Hash.Inherited, Eq.Inherited)
+  val Longs: HashEqOrder[Long]       = all(Hash(x => x), Eq(_ == _), Order(_ < _))
 
   def hasheq[A](implicit hz: Hash[A], ez: Eq[A]): HashEq[A]                 = new HashEqImpl[A](hz, ez)
   def all[A](implicit hz: Hash[A], ez: Eq[A], oz: Order[A]): HashEqOrder[A] = new HashEqOrderImpl[A](hz, ez, oz)

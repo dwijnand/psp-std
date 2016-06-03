@@ -6,7 +6,8 @@ import all._
 /** Holding area for things which should later be made configurable.
  */
 object Pconfig {
-  val renderer = new FullRenderer(3L sizeTo 9)
+  val renderer: Renderer = new FullRenderer(3L sizeTo 9)
+  val logger: Printing   = err
 }
 
 /** Motley objects for which a file of residence is not obvious.
@@ -22,9 +23,9 @@ object JvmName {
   def asJava(clazz: jClass): JvmName  = new JvmName(clazz.getName)
   def asScala(clazz: jClass): JvmName = new JvmName(clazz.getName.mapSplit('.')(decode))
 }
-class LabeledFunction[-T, +R](f: T => R, str: () => String) extends (T ?=> R) with ShowSelf {
-  def isDefinedAt(x: T) = f match {
-    case f: scala.PartialFunction[_, _] => f isDefinedAt x
+class LabeledFunction[T, R](f: T => R, str: () => String) extends (T ?=> R) with ShowSelf {
+  def isDefinedAt(x: T): Bool = f match {
+    case f: scala.PartialFunction[T, R] => f isDefinedAt x
     case _                              => true
   }
   def apply(x: T): R = f(x)

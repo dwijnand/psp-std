@@ -7,6 +7,7 @@ object PspStd {
   type TaskOf[A]      = Def.Initialize[Task[A]]
   type InputTaskOf[A] = Def.Initialize[InputTask[A]]
 
+  def junitArgs: Seq[String]    = sys.env.getOrElse("ARGS", "-a -s").split("\\s+").toSeq
   def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-predef -Yno-adapted-args")
   def ammoniteArgs: Seq[String] = baseArgs ++ wordSeq("-Yno-imports")
   def compileArgs: Seq[String]  = ammoniteArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")

@@ -87,6 +87,7 @@ trait IsFunction[-R, -A, +B] extends Any {
  *************/
 
 object Order extends RelationCompanion[Order] {
+  val Reference: Order[AnyRef]                = apply(_.id_## < _.id_##)
   def Inherited[A <: Comparable[A]]: Order[A] = apply((x, y) => (x compareTo y) < 0)
 
   def wrap[A](r: Relation[A]): Order[A]   = new Impl(r)

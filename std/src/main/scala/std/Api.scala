@@ -51,34 +51,39 @@ abstract class ApiValues extends ApiTypes {
 
   def ??? : Nothing                                 = throw new scala.NotImplementedError
   def abort(msg: Any): Nothing                      = throw new RuntimeException(s"$msg")
-  def assert(assertion: => Bool, msg: => Any): Unit = cond(assertion, (), assertionError(msg))
+  def assert(assertion: => Bool, msg: => Any): Unit = if (!assertion) assertionError(msg)
   def assertionError(msg: Any): Nothing             = throw new AssertionError(s"$msg")
   def illegalArgumentException(msg: Any): Nothing   = throw new IllegalArgumentException(s"$msg")
   def indexOutOfBoundsException(msg: Any): Nothing  = throw new IndexOutOfBoundsException(s"$msg")
   def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(s"$msg")
 
-  def ?[A](implicit value: A): A             = value
-  def _0[A](implicit z: ZeroOne[A]): A       = z.zero
-  def _1[A](implicit z: ZeroOne[A]): A       = z.one
-  def emptyValue[A](implicit z: Empty[A]): A = z.empty
-  def show[A](implicit z: Show[A]): Show[A]  = z
+  def ?[A](implicit value: A): A                              = value
+  def _0[A](implicit z: ZeroOne[A]): A                        = z.zero
+  def _1[A](implicit z: ZeroOne[A]): A                        = z.one
+  def emptyValue[A](implicit z: Empty[A]): A                  = z.empty
+  def max[A](l: A, r: A)(implicit z: Order[A]): A             = if (z.less(l, r)) r else l
+  def min[A](l: A, r: A)(implicit z: Order[A]): A             = if (z.less(l, r)) l else r
+  def zcond[A](p: Bool, thenp: => A)(implicit z: Empty[A]): A = cond(p, thenp, z.empty)
+
+  def classFilter[A: CTag]: Any ?=> A       = Fun.partial(isInstance[A], cast[A])
+  def classOf[A: CTag](): Class[_ <: A]     = cast(classTag[A].runtimeClass)
+  def classTag[A: CTag]: CTag[A]            = ?[CTag[A]]
+  def isInstance[A: CTag](x: Any): Bool     = classOf[A]() isAssignableFrom x.getClass
+  def newArray[A: CTag](len: Int): Array[A] = new Array[A](len)
 
   def castRef[A](value: A): Ref[A]                       = cast(value)
   def cast[A](value: Any): A                             = value.asInstanceOf[A]
-  def classOf[A: CTag](): Class[_ <: A]                  = cast(classTag[A].runtimeClass)
-  def classTag[A: CTag]: CTag[A]                         = ?[CTag[A]]
+  def classNameOf(x: Any): String                        = JvmName asScala x.getClass short
   def cond[A](p: Bool, thenp: => A, elsep: => A): A      = if (p) thenp else elsep
-  def doto[A](x: A)(f: A => Unit): A                     = sideEffect(x, f(x))
+  def doto[A](x: A)(f: A => Unit): A                     = doalso(x)(f(x))
+  def doalso[A](x: A)(exprs: Unit*): A                   = x
   def fst[A, B](x: A -> B): A                            = x._1
   def identity[A](x: A): A                               = x
-  def isInstance[A: CTag](x: Any): Bool                  = classOf[A]() isAssignableFrom x.getClass
   def jFile(path: String): jFile                         = new jFile(path)
   def jPair[A, B](x: A, y: B): jMapEntry[A, B]           = new SimpleImmutableEntry(x, y)
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
-  def max[A](l: A, r: A)(implicit z: Order[A]): A        = if (z.less(l, r)) r else l
-  def min[A](l: A, r: A)(implicit z: Order[A]): A        = if (z.less(l, r)) l else r
-  def newArray[A: CTag](len: Int): Array[A]              = new Array[A](len)
+  def lformat[A](n: Int): A => String                    = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = Tuple2(x, y)
@@ -87,7 +92,6 @@ abstract class ApiValues extends ApiTypes {
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
-  def zcond[A: Empty](p: Bool, thenp: => A): A           = cond(p, thenp, emptyValue[A])
 
   /** Safe in the senses that it won't silently truncate values,
     *  and will translate MaxLong to MaxInt instead of -1.

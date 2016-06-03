@@ -3,17 +3,19 @@ import psp.PspStd._
 lazy val root = (
   project.root.setup aggregate std dependsOn (std, benchmark) settings (
       coursierVerbosity :=  0,
-     console in Compile <<= console in Compile in repl
+     console in Compile <<= console in Compile in repl,
+            run in Test <<= run in Test in std
   )
 )
 
 lazy val std = project.setup settings (
                 description :=  "psp's non-standard standard library",
-                testOptions +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
-                testOptions +=  Tests.Argument(TestFrameworks.JUnit, "-s"),
+        testOptions in Test +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
+        testOptions in Test +=  Tests.Argument(TestFrameworks.JUnit, junitArgs: _*),
   parallelExecution in Test :=  false,
         logBuffered in Test :=  false,
-        // libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+         traceLevel in Test :=  30,
+     // libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         libraryDependencies ++= testDependencies map (_ % "test")
 )
 

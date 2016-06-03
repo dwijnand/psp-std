@@ -5,7 +5,7 @@ import std._, all._, StdShow._
 import org.scalacheck.Prop._, Color._
 
 object Color {
-  import scala.Console.{ println => _, _ }
+  import scala.Console._
 
   val Reset = Color(RESET)
   val Green = Color(GREEN)
@@ -62,8 +62,8 @@ trait Explicit {
   def junitAssert(exprs: Boolean*): Unit                               = exprs foreach (org.junit.Assert assertTrue _)
   def junitAssertFalse(exprs: Boolean*): Unit                          = exprs foreach (org.junit.Assert assertFalse _)
   def preNewline(s: String): String                                    = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
-  def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) println(pp"$msg: $r"))
-  def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => println(pp"$msg: $r"))
+  def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) log"$msg: $r")
+  def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => log"$msg: $r")
   def sameDocAsToString[A: Show](expr: A): Unit                        = same(expr.pp, expr.toString)
   def sameDoc(expr: Doc, expected: Doc): Unit                          = same(pp"$expr", pp"$expected")
   def seqShows[A: Show](expected: String, xs: View[A]): NamedProp      = preNewline(expected) -> (expected =? (xs joinWith ", "))
@@ -130,8 +130,8 @@ trait Implicit extends Explicit {
   }
   implicit class GenOps[A](val self: Gen[A]) extends GenTransform[Gen, A] {
     def transform[B](f: Gen[A] => Gen[B]): Gen[B] = f(self)
-    def stream: Each[A]                           = Makes continually self.sample flatMap (_.view) toVec
-    def take(n: Int): Direct[A]                   = stream take n toVec
+    def stream: View[A]                           = Makes continually self.sample flatMap (_.view)
+    def take(n: Int): Vec[A]                      = stream take n toVec
   }
   implicit class TestSizeOps(val self: Precise) {
     def upTo(hi: Long): Gen[Precise] = self.getLong upTo hi map (_.size)

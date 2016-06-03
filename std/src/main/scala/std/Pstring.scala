@@ -55,6 +55,9 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def toBigInt: BigInt = scala.math.BigInt(self)
   def toInt: Int       = ifPrefix("0x")(parseInt(_, 16)) or parseInt(self)
   def toLong: Long     = ifPrefix("0x")(parseLong(_, 16)) or parseLong(self)
+
+  def <>(rhs: Doc): Doc  = lit ~ rhs
+  def <+>(rhs: Doc): Doc = lit ~ Doc.SP ~ rhs
 }
 
 final class Regex(val pattern: Pattern) extends ShowSelf {

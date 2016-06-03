@@ -33,8 +33,8 @@ object Generator {
 
 object Expressions {
   final val pspShowCode = """
-    /* no */ class Bippy ; val x = new Bippy ; println(x)
-    /* ok */ class Bippy ; val x = new Bippy ; implicit val s = Show[Bippy](_ => "yo") ; println(x)
+    /* no */ class Bippy ; val x = new Bippy ; out.println(x)
+    /* ok */ class Bippy ; val x = new Bippy ; implicit val s = Show[Bippy](_ => "yo") ; out.println(x)
   """
 
   final val scalaLibraryCode = """

@@ -27,6 +27,7 @@ object Makes extends StdMakes {
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
   class Iterable[A](it: () => scIterator[A]) extends Each[A] {
+    def size                        = Size.Unknown
     def foreach(f: A => Unit): Unit = it() foreach f
   }
   class FromInts[A](f: Int => A, start: Int, end: Int) extends Direct[A] {
@@ -41,12 +42,13 @@ object Makes extends StdMakes {
     def make(xs: View[A]): R = f(xs)
   }
 
-  def fromPairs[R, A, B](xs: R)(implicit pz: IsPairs[R, A, B]): Direct[A->B]  = fromArgs(pz pairs xs seq: _*)
-  def fromIntIndexed[R, A](xs: R)(implicit iz: IsIntIndexed[R, A]): Direct[A] = fromInts(iz.elem(xs, _), 0, iz length xs)
-  def fromFolded[R, A](xs: R)(implicit ez: IsFolded[R, A]): Each[A]           = ez resume xs suspend
-  def fromInts[A](f: Int => A, start: Int, end: Int): Direct[A]               = new FromInts(f, start, end)
-  def fromArgs[A](xs: A*): Direct[A]                                          = fromInts(xs.apply, 0, xs.length)
+  def fromPairs[R, A, B](xs: R)(implicit pz: IsPairs[R, A, B]): Vec[A->B]  = fromArgs(pz pairs xs seq: _*)
+  def fromIntIndexed[R, A](xs: R)(implicit iz: IsIntIndexed[R, A]): Vec[A] = fromInts(iz.elem(xs, _), 0, iz length xs)
+  def fromFolded[R, A](xs: R)(implicit ez: IsFolded[R, A]): Each[A]        = ez resume xs suspend
+  def fromInts[A](f: Int => A, start: Int, end: Int): Vec[A]               = new FromInts(f, start, end)
+  def fromArgs[A](xs: A*): Vec[A]                                          = fromInts(xs.apply, 0, xs.length)
 
+  def reversed[A](xs: Vec[A]): Vec[A]              = fromInts(xs applyReverse _.index, 0, xs.size.getInt)
   def const[A](elem: A): Generated[A]              = new Const(elem)
   def continually[A](expr: => A): Generated[A]     = new Continually(expr)
   def iterable[A](expr: => scIterator[A]): Each[A] = new Iterable(() => expr)
@@ -54,7 +56,7 @@ object Makes extends StdMakes {
 
 trait StdWalks {
   def javaIterable[A, M[X] <: jIterable[X]]: Walks[A, M[A]]        = suspended(xs => xs.iterator foreach _)
-  def javaMap[K, V, ⇶[X,Y] <: jMap[X, Y]]: Walks[K->V, K ⇶ V]      = suspended(_.entrySet.pairs.foreach _)
+  def javaMap[K, V, ⇶[X,Y] <: jMap[X, Y]]: Walks[K->V, K ⇶ V]      = suspended(xs => f => xs.entrySet foreach (kv => f(kv.toPair)))
   def pspEach[A, M[X] <: Each[X]]: Walks[A, M[A]]                  = Walks(identity)
   def pspMap[A: Hash, B](xs: (A->B)*): Walks[A->B, Pmap[A, B]]     = suspended(_.pairs.foreach _)
   def pspSet[A, M[X] <: Pset[X]]: Walks[A, M[A]]                   = suspended(_.basis.foreach _)
@@ -85,7 +87,7 @@ trait StdMakes {
   def pspMap[K : Hash : Eq, V]: Makes[K->V, Pmap[K, V]] = pspDirect[K->V] map (kvs => kvs.m.toMap[sciMap](scalaMap) |> (f => Pmap(kvs map fst toPset, Fun(f))))
   def pspSet[A : Hash : Eq]: Makes[A, Pset[A]]          = Makes(Pset apply _)
   def pspStream[A]: Makes[A, Pstream[A]]                = Makes(_ match { case HeadTailView(hd, tl) => new Pscons(hd, tl.toStream) ; case _ => Psnil() })
-  def pspDirect[A]: Makes[A, Direct[A]]                 = scalaVector[A] map (xs => Makes.fromInts(xs.apply, 0, xs.length))
+  def pspDirect[A]: Makes[A, Vec[A]]                    = scalaVector[A] map (xs => Makes.fromInts(xs.apply, 0, xs.length))
   def pspView[A]: Makes[A, View[A]]                     = Makes(identity)
   def scalaList[A]: Makes[A, sciList[A]]                = scalaTraversable
   def scalaMap[K, V]: Makes[K->V, sciMap[K, V]]         = scalaGenericMap
