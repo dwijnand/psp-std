@@ -37,7 +37,7 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   type VdexRange            = ClosedRange[Vdex]
   type Vec[A]               = Direct[A]
 
-  type SplitView[A, R]   = ViewClasses[A, R]#Split
-  type LiveView[A, B, R] = ViewClasses[A, R]#Live[B]
+  type SplitView[A, R]   = RView[A, R]#Split
+  type LiveView[A, B, R] = RView[A, R]#Live[B]
   type View2D[A]         = View[View[A]]
 }

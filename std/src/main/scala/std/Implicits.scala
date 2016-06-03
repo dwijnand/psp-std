@@ -13,6 +13,6 @@ trait AllImplicit extends AllImplicit0 with StdEmpty with StdBuilders with StdAl
 }
 
 trait AllImplicit0 {
-  implicit def walksToView[A, R](xs: R)(implicit z: Walks[A, R]): RView[A, R] = View walks xs
+  implicit def walksToView[A, R](xs: R)(implicit z: Walks[A, R]): RView[A, R] = View(z walk xs)
   implicit def showsToDoc[A](x: A)(implicit z: Show[A]): Doc                  = Doc(x)
 }

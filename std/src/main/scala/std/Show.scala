@@ -6,6 +6,8 @@ import StringContext.processEscapes
 
 abstract class Printing {
   def pstream: PrintStream
+
+  def dump(xs: Any*): Unit                        = pstream println (xs mkString ", ")
   def println[A](x: A)(implicit z: Show[A]): Unit = pstream println (z show x)
 }
 object out extends Printing {
@@ -80,7 +82,7 @@ trait Interpolators {
   /** Having args of type Doc* forces all the interpolated values
     * be of a type which is implicitly convertible to Doc.
     */
-  def log(args: Doc*): Unit   = err println pp(args: _*)
+  def log(args: Doc*): Unit   = Pconfig.logger dump pp(args: _*)
   def pp(args: Doc*): String  = Pconfig.renderer show doc(args: _*)
   def fp(args: Doc*): String  = Pconfig.renderer show fdoc(args: _*)
   def sm(args: Doc*): String  = Pconfig.renderer show sdoc(args: _*)
@@ -127,7 +129,6 @@ trait StdShow2 extends StdShow1 {
   implicit def showIndex: Show[Vdex]                    = by(_.indexValue)
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
-  implicit def showOp[A, B]: Show[Op[A, B]]             = Show(op => op[ConstDoc]("".lit).pp)
 
   implicit def showLiveView[A, B: Show]: Show[LiveView[A, B, _]] = by(_.lines.joinLines)
 
@@ -135,7 +136,7 @@ trait StdShow2 extends StdShow1 {
     case Precise(size)         => pp"$size"
     case Bounded(lo, Infinite) => pp"$lo+"
     case Bounded(lo, hi)       => pp"[$lo,$hi]"
-    case Infinite              =>   "<inf>"
+    case Infinite              => "<inf>"
   }
 
   implicit def showInterval: Show[Interval] = Show {

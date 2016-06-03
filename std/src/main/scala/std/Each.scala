@@ -14,8 +14,9 @@ import all._
 trait Foreach[+A] extends Any {
   def foreach(f: A => Unit): Unit
 }
-trait Each[+A] extends Any with Foreach[A]
-
+trait Each[+A] extends Any with Foreach[A] {
+  def size: Size
+}
 trait Indexed[+A] extends Any with Each[A] {
   def size: Atomic
   def apply(idx: Vdex): A
@@ -26,12 +27,13 @@ trait Generated[+A] extends Any with Indexed[A] {
 trait Direct[+A] extends Any with Indexed[A] {
   def size: Precise
 
+  def applyReverse(idx: Vdex): A  = apply(size.lastIndex - idx.indexValue)
   def foreach(f: A => Unit): Unit = ll.foreachDirect(this, f)
   def head: A                     = apply(_0) // depend on this
-  def reverse: Direct[A]          = size.getInt |> (e => Makes.fromInts(n => apply(Index(e - 1 - n)), 0, e))
 }
 
 final class Suspend[+A](c: Folded[A]) extends Each[A] {
+  def size                        = Size.Unknown
   def foreach(f: A => Unit): Unit = c.foldl(())((xs, x) => f(x))
 }
 

@@ -1,7 +1,7 @@
 package psp
 package std
 
-import all._
+import views._, all._
 
 trait ViewClasses[A, R] {
   self: RView[A, R] =>
@@ -12,7 +12,6 @@ trait ViewClasses[A, R] {
   type This     = MapTo[A]
   type V        = MapTo[A]
   type Zipped   = Zip[A, A]
-  type S2D      = Pstream[Pstream[A]]
 
   def mpartition(mf: View[A] => Pred): Map2D[A] = {
     def next(self: View[A]): Pstream[MapTo[A]] = mf(self) |> (p => Pstream(self filter p as, next(self filter !p)))
@@ -33,7 +32,7 @@ trait ViewClasses[A, R] {
     def mapEach(f: ToSelf[V]): Split  = Split(f(leftView), f(rightView))
     def mapLeft(f: ToSelf[V]): Split  = Split(f(leftView), rightView)
     def mapRight(f: ToSelf[V]): Split = Split(leftView, f(rightView))
-    def pairs: RView[A->A, R]         = View(zip.pairs)
+    def pairs: MapTo[A->A]            = View(zip.pairs)
     def views: V->V                   = leftView -> rightView
     def zip: Zipped                   = app(zipViews(_, _))
   }
@@ -63,9 +62,6 @@ trait ViewClasses[A, R] {
 /** Extractors.
  */
 
-import View._
-import Size.Zero
-
 object SplitView {
   def unapply[A, R](x: SplitView[A, R]) = Some(x.leftView -> x.rightView)
 }
@@ -80,57 +76,37 @@ object HeadTailView {
 }
 object SlicedView {
   def unapply[A, R](xs: RView[A, R]): Option[RView[A, R] -> VdexRange] = xs match {
-    case View0(prev, Reverse)      => none()
-    case View0(prev, DropRight(n)) => unapply(prev) map (_ mapRight (_ dropRight n))
-    case View0(prev, TakeRight(n)) => unapply(prev) map (_ mapRight (_ takeRight n))
-    case View0(prev, Drop(n))      => unapply(prev) map (_ mapRight (_ drop n))
-    case View0(prev, Take(n))      => unapply(prev) map (_ mapRight (_ take n))
-    case _                         => xs.size matchIf { case x: Precise => some(xs -> x.indices) }
-  }
-}
-object OptimizeView {
-  private def finish[A, R](xs: RView[A, R]): Some[RView[A, R]] = xs match {
-    case OptimizeView(ys) => Some(ys)
-    case _                => Some(xs)
-  }
-  def unapply[A, R](xs: RView[A, R]): Opt[RView[A, R]] = xs match {
-    case View0(View0(xs, Reverse), Reverse)             => finish(xs)
-    case View2(View2(xs, Mapped(f)), Mapped(g))         => finish(xs map (f andThen g))
-    case View2(View2(xs, Mapped(f)), FlatMap(g))        => finish(xs flatMap (f andThen g))
-    case View2(View2(xs, FlatMap(f)), Mapped(g))        => finish(xs flatMap (x => f(x) map g))
-    case View2(View2(xs, FlatMap(f)), FlatMap(g))       => finish(xs flatMap (f andThen g))
-    case View1(View1(xs, Filter(p)), Filter(q))         => finish(xs withFilter p && q)
-    case View2(View2(xs, Collect(pf)), Mapped(f))       => finish(xs collect (pf andThen f))
-    case View0(View0(xs, Drop(n1)), Drop(n2))           => finish(xs drop n1 + n2)
-    case View0(View0(xs, DropRight(n1)), DropRight(n2)) => finish(xs dropRight n1 + n2)
-    case View0(View0(xs, Take(n1)), Take(n2))           => finish(xs take min(n1, n2))
-    case View0(View0(xs, TakeRight(n1)), TakeRight(n2)) => finish(xs takeRight min(n1, n2))
-    case View1(View1(xs, TakeWhile(p)), TakeWhile(q))   => finish(xs takeWhile p && q)
-    case View1(View1(xs, DropWhile(p)), DropWhile(q))   => finish(xs dropWhile p || q)
-    case View0(xs, Drop(Zero))                          => finish(xs)
-    case View0(xs, DropRight(Zero))                     => finish(xs)
-    case View0(_, Take(Zero))                           => finish(emptyValue)
-    case View0(_, TakeRight(Zero))                      => finish(emptyValue)
-    case _                                              => none()
+
+    case View0(SlicedView(xs, r), DropRight(n)) => some(pair(xs, r dropRight n))
+    case View0(SlicedView(xs, r), TakeRight(n)) => some(pair(xs, r takeRight n))
+    case View0(SlicedView(xs, r), Drop(n))      => some(pair(xs, r drop n))
+    case View0(SlicedView(xs, r), Take(n))      => some(pair(xs, r take n))
+    case IdView(u: Each[_])                     => u.size matchIf { case x: Precise => some(xs -> x.indices) }
+    case _                                      => none()
   }
 }
 object SizeOfView {
   def unapply[A](xs: View[A]): Some[Size] = Some(apply(xs))
   def apply[A](xs: View[A]): Size = xs match {
-    case IdView(xs: View[_])                    => apply(xs)
-    case IdView(xs: Indexed[_])                 => xs.size
-    case Joined(SizeOfView(v1), SizeOfView(v2)) => v1 + v2
-    case View0(SizeOfView(n), Reverse)          => n
-    case View2(SizeOfView(n), Mapped(_))        => n
-    case View2(SizeOfView(n), FlatMap(_))       => cond(n.isZero, n, Size.Unknown)
-    case View1(SizeOfView(n), Filter(_))        => n.atMost
-    case View2(SizeOfView(n), Collect(_))       => n.atMost
-    case View1(SizeOfView(n), TakeWhile(_))     => n.atMost
-    case View1(SizeOfView(n), DropWhile(_))     => n.atMost
-    case View0(SizeOfView(m), DropRight(n))     => Size.min(m, n)
-    case View0(SizeOfView(m), TakeRight(n))     => Size.min(m, n)
-    case View0(SizeOfView(m), Drop(n))          => Size.min(m, n)
-    case View0(SizeOfView(m), Take(n))          => Size.min(m, n)
-    case _                                      => Size.Unknown
+    case Op(EmptyView(), _)                                                      => _0
+    case Op(SizeOfView(n), FlatMap(_))                                           => Size.Unknown
+    case Op(SizeOfView(n), Reverse | Mapped(_))                                  => n
+    case Op(SizeOfView(n), Filter(_) | Collect(_) | TakeWhile(_) | DropWhile(_)) => n.atMost
+    case Op(SizeOfView(m), Drop(n))                                              => m - n
+    case Op(SizeOfView(m), DropRight(n))                                         => m - n
+    case Op(SizeOfView(m), Take(n))                                              => Size.min(m, n)
+    case Op(SizeOfView(m), TakeRight(n))                                         => Size.min(m, n)
+    case Joined(SizeOfView(v1), SizeOfView(v2))                                  => v1 + v2
+    case IdView(SizeOfView(n))                                                   => n
+    case IdView(xs: Each[_])                                                     => xs.size
+    case IdView(_)                                                               => Size.Unknown
+  }
+}
+object Op {
+  def unapply[A, R, S](xs: RView[A, R]) = xs match {
+    case View0(prev, op) => some(prev -> op)
+    case View1(prev, op) => some(prev -> op)
+    case View2(prev, op) => some(prev -> op)
+    case _               => none()
   }
 }

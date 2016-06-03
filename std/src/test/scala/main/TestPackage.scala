@@ -130,8 +130,8 @@ trait Implicit extends Explicit {
   }
   implicit class GenOps[A](val self: Gen[A]) extends GenTransform[Gen, A] {
     def transform[B](f: Gen[A] => Gen[B]): Gen[B] = f(self)
-    def stream: Each[A]                           = Makes continually self.sample flatMap (_.view) toVec
-    def take(n: Int): Direct[A]                   = stream take n toVec
+    def stream: View[A]                           = Makes continually self.sample flatMap (_.view)
+    def take(n: Int): Vec[A]                      = stream take n toVec
   }
   implicit class TestSizeOps(val self: Precise) {
     def upTo(hi: Long): Gen[Precise] = self.getLong upTo hi map (_.size)

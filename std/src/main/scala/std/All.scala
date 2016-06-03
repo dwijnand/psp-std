@@ -6,6 +6,11 @@ import java.io.BufferedInputStream
 object Unsafe {
   implicit def promoteIndex(x: scala.Long) = Index(x)
   implicit def inheritedShow[A]: Show[A]   = Show.Inherited
+  implicit def showFunction1[A, B] : Show[A => B] = Show {
+
+    case x: LabeledFunction[_, _] => x.to_s
+    case _                        => "<f>"
+  }
 }
 
 /** One import which includes the implicits, one which doesn't.
@@ -63,6 +68,7 @@ object all extends AllExplicit with AllImplicit {
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
   implicit class PspPartialFunctionOps[A, B](pf: A ?=> B) {
+    def filter(p: ToBool[A]): A ?=> B         = { case x if p(x) && contains(x) => pf(x) }
     def contains(x: A): Bool                  = pf isDefinedAt x
     def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
     def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
