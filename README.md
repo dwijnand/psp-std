@@ -9,7 +9,7 @@ The scala standard library is deficient in many ways. This library is an attempt
 
 ### Usage
 
-Suggested contents for a basic `build.sbt` follows. Note that the console transcript as seen requires more project code than this. The standard scala repl can't handle -Yno-imports, so psp-std derives a new console task from ammonite.
+Suggested contents for a basic `build.sbt` follows. Note that the console transcript as seen requires more project code than this.
 
 ```scala
               scalaVersion :=  "2.11.8"
@@ -21,26 +21,23 @@ initialCommands in console :=  "import psp.std._, all._, StdShow._"
 
 Then `sbt console` and you can look around.
 ```scala
-% sbt console
-psp-std repl (ammonite 0.5.7, scala 2.11.8, jvm 1.8.0_92)
+scala> val xs = 1 to 20 splitAfter 10.size
+xs: psp.std.RView[psp.std.all.Int,psp.std.all.ClosedRange[psp.std.all.Int]]#Split = [ 1, 2, 3, ... ] / [ 11, 12, 13, ... ]
 
-psp> val xs = 1 to 20 splitAfter 10.size
-xs: Split[Int] = [ 1, 2, 3, ... ] / [ 11, 12, 13, ... ]
+scala> xs mapLeft (_ dropRight 8) join
+res0: psp.std.RView[Int,psp.std.Consecutive.Closed[Int]] = [ 1, 2, 11, ... ]
 
-psp> xs mapLeft (_ dropRight 8) join
-res0: View[Int] = [ 1, 2, 11, ... ]
+scala> xs.zip filterRight (_ % 3 === 0)
+res1: psp.std.Zip[Int,Int] = [ 2 -> 12, 5 -> 15, 8 -> 18 ]
 
-psp> xs.zip filterRight (_ % 3 === 0)
-res1: Zip[Int, Int] = [ 2 -> 12, 5 -> 15, 8 -> 18 ]
+scala> val ys = zipCross(1 to 3, view("a", "bb"))
+ys: psp.std.Zip[psp.std.all.Int,String] = [ 1 -> a, 1 -> bb, 2 -> a, 2 -> bb, 3 -> a, 3 -> bb ]
 
-psp> val ys = zipCross(1 to 3, view("a", "bb"))
-ys: Zip[Int, String] = [ 1 -> a, 1 -> bb, 2 -> a, 2 -> bb, 3 -> a, 3 -> bb ]
+scala> val zs = ys eqBy (x => x, _.length)
+zs: psp.std.Zip[psp.std.all.Int,String] = [ 1 -> a, 2 -> bb ]
 
-psp> val zs = ys eqBy (x => x, _.length)
-same: Zip[Int, String] = [ 1 -> a, 2 -> bb ]
-
-psp> zs.rights joinWith '/'
-res2: String = a/bb
+scala> zs.rights joinWith '/'
+res2: psp.std.all.String = a/bb
 ```
 
 ### Requirements

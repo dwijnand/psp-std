@@ -1,42 +1,6 @@
 package psprepl
 
 import psp.std._, all._, StdShow._
-import ammonite.repl.{ Ref, Repl, Storage }
-import ammonite.repl.Main.defaultAmmoniteHome
-import ammonite.repl.frontend.FrontEnd
-import java.lang.System
-
-object Main {
-  def storage = Storage(defaultAmmoniteHome, None)
-  def initImports = sm"""
-    |import psp.std._, all._, StdShow._
-    |import psprepl._, INREPL._
-  """
-
-  def main(args: Array[String]): Unit = new REPL(Ref(storage), initImports, args.toVec).start()
-}
-
-/** This sets up the ammonite repl with the correct compiler settings
- *  and desired namespace elements and aesthetics.
- */
-class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", emptyValue) {
-  override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
-  override val prompt   = Ref("psp> ")
-
-  private def banner               = s"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
-  override def printBanner(): Unit = printStream println banner
-
-  import interp.replApi._
-
-  def start(): Unit = {
-    compiler.settings.processArguments(scalacArgs.to, processAll = true)
-    load(initCode)
-    run()
-  }
-
-  // Blank line between results.
-  override def action() = sideEffect(super.action(), printStream.println(""))
-}
 
 /** These classes are imported into the running repl.
  */
@@ -53,7 +17,4 @@ object INREPL {
   implicit class ReplShowRepr[R](repr: R) {
     def > (implicit z: Show[R] = Show.Inherited) = out.println(repr.pp)
   }
-
-  implicit def showToAmmonite[A](implicit z: Show[A]): pprint.PPrinter[A] =
-    pprint.PPrinter[A]((t, c) => vec(z show t).iterator)
 }

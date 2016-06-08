@@ -20,19 +20,23 @@ lazy val std = project.setup settings (
 )
 
 lazy val repl = project.noArtifacts.setup dependsOn std settings (
-     libraryDependencies += ammonite,
-   outputStrategy in run := Some(StdoutOutput),
-             fork in run := true,
-     connectInput in run := true,
-               mainClass := Some("psprepl.Main"),
-      console in Compile := (run in Compile).toTask(ammoniteArgs mkString (" ", " ", "")).value
+                outputStrategy in run  := Some(StdoutOutput),
+                          fork in run  := true,
+                  connectInput in run  := true,
+                            mainClass  := Some("psprepl.Main"),
+  scalacOptions in console in Compile ++= baseArgs,
+           initialCommands in console  += """
+             |import psp.std._, all._, StdShow._
+             |import psprepl._, INREPL._
+           """.stripMargin
 )
 
 lazy val macros = project.noArtifacts dependsOn (std % "compile->compile;test->test") settings (
                  name :=  "psp-macros",
   libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
               version :=  "0.6.2-SNAPSHOT",
-         scalaVersion :=  "2.11.8",
+            resolvers +=  "scala-pr-validation-snapshots" at "https://scala-ci.typesafe.com/artifactory/scala-pr-validation-snapshots/",
+         scalaVersion :=  "2.12.0-22e2427-SNAPSHOT",
          organization :=  "org.improving",
         scalacOptions ++= wordSeq("-language:experimental.macros -Yno-predef")
 )

@@ -8,18 +8,16 @@ object PspStd {
   type InputTaskOf[A] = Def.Initialize[InputTask[A]]
 
   def junitArgs: Seq[String]    = sys.env.getOrElse("ARGS", "-a -s").split("\\s+").toSeq
-  def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-predef -Yno-adapted-args")
-  def ammoniteArgs: Seq[String] = baseArgs ++ wordSeq("-Yno-imports")
-  def compileArgs: Seq[String]  = ammoniteArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
+  def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-imports -Yno-predef -Yno-adapted-args")
+  def compileArgs: Seq[String]  = baseArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
   def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
 
-  def ammonite         = "com.lihaoyi"              %       "ammonite-repl"       % "0.5.7" cross CrossVersion.full
-  def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" %             "1.12"
-  def jsr305           = "com.google.code.findbugs" %           "jsr305"          %             "3.0.1"
-  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" %             "1.1.1"
+  def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" % "1.12"
+  def jsr305           = "com.google.code.findbugs" %           "jsr305"          % "3.0.1"
+  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.1.1"
 
   def testDependencies = Seq(
-    "org.scalacheck" %% "scalacheck"      % "1.12.5",
+ // "org.scalacheck" %% "scalacheck"      % "1.12.5", // no scalacheck for 2.12.0-SNAPSHOT
     "com.novocode"    % "junit-interface" %  "0.11"
   )
 
@@ -45,9 +43,10 @@ object PspStd {
     javacOptions in compile ++= Seq("-nowarn", "-XDignore.symbol.file"),
          logLevel in update :=  Level.Warn,
     publishArtifact in Test :=  false,
+                  resolvers +=  "scala-pr-validation-snapshots" at "https://scala-ci.typesafe.com/artifactory/scala-pr-validation-snapshots/",
         libraryDependencies +=  jmhAnnotations,
                     version :=  "0.6.2-SNAPSHOT",
-               scalaVersion :=  "2.11.8",
+               scalaVersion :=  "2.12.0-22e2427-SNAPSHOT",
                organization :=  "org.improving",
                    licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
            triggeredMessage :=  Watched.clearWhenTriggered,

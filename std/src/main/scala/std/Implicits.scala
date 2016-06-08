@@ -10,6 +10,8 @@ trait AllImplicit extends AllImplicit0 with StdEmpty with StdBuilders with StdAl
   // Conversions.
   implicit def longToPrecise(x: Long): Precise     = Size(x)
   implicit def stringToPstring(x: String): Pstring = new Pstring(x)
+
+  implicit def pspReplPrinter[A: Show]: PspReplPrinter[A] = new PspReplPrinter[A]
 }
 
 trait AllImplicit0 {
