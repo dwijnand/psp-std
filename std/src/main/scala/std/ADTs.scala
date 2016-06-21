@@ -1,7 +1,8 @@
 package psp
 package std
 
-import exp._, Size._, all.PspLongOps
+import exp._, Size._, StdShow._, all.{ PspLongOps, showsToDoc }
+
 
 /** The Size hierarchy is:
   *                     Size
@@ -61,7 +62,7 @@ final class Precise private[std](val getLong: Long) extends Atomic {
   def indices: VdexRange      = 0L indexUntil getLong
   def lastIndex: Index        = exclusive.prev // effectively maps both undefined and zero to no index.
 
-  override def toString = s"$getLong"
+  override def toString = pp"$getLong"
 }
 final case class Bounded private[std](lo: Precise, hi: Atomic) extends Size
 

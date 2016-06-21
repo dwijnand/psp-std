@@ -78,7 +78,7 @@ final class Regex(val pattern: Pattern) extends ShowSelf {
   def prepend(s: String): Regex              = mapRegex(s + _)
   def starts: Regex                          = cond(to_s startsWith "^", this, prepend("^"))
   def surround(s: String, e: String): Regex  = mapRegex(_.surround(s, e))
-  def to_s: String                           = s"$pattern"
+  def to_s: String                           = pp"$pattern"
 
   def <>(that: Regex): Regex = mapRegex(_ + that.pattern)
   def |(that: Regex): Regex  = mapRegex(_ + "|" + that.pattern)
@@ -87,7 +87,7 @@ final class Regex(val pattern: Pattern) extends ShowSelf {
 object Regex extends (String => Regex) {
   val WS = apply("\\s*")
 
-  def apply(ch: Char): Regex              = apply(s"[$ch]")
+  def apply(ch: Char): Regex              = apply(pp"[$ch]")
   def quote(s: String): Regex             = apply(Pattern quote s)
   def apply(s: String): Regex             = new Regex(Pattern compile s)
   def apply(s: String, flags: Int): Regex = new Regex(Pattern.compile(s, flags))

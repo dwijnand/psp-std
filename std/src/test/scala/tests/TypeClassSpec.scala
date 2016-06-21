@@ -107,7 +107,7 @@ class ViewBasic extends ScalacheckBundle {
       expectValue(5)(view(5).zhead)
       // Just to observe the scalacheck arguments being generated
       // , "dump" -> sameOutcomes[RTriple, Unit](
-      //   { case xs -> (idx -> size) => { println(s"$xs -> ($idx -> $size)") ; () } },
+      //   { case xs -> (idx -> size) => { println(pp"$xs -> ($idx -> $size)") ; () } },
       //   { case xs -> (idx -> size) => () }
       // )
     )

@@ -2,7 +2,8 @@ package psp
 package std
 
 import all._, Show.by
-import StringContext.processEscapes
+import java.util.regex.Pattern
+import scala.StringContext.processEscapes
 
 abstract class Printing {
   def pstream: PrintStream
@@ -69,8 +70,8 @@ class FullRenderer(elemRange: SizeRange) extends Renderer {
   }
 }
 
-trait Interpolators {
-  def stringContext: StringContext
+// MUST be called StringContext, hard-coded in Scala's parser
+final case class StringContext(parts: String*) {
 
   /** TODO. See
    *  https://github.com/scala/scala/blob/2.12.x/src/compiler/scala/tools/reflect/FormatInterpolator.scala
@@ -88,7 +89,7 @@ trait Interpolators {
   def sm(args: Doc*): String  = Pconfig.renderer show sdoc(args: _*)
   def any(args: Any*): String = pp(args.m asDocs Show.Inherited seq: _*)
 
-  private def escapedParts: View[String]  = stringContext.parts.toVec map processEscapes
+  private def escapedParts: View[String]  = parts.toVec map processEscapes
   private def escaped: String             = escapedParts.join
   private def strippedParts: View[String] = escapedParts map (_ mapLines (_.stripMargin))
 
@@ -97,7 +98,7 @@ trait Interpolators {
    */
   def doc(args: Doc*): Doc  = escapedParts.asDocs.zip(args :+ Doc.empty).pairs flatMap (_.each) reducel (_ ~ _)
   def fdoc(args: Doc*): Doc = escaped.format(args.map(_.pp): _*)
-  def sdoc(args: Doc*): Doc = new StringContext(strippedParts.seq: _*).raw(args: _*).trim
+  def sdoc(args: Doc*): Doc = new scala.StringContext(strippedParts.seq: _*).raw(args: _*).trim
 }
 
 /** An incomplete selection of show compositors.
@@ -129,6 +130,7 @@ trait StdShow2 extends StdShow1 {
   implicit def showIndex: Show[Vdex]                    = by(_.indexValue)
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
+  implicit def showPattern: Show[Pattern]               = Show.Inherited
 
   implicit def showLiveView[A, B: Show]: Show[LiveView[A, B, _]] = by(_.lines.joinLines)
 

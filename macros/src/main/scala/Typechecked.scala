@@ -2,6 +2,7 @@ package psp
 package std
 package macros
 
+import scala.StringContext
 import scala.reflect.macros.blackbox.Context
 import all._
 

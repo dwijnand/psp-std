@@ -29,8 +29,8 @@ class ADTSpec extends ScalacheckBundle {
 
   var seen = ""
   val m1 = f1.traced(
-    x => seen += s"f($x): ",
-    x => seen += s"$x "
+    x => seen += pp"f($x): ",
+    x => seen += pp"$x "
   )
 
   lazy val m1trace = {

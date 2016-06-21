@@ -17,7 +17,7 @@ import java.nio.{ file => jnf }
   *   - Seq is hardcoded into varargs
   *   - Arrays are everywhere special
   *   - Lists are specially optimized by the compiler
-  *   - stringContext is required for string interpolation
+  *   - A StringContext term is required for string interpolation
   *   - ClassTags are synthesized by the compiler
   *   - BigDecimal/BigInt are treated specially for equality
   *   - Dynamic has special semantics
@@ -56,7 +56,6 @@ trait ExternalTypes {
   type Failure[+A]    = scala.util.Failure[A]
   type Option[+A]     = scala.Option[A]
   type Some[+A]       = scala.Some[A]
-  type StringContext  = scala.StringContext
   type Success[+A]    = scala.util.Success[A]
   type Try[+A]        = scala.util.Try[A]
   type Tuple2[+A, +B] = scala.Tuple2[A, B]
