@@ -162,7 +162,7 @@ trait Implicit extends Explicit {
   }
   implicit class TestOnlyAnyOps[A](private val lhs: A) {
     def =?(rhs: A)(implicit eqv: Eq[A], z: Show[A]): Prop = {
-      def label = pp"Expected $rhs but got $lhs"
+      def label = pp"Expected $lhs but got $rhs"
       cond(lhs === rhs, proved, falsified :| label)
     }
   }
