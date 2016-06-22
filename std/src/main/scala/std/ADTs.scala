@@ -126,25 +126,23 @@ object Size {
 
 /** Virtual Index.
   */
-final class Vindex[Base] private[std](val indexValue: Long) extends AnyVal {
-  type This = Vindex[Base]
+final class Vindex[+Base] private[std](val indexValue: Long) extends AnyVal {
+  def create(indexValue: Long): Vindex[Base] = new Vindex[Base](indexValue)
 
-  def create(indexValue: Long): This = new Vindex[Base](indexValue)
+  private def mapLong(f: Long => Long): Vindex[Base] = cond(isInvalid, this, create(f(indexValue)))
 
-  private def mapLong(f: Long => Long): This = cond(isInvalid, this, create(f(indexValue)))
-
-  def +(n: Long): This   = mapLong(_ + n)
-  def -(n: Long): This   = mapLong(_ - n)
-  def excluding: Precise = Size(indexValue)
-  def getInt: Int        = safeLongToInt(indexValue) // depend on this
-  def including: Precise = Size(nthValue)
-  def isEmpty            = indexValue < 0
-  def isInvalid          = indexValue < 0
-  def next: This         = this + 1
-  def nthValue: Long     = indexValue + 1
-  def prev: This         = this - 1
-  def toIndex: Index     = Index(indexValue)
-  def toNth: Nth         = Nth(nthValue)
+  def +(n: Long): Vindex[Base] = mapLong(_ + n)
+  def -(n: Long): Vindex[Base] = mapLong(_ - n)
+  def excluding: Precise       = Size(indexValue)
+  def getInt: Int              = safeLongToInt(indexValue) // depend on this
+  def including: Precise       = Size(nthValue)
+  def isEmpty                  = indexValue < 0
+  def isInvalid                = indexValue < 0
+  def next: Vindex[Base]       = this + 1
+  def nthValue: Long           = indexValue + 1
+  def prev: Vindex[Base]       = this - 1
+  def toIndex: Index           = Index(indexValue)
+  def toNth: Nth               = Nth(nthValue)
 }
 object Vindex {
   val Zero = new AnyRef

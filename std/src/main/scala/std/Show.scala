@@ -114,7 +114,7 @@ trait StdShow0 {
   implicit def showUnit: Show[Unit]       = Show.Inherited
 
   implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
-  implicit def showNth: Show[Nth]               = by(x => pp"#${x.nthValue}") // XXX
+  implicit def showVindex[A]: Show[Vindex[A]]   = by(_.indexValue)
 }
 trait StdShow1 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
@@ -134,7 +134,7 @@ trait StdShow2 extends StdShow1 {
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
   implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
-  implicit def showIndex: Show[Vdex]                    = by(_.indexValue)
+  implicit def showNth: Show[Nth]                       = by(x => pp"#${x.nthValue}")
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
 
@@ -155,9 +155,9 @@ trait StdShow2 extends StdShow1 {
   }
 }
 trait StdShow extends StdShow2 {
-  implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
-    case Consecutive(s, None)    => pp"[$s..)"
-    case Consecutive(s, Some(e)) => pp"[$s..$e]"
-    case _                       => "[]"
-  }
+//  implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
+//    case Consecutive(s, None)    => pp"[$s..)"
+//    case Consecutive(s, Some(e)) => pp"[$s..$e]"
+//    case _                       => "[]"
+//  }
 }

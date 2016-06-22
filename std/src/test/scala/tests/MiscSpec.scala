@@ -57,14 +57,14 @@ class ADTSpec extends ScalacheckBundle {
     showsAs("-", f4 get 3),
     showsAs("99", f4(3)),
     showsAs("f(1): 2 f(2): 4 f(3): 6", m1trace),
-    showsAs("0", Nth(1)),
+    showsAs("#1", Nth(1)),
     showsAs("0", Nth(1).indexValue),
     showsAs("0", Index(0)),
     showsAs("0", Index(0).indexValue),
     showsAs("0", (Nth(1): Vdex).indexValue),
-    showsAs("[0..2]", 1 nthTo 3),
-    showsAs("[0..2]", 0 indexUntil 3),
-    showsAs("[ [0..2], [0..2] ]", vec(1 nthTo 3, 0 indexUntil 3))
+    showsAs("[ #1, #2, #3 ]", 1 nthTo 3),
+    showsAs("[ 0, 1, 2 ]", 0 indexUntil 3),
+    showsAs("[ [ 0, 1, 2 ], [ 0, 1, 2 ] ]", vec(1 nthTo 3, 0 indexUntil 3))
   )
 }
 
