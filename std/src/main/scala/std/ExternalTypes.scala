@@ -44,7 +44,7 @@ trait ExternalTypes {
   type Short     = scala.Short
   type Unit      = scala.Unit
 
-  // Useful as a lower bound, e.g. def f[A >: Primitive <: AnyVal].
+  // Useful as a lower bound, e.g. def f[A >: Primitive <: AnyVal], if it works..
   type Primitive = Boolean with Char with Byte with Short with Int with Long with Float with Double with Unit
 
   // scala magic types, mostly not renamed.

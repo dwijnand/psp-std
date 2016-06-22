@@ -104,7 +104,15 @@ trait Interpolators {
   *  Not printing the way scala does.
   */
 trait StdShow0 {
-  implicit def showPrimitive[A >: Primitive <: AnyVal] : Show[A] = Show.Inherited
+  implicit def showBoolean: Show[Boolean] = Show.Inherited
+  implicit def showChar: Show[Char]       = Show.Inherited
+  implicit def showByte: Show[Byte]       = Show.Inherited
+  implicit def showShort: Show[Short]     = Show.Inherited
+  implicit def showInt: Show[Int]         = Show.Inherited
+  implicit def showLong: Show[Long]       = Show.Inherited
+  implicit def showDouble: Show[Double]   = Show.Inherited
+  implicit def showUnit: Show[Unit]       = Show.Inherited
+
   implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
   implicit def showNth: Show[Nth]               = by(x => pp"#${x.nthValue}") // XXX
 }
