@@ -13,7 +13,7 @@ object PspStd {
   def compileArgs: Seq[String]  = ammoniteArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
   def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
 
-  def ammonite         = "com.lihaoyi"              %       "ammonite-repl"       % "0.5.7" cross CrossVersion.full
+  def ammonite         = "com.lihaoyi"              %       "ammonite-repl"       % "0.6.2" cross CrossVersion.full
   def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" %             "1.12"
   def jsr305           = "com.google.code.findbugs" %           "jsr305"          %             "3.0.1"
   def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" %             "1.1.1"

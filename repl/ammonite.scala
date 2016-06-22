@@ -7,24 +7,27 @@ import ammonite.repl.frontend.FrontEnd
 import java.lang.System
 
 object Main {
-  def storage = Storage(defaultAmmoniteHome, None)
+  def storage = new Storage.Folder(defaultAmmoniteHome)
   def initImports = sm"""
     |import psp.std._, all._, StdShow._
     |import psprepl._, INREPL._
   """
 
-  def main(args: Array[String]): Unit = new REPL(Ref(storage), initImports, args.toVec).start()
+  def ammoniteVersion = ammonite.Constants.version
+  def scalaVersion    = scala.util.Properties.versionNumberString
+  def javaVersion     = System.getProperty("java.version")
+  def banner          = s"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
+
+  def main(args: Array[String]): Unit = new REPL(storage, initImports, args.toVec).start()
 }
 
 /** This sets up the ammonite repl with the correct compiler settings
  *  and desired namespace elements and aesthetics.
  */
-class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) extends Repl(System.in, System.out, System.err, storage, "", emptyValue) {
+class REPL(storage: Storage, initCode: String, scalacArgs: Vec[String])
+    extends Repl(System.in, System.out, System.err, storage, "", ammonite.ops.cwd, Some(Main.banner), emptyValue) {
   override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
   override val prompt   = Ref("psp> ")
-
-  private def banner               = s"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
-  override def printBanner(): Unit = printStream println banner
 
   import interp.replApi._
 
