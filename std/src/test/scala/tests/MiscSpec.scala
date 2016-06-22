@@ -7,6 +7,21 @@ import Prop.forAll
 class MiscTests {
   @Test(expected = Predef.classOf[AssertionError])
   def junitFail(): Unit = junitAssert(false)
+
+  @Test(expected = Predef.classOf[scala.NotImplementedError])
+  def notImplementedError(): Unit = ???
+
+  @Test
+  def assertTrue(): Unit = assert(true, "boom")
+
+  @Test(expected = Predef.classOf[IllegalArgumentException])
+  def iae(): Unit = illegalArgumentException("boom")
+
+  @Test(expected = Predef.classOf[IndexOutOfBoundsException])
+  def ioobe(): Unit = indexOutOfBoundsException("boom")
+
+  @Test(expected = Predef.classOf[NoSuchElementException])
+  def nsee(): Unit = noSuchElementException("boom")
 }
 
 class ArraySpec extends ScalacheckBundle {
