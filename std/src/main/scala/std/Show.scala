@@ -106,7 +106,7 @@ trait Interpolators {
 trait StdShow0 {
   implicit def showPrimitive[A >: Primitive <: AnyVal] : Show[A] = Show.Inherited
   implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
-  implicit def showNth: Show[Nth]               = by(_.nthValue)
+  implicit def showNth: Show[Nth]               = by(x => pp"#${x.nthValue}") // XXX
 }
 trait StdShow1 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
