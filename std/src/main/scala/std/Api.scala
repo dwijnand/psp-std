@@ -5,7 +5,7 @@ import scala.{ Tuple3, collection => sc }
 import java.{ lang => jl }
 import java.nio.{ file => jnf }
 import java.util.AbstractMap.SimpleImmutableEntry
-import exp._
+import StdShow._, exp._, all.showsToDoc
 
 trait ApiTypes extends ExternalTypes {
   // Aliases for internal and external types.
@@ -50,12 +50,12 @@ abstract class ApiValues extends ApiTypes {
   final val EOL     = jl.System getProperty "line.separator"
 
   def ??? : Nothing                                 = throw new scala.NotImplementedError
-  def abort(msg: Any): Nothing                      = throw new RuntimeException(s"$msg")
+  def abort(msg: Any): Nothing                      = throw new RuntimeException(any"$msg")
   def assert(assertion: => Bool, msg: => Any): Unit = if (!assertion) assertionError(msg)
-  def assertionError(msg: Any): Nothing             = throw new AssertionError(s"$msg")
-  def illegalArgumentException(msg: Any): Nothing   = throw new IllegalArgumentException(s"$msg")
-  def indexOutOfBoundsException(msg: Any): Nothing  = throw new IndexOutOfBoundsException(s"$msg")
-  def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(s"$msg")
+  def assertionError(msg: Any): Nothing             = throw new AssertionError(any"$msg")
+  def illegalArgumentException(msg: Any): Nothing   = throw new IllegalArgumentException(any"$msg")
+  def indexOutOfBoundsException(msg: Any): Nothing  = throw new IndexOutOfBoundsException(any"$msg")
+  def noSuchElementException(msg: Any): Nothing     = throw new NoSuchElementException(any"$msg")
 
   def ?[A](implicit value: A): A                              = value
   def _0[A](implicit z: ZeroOne[A]): A                        = z.zero
@@ -100,7 +100,7 @@ abstract class ApiValues extends ApiTypes {
   def safeLongToInt(value: Long): Int = value match {
     case MaxLong => MaxInt
     case MinLong => MinInt
-    case _       => assert(MinInt <= value && value <= MaxInt, s"$value out of range"); value.toInt
+    case _       => assert(MinInt <= value && value <= MaxInt, pp"$value out of range"); value.toInt
   }
 
   def stringFormat(s: String, args: Any*): String = {
@@ -110,7 +110,4 @@ abstract class ApiValues extends ApiTypes {
     }
     java.lang.String.format(s, args map unwrapArg: _*)
   }
-
-  // You can't use string interpolation without a stringContext term in scope.
-  lazy val StringContext = scala.StringContext
 }

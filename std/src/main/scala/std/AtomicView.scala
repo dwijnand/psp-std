@@ -9,7 +9,7 @@ trait View[+A] extends Any with Foreach[A] {
 }
 
 final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R] {
-  override def toString = s"Id(${ underlying.size.pp })"
+  override def toString = pp"Id(${ underlying.size })"
 }
 
 trait RView[A, R] extends View[A] with ViewClasses[A, R] {

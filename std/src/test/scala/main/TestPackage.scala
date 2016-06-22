@@ -51,7 +51,7 @@ trait Explicit {
   implicit def genToArb[A](g: Gen[A]): Arb[A] = Arb(g)
   implicit def arbToGen[A](g: Arb[A]): Gen[A] = g.arbitrary
 
-  def assert(p: => Boolean, msg: => Any)(implicit z: Assertions): Unit = Assertions.using(z)(p, s"assertion failed: $msg")
+  def assert(p: => Boolean, msg: => Any)(implicit z: Assertions): Unit = Assertions.using(z)(p, any"assertion failed: $msg")
   def associative[A: Arb : Eq](f: BinOp[A]): Prop                      = forAll((a: A, b: A, c: A) => sameBehavior(f(f(a, b), c), f(a, f(b, c))))
   def commutative[A: Arb : Eq](f: BinOp[A]): Prop                      = forAll((a: A, b: A) => sameBehavior(f(a, b), f(b, a)))
   def expectType(expected: jClass, found: jClass): NamedProp           = fp"$expected%15s  >:>  $found%s" -> Prop(expected isAssignableFrom found)
@@ -162,7 +162,7 @@ trait Implicit extends Explicit {
   }
   implicit class TestOnlyAnyOps[A](private val lhs: A) {
     def =?(rhs: A)(implicit eqv: Eq[A], z: Show[A]): Prop = {
-      def label = pp"Expected $rhs but got $lhs"
+      def label = pp"Expected $lhs but got $rhs"
       cond(lhs === rhs, proved, falsified :| label)
     }
   }

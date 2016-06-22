@@ -23,7 +23,7 @@ class REPL(storage: Ref[Storage], initCode: String, scalacArgs: Vec[String]) ext
   override val frontEnd = Ref[FrontEnd](FrontEnd.JLineUnix)
   override val prompt   = Ref("psp> ")
 
-  private def banner               = s"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
+  private def banner               = pp"\npsp-std repl (ammonite $ammoniteVersion, scala $scalaVersion, jvm $javaVersion)"
   override def printBanner(): Unit = printStream println banner
 
   import interp.replApi._

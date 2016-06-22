@@ -7,6 +7,21 @@ import Prop.forAll
 class MiscTests {
   @Test(expected = Predef.classOf[AssertionError])
   def junitFail(): Unit = junitAssert(false)
+
+  @Test(expected = Predef.classOf[scala.NotImplementedError])
+  def notImplementedError(): Unit = ???
+
+  @Test
+  def assertTrue(): Unit = assert(true, "boom")
+
+  @Test(expected = Predef.classOf[IllegalArgumentException])
+  def iae(): Unit = illegalArgumentException("boom")
+
+  @Test(expected = Predef.classOf[IndexOutOfBoundsException])
+  def ioobe(): Unit = indexOutOfBoundsException("boom")
+
+  @Test(expected = Predef.classOf[NoSuchElementException])
+  def nsee(): Unit = noSuchElementException("boom")
 }
 
 class ArraySpec extends ScalacheckBundle {
@@ -29,8 +44,8 @@ class ADTSpec extends ScalacheckBundle {
 
   var seen = ""
   val m1 = f1.traced(
-    x => seen += s"f($x): ",
-    x => seen += s"$x "
+    x => seen += pp"f($x): ",
+    x => seen += pp"$x "
   )
 
   lazy val m1trace = {
@@ -56,7 +71,15 @@ class ADTSpec extends ScalacheckBundle {
     showsAs("-", f3 get 3),
     showsAs("-", f4 get 3),
     showsAs("99", f4(3)),
-    showsAs("f(1): 2 f(2): 4 f(3): 6", m1trace)
+    showsAs("f(1): 2 f(2): 4 f(3): 6", m1trace),
+    showsAs("#1", Nth(1)),
+    showsAs("0", Nth(1).indexValue),
+    showsAs("0", Index(0)),
+    showsAs("0", Index(0).indexValue),
+    showsAs("0", (Nth(1): Vdex).indexValue),
+    showsAs("[ #1, #2, #3 ]", 1 nthTo 3),
+    showsAs("[ 0, 1, 2 ]", 0 indexUntil 3),
+    showsAs("[ [ 0, 1, 2 ], [ 0, 1, 2 ] ]", vec(1 nthTo 3, 0 indexUntil 3))
   )
 }
 

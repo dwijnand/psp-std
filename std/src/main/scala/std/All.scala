@@ -19,7 +19,6 @@ object Unsafe {
 object exp extends AllExplicit
 
 object all extends AllExplicit with AllImplicit {
-  implicit class PspStringContextOps(val stringContext: StringContext) extends Interpolators
   implicit class PspAnyOps[A](private val x: A) extends AnyVal {
     /** Call this on any value. Produce a view.
      *  If a value of the same type as the original can be
@@ -28,7 +27,7 @@ object all extends AllExplicit with AllImplicit {
      */
     def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
 
-    def any_s: String                     = s"$x"
+    def any_s: String                     = any"$x"
     def id_## : Int                       = java.lang.System.identityHashCode(x)
     def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
     def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue

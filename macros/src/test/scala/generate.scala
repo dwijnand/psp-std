@@ -1,7 +1,7 @@
 package psp
 package tests
 
-import psp.std._, all._
+import psp.std._, all._, StdShow._
 
 /** TODO - actually generate the code via an sbt generator.
  */
@@ -18,17 +18,17 @@ object Generator {
     "pspStraight"      -> ""
   )
   def vals = for ((name, stub) <- envs) yield {
-    val lines = for (l <- lhses; op <- ops; r <- rhses) yield s"$l$stub $op $r"
-    s"  final val $name = " + tq + "\n    " + (lines mkString "\n    ") + "\n  " + tq
+    val lines = for (l <- lhses; op <- ops; r <- rhses) yield pp"$l$stub $op $r"
+    pp"  final val $name = " + tq + "\n    " + (lines mkString "\n    ") + "\n  " + tq
   }
-  def template = s"""
+  def template = sm"""
     |package psp
     |package tests
     |package generated
     |
     |object Expressions {
     |  ${ vals mkString "\n" }
-    |}""".stripMargin
+    |}"""
 }
 
 object Expressions {
