@@ -12,19 +12,12 @@ trait Bundle extends ShowSelf {
  *  labels with the |: operator.
  */
 final class NamedProp(val label: String, p: Prop) {
-  def prop = p :| label
-  def check: Test.Result = p match {
-    case NamedProp.MapParams(prop, f) => Test.check(prop)(f)
-    case _                            => Test.check(p)(identity)
-  }
+  def prop: Prop         = p :| label
+  def check: Test.Result = Test.check(p)(identity)
 }
 object NamedProp {
-  final case class MapParams(underlying: Prop, f: ToSelf[TestParams]) extends Prop {
-    def apply(prms: GenParams)                 = underlying(prms)
-    override def check(prms: TestParams): Unit = super.check(f(prms))
-  }
+  def apply(label: String, p: Prop): NamedProp = new NamedProp(label, p)
 
-  def apply(label: String, p: Prop): NamedProp                 = new NamedProp(label, p)
   implicit def liftSeqPair(x: String -> View[Prop]): NamedProp = NamedProp(fst(x), snd(x) reducel (_ && _))
   implicit def liftPair(x: String -> Prop): NamedProp          = NamedProp(fst(x), snd(x))
 }

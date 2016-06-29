@@ -145,10 +145,6 @@ trait Implicit extends Explicit {
   implicit class TestIntOps(val self: Int) {
     def upTo(hi: Int): Gen[Int] = Gen.choose(self, hi)
   }
-  implicit class PropOps(p: Prop) {
-    def mapParams(f: ToSelf[TestParams]): Prop = new NamedProp.MapParams(p, f)
-    def minSuccessful(size: Precise): Prop     = mapParams(_ withMinSuccessfulTests size.getLong.toInt)
-  }
   implicit class PropResultOps(r: Prop.Result) {
     def unary_! : Prop.Result = r.copy(status = !r.status)
   }

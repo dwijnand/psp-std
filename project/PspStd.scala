@@ -19,7 +19,7 @@ object PspStd {
   def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" %             "1.1.1"
 
   def testDependencies = Seq(
-    "org.scalacheck" %% "scalacheck"      % "1.12.5",
+    "org.scalacheck" %% "scalacheck"      % "1.13.1",
     "com.novocode"    % "junit-interface" %  "0.11"
   )
 
