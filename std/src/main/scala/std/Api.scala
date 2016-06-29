@@ -14,15 +14,12 @@ trait ApiTypes extends ExternalTypes {
   type Bool               = scala.Boolean
   type GTOnce[+A]         = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
   type Id[+X]             = X
-  type Index              = Vindex[Vindex.Zero.type]
-  type Nth                = Vindex[Vindex.One.type]
   type Opt[+A]            = scala.Option[A]             // Placeholder
   type Pair[+A, +B]       = A -> B
   type PairOf[+A]         = A -> A
   type Pair2D[+A, +B]     = Pair[A->B, A->B]
   type Ref[+A]            = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
   type Triple[+A, +B, +C] = scala.Product3[A, B, C]
-  type Vdex               = Vindex[_]
   type sCollection[+A]    = sc.GenTraversable[A]        // named analogously to jCollection.
   type HashEqOrder[-A]    = Hash[A] with Eq[A] with Order[A]
   type HashEq[-A]         = Hash[A] with Eq[A]
@@ -87,6 +84,7 @@ abstract class ApiValues extends ApiTypes {
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = Tuple2(x, y)
+  def sameRef(x: Any, y: Any): Bool                      = castRef(x) eq castRef(y)
   def sideEffect[A](result: A, exprs: Any*): A           = result
   def snd[A, B](x: A -> B): B                            = x._2
   def some[A](x: A): Option[A]                           = scala.Some(x)

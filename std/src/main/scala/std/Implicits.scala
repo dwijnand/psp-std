@@ -8,8 +8,10 @@ trait AllImplicit extends AllImplicit0 with StdEmpty with StdBuilders with StdAl
   implicit def productizeScalaProduct[A, B]: Productize[A -> B, A, B]          = Productize(pair, fst, snd)
 
   // Conversions.
-  implicit def longToPrecise(x: Long): Precise     = Size(x)
-  implicit def stringToPstring(x: String): Pstring = new Pstring(x)
+  implicit def longToPrecise(x: Long): Precise                  = Size(x)
+  implicit def stringToPstring(x: String): Pstring              = new Pstring(x)
+  implicit def nthToIndex(x: Nth): Index                        = x.toIndex
+  implicit def nthRangeToIndex(x: Consecutive[Nth]): SliceRange = x map (_.toIndex)
 }
 
 trait AllImplicit0 {

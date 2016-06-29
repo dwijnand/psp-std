@@ -15,7 +15,9 @@ object Pconfig {
 final class JvmName(val raw: String) extends ShowSelf {
   def segments: Vec[String] = raw splitChar '.' toVec
   def short: String         = segments.last
+  def shorter: String       = short splitChar '$' filterNot (_.isEmpty) last
   def to_s: String          = raw
+  def scala_s: String       = cond(raw endsWith "$", "object " + shorter, "class " + shorter)
 }
 object JvmName {
   import scala.reflect.NameTransformer.decode
@@ -56,28 +58,4 @@ object +: {
 }
 object :+ {
   def unapply[A](xs: View[A]): Opt[View[A] -> A] = zcond(!xs.isEmpty, some(xs.init -> xs.last))
-}
-
-/** A valid index is always non-negative. All negative indices are
-  *  mapped to NoIndex, which has an underlying value of -1.
-  *  Manipulations of invalid values remain invalid, like NaN.
-  *  All valid indices give rise to a corresponding Nth which is
-  *  one larger, i.e. Index(3) is equivalent to Nth(4).
-  */
-object Index extends (Long => Index) {
-  final class Extractor(val get: Long) extends AnyVal { def isEmpty = get < 0 }
-
-  def invalid: Index            = new Index(-1L)
-  def apply(value: Long): Index = if (value < 0) invalid else new Index(value)
-  def unapply(x: Vdex)          = new Extractor(x.indexValue)
-}
-
-/** Nth is a 1-based index.
-  */
-object Nth extends (Long => Nth) {
-  final class Extractor(val get: Long) extends AnyVal { def isEmpty = get <= 0 }
-
-  def invalid: Nth            = new Nth(-1L)
-  def apply(value: Long): Nth = if (value <= 0) invalid else new Nth(value - 1)
-  def unapply(x: Vdex)        = new Extractor(x.nthValue)
 }

@@ -45,7 +45,7 @@ trait ViewClasses[A, R] {
     def isEmpty: Bool             = self.isEmpty || functions.isEmpty
     def apply(xy: Coords): B      = xy app (rows applyIndex _ applyIndex _)
     def rows: MapTo[View[B]]      = self map (r => functions map (_ apply r))
-    def column(n: Vdex): MapTo[B] = rows map (_ applyIndex n)
+    def column(n: Index): MapTo[B] = rows map (_ applyIndex n)
     def columns: Map2D[B]         = View(openIndices map column)
 
     def widths(implicit z: Show[B]): MapTo[Int]  = columns map (_ map (_.pp.length) max)
@@ -55,7 +55,7 @@ trait ViewClasses[A, R] {
   class EqOps(implicit z: Eq[A]) {
     def contains(x: A): Boolean = self exists (_ === x)
     def distinct: RView[A, R]   = self.zfoldl[V]((xs, x) => if (xs contains x) xs else xs :+ x)
-    def indexOf(x: A): Vdex     = self indexWhere (_ === x)
+    def indexOf(x: A): Index    = self indexWhere (_ === x)
   }
 }
 
@@ -75,7 +75,7 @@ object HeadTailView {
   }
 }
 object SlicedView {
-  def unapply[A, R](xs: RView[A, R]): Option[RView[A, R] -> VdexRange] = xs match {
+  def unapply[A, R](xs: RView[A, R]): Option[RView[A, R] -> SliceRange] = xs match {
 
     case View0(SlicedView(xs, r), DropRight(n)) => some(pair(xs, r dropRight n))
     case View0(SlicedView(xs, r), TakeRight(n)) => some(pair(xs, r takeRight n))

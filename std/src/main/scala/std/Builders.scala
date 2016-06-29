@@ -85,5 +85,5 @@ trait StdEmpty extends StdEmpty0 {
   implicit lazy val emptySize: Empty.Const[Size]                = Empty const _0
   implicit lazy val emptyString: Empty.Const[String]            = Empty const ""
   implicit lazy val emptyUri: Empty.Const[jUri]                 = Empty const jUri("")
-  implicit lazy val emptyVdexRange: Empty.Const[VdexRange]      = Empty const (Interval.empty map Index)
+  implicit lazy val emptySliceRange: Empty.Const[SliceRange]      = Empty const (Interval.empty map Index)
 }

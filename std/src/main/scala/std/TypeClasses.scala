@@ -44,7 +44,7 @@ trait Show[-A] extends Any with MShow[A, String] {
   def show(x: A): String
 }
 trait VIndexed[-R, +A] extends Any with MIndexed[R, Vdex, A] {
-  def elem(x: R, index: Vdex): A
+  def elem(x: R, index: Index): A
 }
 trait Empty[+A] extends Any with MEmpty[A] {
   def empty: A
@@ -124,6 +124,11 @@ object Show extends UnaryClassCompanion[Show, String] {
     * There is however an implicit universal instance in the Unsafe object.
     */
   val Inherited: Show[Any] = apply[Any](s => zcond(s != null, s.toString))
+
+  object ToS extends Show[Any] with ShowSelf {
+    def show(x: Any): String = x.self_s
+    def to_s                 = "ToS"
+  }
 
   def wrap[A](f: ToString[A]): Show[A]   = new Impl[A](f)
   def unwrap[A](r: Show[A]): ToString[A] = r show _

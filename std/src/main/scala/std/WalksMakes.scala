@@ -19,11 +19,11 @@ object Walks extends StdWalks {
 }
 object Makes extends StdMakes {
   class Const[A](elem: A) extends Generated[A] {
-    def apply(idx: Vdex): A         = elem
+    def apply(idx: Index): A         = elem
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
   class Continually[A](elem: => A) extends Generated[A] {
-    def apply(idx: Vdex): A         = elem
+    def apply(idx: Index): A         = elem
     def foreach(f: A => Unit): Unit = while (true) f(elem)
   }
   class Iterable[A](it: () => scIterator[A]) extends Each[A] {
@@ -32,7 +32,7 @@ object Makes extends StdMakes {
   }
   class FromInts[A](f: Int => A, start: Int, end: Int) extends Direct[A] {
     def size = Size(end - start)
-    def apply(idx: Vdex): A = f(start + idx.indexValue.toInt)
+    def apply(idx: Index): A = f(start + idx.indexValue.toInt)
   }
   class Helper[R] {
     def apply[A](expr: View[A])(implicit z: Makes[A, R]): R = z make expr

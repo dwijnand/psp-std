@@ -1,7 +1,7 @@
 package psp
 package std
 
-import all._
+import all._, StdShow._
 
 /** "Native" psp collections.
   */
@@ -19,8 +19,9 @@ final case class Pcons[A](head: A, tail: Plist[A]) extends Plist[A] {
   def size = Size.One.atLeast
 }
 final case object Pnil extends Plist[Nothing] {
-  def size = _0
-  def apply[A](): Plist[A] = cast(this)
+  def size                           = _0
+  def apply[A](): Plist[A]           = cast(this)
+  def unapply[A](xs: Plist[A]): Bool = xs eq this
 }
 
 object Pstream {
@@ -56,16 +57,30 @@ sealed class PunapplySeq[A](it: () => scIterator[A]) extends scSeq[A] {
   def length: Int     = if (iterator.hasNext) MaxInt else 0
 }
 
-sealed abstract class Consecutive[+A] extends Indexed[A] {
+sealed abstract class Consecutive[+A] extends Indexed[A] with HasToS {
   type CC [X] <: Consecutive[X]
+
   def in: Interval
   def map[B](g: A => B): CC[B]
-  def applyLong(x: Long): A
+  def applyLong: Long => A
   def isAfter(n: Long): Bool
 
+  def drop(n: Precise): Consecutive[A]
+  def dropRight(n: Precise): Consecutive[A]
+  def take(n: Precise): Consecutive.Closed[A]
+  def takeRight(n: Precise): Consecutive.Closed[A]
+
+  def prelude: Precise            = startLong.size
   def startLong: Long             = in.startLong
   def containsLong(n: Long): Bool = in contains n
+
+  def take(n: Atomic): Consecutive[A]      = n.foldInfinite(this, take)
+  def takeRight(n: Atomic): Consecutive[A] = n.foldInfinite(this, takeRight)
+
+  def slice(start: Index, len: Precise): ClosedRange[A] = Consecutive(in.slice(start, len), applyLong)
+  def slice(r: SliceRange): Consecutive[A]              = cond(r.isEmpty, Consecutive.empty[A], this drop r.head.excluding take r.size)
 }
+
 object Consecutive {
   private val Empty = new Closed[Nothing](Interval.empty, indexOutOfBoundsException)
 
@@ -79,32 +94,35 @@ object Consecutive {
     case r: Open[A]                    => some(r.head -> none())
   }
 
-  final class Open[+A](val in: Interval.Open, f: Long => A) extends Consecutive[A] with Indexed[A] {
+  final class Open[+A](val in: Interval.Open, val applyLong: Long => A) extends Consecutive[A] with Indexed[A] {
     type CC[X] = Open[X]
 
     def isAfter(n: Long): Bool      = false
-    def applyLong(x: Long): A       = f(x)
     def size                        = Infinite
-    def apply(vdex: Vdex): A        = f(in(vdex))
-    def foreach(g: A => Unit): Unit = in foreach (f andThen g)
-    def map[B](g: A => B): Open[B]  = in map (f andThen g)
+    def apply(vdex: Index): A       = applyLong(in(vdex))
+    def foreach(g: A => Unit): Unit = in foreach (applyLong andThen g)
+
+    def map[B](g: A => B): Open[B]  = in map (applyLong andThen g)
+
+    def drop(n: Precise): Open[A]        = Consecutive(in drop n, applyLong)
+    def dropRight(n: Precise): Open[A]   = Consecutive(in dropRight n, applyLong)
+    def take(n: Precise): Closed[A]      = Consecutive(in take n, applyLong)
+    def takeRight(n: Precise): Closed[A] = Consecutive(in takeRight n, applyLong)
+
+    def to_s = showConsecutive show this
   }
-  final class Closed[+A](val in: Interval.Closed, f: Long => A) extends Consecutive[A] with Direct[A] {
+  final class Closed[+A](val in: Interval.Closed, val applyLong: Long => A) extends Consecutive[A] with Direct[A] {
     type CC[X] = Closed[X]
 
     def isAfter(n: Long)             = in.exclusiveEnd <= n
-    def applyLong(x: Long): A        = f(x)
-    def apply(vdex: Vdex): A         = f(in(vdex))
-    def map[B](g: A => B): Closed[B] = in map (f andThen g)
+    def apply(vdex: Index): A        = applyLong(in(vdex))
+    def map[B](g: A => B): Closed[B] = in map (applyLong andThen g)
     def size: Precise                = in.size
+    def last: A                      = apply(size.lastIndex)
 
-    def last: A                          = apply(size.lastIndex)
-    def drop(n: Precise): Closed[A]      = Consecutive(in drop n, f)
-    def dropRight(n: Precise): Closed[A] = Consecutive(in dropRight n, f)
-    def take(n: Precise): Closed[A]      = Consecutive(in take n, f)
-    def takeRight(n: Precise): Closed[A] = Consecutive(in takeRight n, f)
-
-    def slice(start: Vdex, len: Precise): Closed[A] = Consecutive(in.slice(start, len), f)
-    def slice(r: VdexRange): Closed[A]              = Consecutive(in.slice(r), f)
+    def drop(n: Precise): Closed[A]      = Consecutive(in drop n, applyLong)
+    def dropRight(n: Precise): Closed[A] = Consecutive(in dropRight n, applyLong)
+    def take(n: Precise): Closed[A]      = Consecutive(in take n, applyLong)
+    def takeRight(n: Precise): Closed[A] = Consecutive(in takeRight n, applyLong)
   }
 }

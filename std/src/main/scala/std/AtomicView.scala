@@ -19,7 +19,7 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def +:(head: A): This                               = self prepend view(head)
   def :+(last: A): This                               = self append view(last)
   def append(that: View[A]): This                     = self ++ that
-  def applyIndex(idx: Vdex): A                        = sliceIndex(idx).head
+  def applyIndex(idx: Index): A                       = sliceIndex(idx).head
   def asDocs(implicit z: Show[A]): MapTo[Doc]         = self map (x => Doc(x))
   def asRefs: MapTo[Ref[A]]                           = self map castRef
   def asShown(implicit z: Show[A]): MapTo[String]     = self map z.show
@@ -28,7 +28,7 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def byRef: MapTo[Ref[A]]#EqOps                      = asRefs by Relation.Reference
   def byShow(implicit z: Show[A]): EqOps              = by(Eq.by[A](_.pp))
   def count(p: Pred): Int                             = foldl[Int](0)((res, x) => cond(p(x), res + 1, res))
-  def dropIndex(idx: Vdex): This                      = splitAround(idx).join
+  def dropIndex(idx: Index): This                     = splitAround(idx).join
   def exists(p: Pred): Bool                           = foldl(false)((res, x) => cond(p(x), return true, res))
   def filter(p: Pred): This                           = self withFilter p
   def filterNot(p: Pred): This                        = self filter !p
@@ -39,7 +39,7 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def grep(re: Regex)(implicit z: Show[A]): This      = self filter (re isMatch _)
   def head: A                                         = self headOr abort("empty")
   def headOr(alt: => A): A                            = self match { case HeadTailView(hd, _) => hd ; case _ => alt }
-  def indexWhere(p: Pred): Vdex                       = zipIndex first { case (x, i) if p(x) => i }
+  def indexWhere(p: Pred): Index                      = zipIndex first { case (x, i) if p(x) => i }
   def init: This                                      = self dropRight 1
   def inits: Map2D[A]                                 = self +: zcond(!isEmpty, init.inits)
   def isEmpty: Bool                                   = size.isZero || !exists(ConstantTrue)
@@ -52,17 +52,17 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def prepend(that: View[A]): This                    = Joined(View(that), this)
   def reducel(f: BinOp[A]): A                         = tail.foldl(head)(f)
   def reducer(f: BinOp[A]): A                         = init.foldr(last)(f)
-  def slice(r: VdexRange): This                       = zcond(!r.isEmpty, slice(r.head, r.size))
-  def slice(start: Vdex, len: Precise): This          = self drop start.excluding take len
-  def sliceIndex(start: Vdex): This                   = slice(start, _1)
+  def slice(r: SliceRange): This                      = zcond(!r.isEmpty, slice(r.head, r.size.preciseOrMaxLong))
+  def slice(start: Index, len: Precise): This         = self drop start.excluding take len
+  def sliceIndex(start: Index): This                  = slice(start, _1)
   def sliceWhile(p: Pred, q: Pred): This              = self dropWhile p takeWhile q
   def sort(implicit z: Order[A]): This                = cast(toRefArray.inPlace.sort.m)
   def sortBy[B: Order](f: A => B): This               = sort(Order by f)
   def sortWith(isLess: Relation[A]): This             = sort(Order(isLess))
   def span(p: Pred): Split                            = Split(self takeWhile p, self dropWhile p)
   def splitAfter(len: Precise): Split                 = Split(self take len, self drop len)
-  def splitAround(idx: Vdex): Split                   = splitAt(idx) mapRight (_ tail)
-  def splitAt(idx: Vdex): Split                       = splitAfter(idx.excluding)
+  def splitAround(idx: Index): Split                  = splitAt(idx) mapRight (_ tail)
+  def splitAt(idx: Index): Split                      = splitAfter(idx.excluding)
   def tail: This                                      = self drop 1
   def tails: Map2D[A]                                 = self +: zcond(!isEmpty, tail.tails)
   def takeToFirst(p: Pred): This                      = self span !p app ((x, y) => x ++ (y take 1))

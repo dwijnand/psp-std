@@ -16,8 +16,8 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
 
   final val ConstantFalse  = (x: scala.Any) => false
   final val ConstantTrue   = (x: scala.Any) => true
-  final val ConstantFalse2 = (x: scala.Any, y: scala.Any) => false
-  final val ConstantTrue2  = (x: scala.Any, y: scala.Any) => true
+  final val ConstantFalse2 = (x: Any, y: Any) => false
+  final val ConstantTrue2  = (x: Any, y: Any) => true
 
   // Type aliases I don't like enough to have in the API.
   type BoolAlgebra[A]       = spire.Bool[A]
@@ -26,7 +26,7 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   type ClosedRange[+A]      = Consecutive.Closed[A]
   type ConstDoc[X]          = Doc
   type ConstSize[X]         = Size
-  type Coords               = PairOf[Vdex]
+  type Coords               = PairOf[Index]
   type HashFun[+A]          = Fun[Long, View[A]]
   type Heyting[A]           = spire.Heyting[A]
   type IntRange             = ClosedRange[Int]
@@ -34,7 +34,8 @@ abstract class AllExplicit extends ApiValues with StdRelation with StdConstructo
   type OpenRange[+A]        = Consecutive.Open[A]
   type Renderer             = Show[Doc]
   type SizeRange            = ClosedRange[Precise]
-  type VdexRange            = ClosedRange[Vdex]
+  type SliceRange           = Consecutive[Index]
+  type SliceRanges          = Vec[SliceRange]
   type Vec[A]               = Direct[A]
 
   type SplitView[A, R]   = RView[A, R]#Split

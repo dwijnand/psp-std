@@ -122,7 +122,7 @@ class ViewBasic extends ScalacheckBundle {
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray ++ parray),
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", parray.m ++ parray.m),
     showsAs("[ 1, 2, 3, 1, 2, 3 ]", pvector ++ pvector),
-    showsAs("[1..)", punfold),
+    showsAs("[1..]", punfold),
     seqShows("1 -> 0, 2 -> 1, 3 -> 2", pvector.zipIndex map (_ -> _)),
     seqShows("11, 22, 33, 44", 1 indexUntil 50 grep """(.)\1""".r),
     seqShows("99, 1010, 1111", xxNumbers.slice(8, Size(3))),

@@ -22,7 +22,7 @@ class OperationCounts extends ScalacheckBundle {
 
     def count: Long            = _access
     def size: Precise          = r.size
-    def apply(idx: Vdex): Long = doalso(r(idx))(_access += 1)
+    def apply(idx: Index): Long = doalso(r(idx))(_access += 1)
   }
   def checkOp(op: LongOp): Bool = synchronized {
     val c = new Counter(1L to max)
