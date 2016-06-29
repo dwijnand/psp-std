@@ -3,6 +3,9 @@ package std
 
 import all._
 
+trait InheritedHashEq extends Any
+trait ReferenceHashEq extends AnyRef
+
 object Relation {
   val Lexical: HashEqOrder[String]   = all(Hash.Inherited, Eq.Inherited, Order.Inherited[String])
   val Reference: HashEqOrder[AnyRef] = all(Hash.Reference, Eq.Reference, Order.Reference)
@@ -41,13 +44,15 @@ object Relation {
 }
 
 trait StdRelation0 {
-  implicit def sizeHashEq: HashEq[Size] = Relation.hasheq(Hash.Inherited, Eq(Size.equiv))
-
+  implicit def inheritedHashEq[A <: InheritedHashEq]: HashEq[A] = Relation.Inherited
+  implicit def referenceHashEq[A <: ReferenceHashEq]: HashEq[A] = Relation.Reference
+}
+trait StdRelation1 extends StdRelation0 {
   implicit def walksHash[A, R](implicit b: Walks[A, R], hz: Hash[A]): Hash[R]    = viewHash[A] on b.walk
   implicit def walksEq[A, R](implicit b: Walks[A, R], ez: Eq[A]): Eq[R]          = viewEq[A] on b.walk
   implicit def walksOrder[A, R](implicit b: Walks[A, R], oz: Order[A]): Order[R] = viewOrder[A] on b.walk
 }
-trait StdRelation1 extends StdRelation0 {
+trait StdRelation2 extends StdRelation1 {
   implicit def pairEq[A: Eq, B: Eq]: Eq[A->B]             = Eq((x, y) => fst(x) === fst(y) && snd(x) === snd(y))
   implicit def pairOrder[A: Order, B: Order]: Order[A->B] = Order { case (x1 -> x2) -> (y1 -> y2) => (x1 < y1) || !(y1 < x1) && (x2 < y2) }
   implicit def pairHash[A: Hash, B: Hash]: Hash[A->B]     = Hash(x => fst(x).hash + snd(x).hash)
@@ -68,14 +73,14 @@ trait StdRelation1 extends StdRelation0 {
     case _                        => false
   }
 
-  implicit def longHashEqOrder: HashEqOrder[Long]       = Relation.Longs
-  implicit def boolHashEqOrder: HashEqOrder[Bool]       = Relation allBy (x => if (x) 1L else 0L)
-  implicit def charHashEqOrder: HashEqOrder[Char]       = Relation allBy (x => x: Long)
-  implicit def intHashEqOrder: HashEqOrder[Int]         = Relation allBy (x => x: Long)
-  implicit def vindexHashEqOrder: HashEqOrder[Vdex]     = Relation allBy (_.indexValue)
-  implicit def preciseHashEqOrder: HashEqOrder[Precise] = Relation allBy (_.getLong)
-  implicit def stringHashEqOrder: HashEqOrder[String]   = Relation.Lexical
-  implicit def classHashEqOrder: Hash[jClass]           = Relation.Inherited
+  implicit def atomicHashEqOrder[A <: Atomic]: HashEqOrder[A] = Relation allBy (_.getLongOrMax)
+  implicit def boolHashEqOrder: HashEqOrder[Bool]             = Relation allBy (x => if (x) 1L else 0L)
+  implicit def charHashEqOrder: HashEqOrder[Char]             = Relation allBy (x => x: Long)
+  implicit def classHashEqOrder: Hash[jClass]                 = Relation.Inherited
+  implicit def intHashEqOrder: HashEqOrder[Int]               = Relation allBy (x => x: Long)
+  implicit def longHashEqOrder: HashEqOrder[Long]             = Relation.Longs
+  implicit def stringHashEqOrder: HashEqOrder[String]         = Relation.Lexical
+  implicit def vdexHashEqOrder: HashEqOrder[Vdex]             = Relation allBy (_.indexValue)
 
   implicit def viewHash[A: Hash]: Hash[View[A]] = Hash(_.map(_.hash).foldl(0L)(_ + _))
   implicit def viewEq[A: Eq]: Eq[View[A]]       = Eq(_ zip _ corresponds (_ === _))
@@ -94,7 +99,7 @@ trait StdRelation1 extends StdRelation0 {
     loop()
   }
 }
-trait StdRelation extends StdRelation1 {
+trait StdRelation extends StdRelation2 {
   implicit def intervalHashEqOrder: HashEqOrder[Interval] =
     Relation allBy (x => x.startLong -> x.size.preciseOrMaxLong)
 }

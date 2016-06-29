@@ -44,7 +44,7 @@ object Run {
     case View1(xs, DropWhile(p)) => ll.foreachDropWhile(xs, f, p)
     case View0(xs, DropRight(n)) => ll.foreachDropRight(xs, f, n)
     case View0(xs, TakeRight(n)) => ll.foreachTakeRight(xs, f, min(n, xs.size.preciseOrMaxLong))
-    case View0(xs, Drop(n))      => ll.foreachSlice(xs, Interval(n.getLong) map Index, f)
+    case View0(xs, Drop(n))      => ll.foreachSlice(xs, openIndices drop n, f)
     case View0(xs, Take(n))      => ll.foreachSlice(xs, n.indices, f)
   }
 

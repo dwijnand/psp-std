@@ -1,7 +1,7 @@
 package psp
 package std
 
-import all._
+import all._, StdShow._
 
 /** Foreach is the common parent of View and Each.
   *
@@ -19,17 +19,18 @@ trait Each[+A] extends Any with Foreach[A] {
 }
 trait Indexed[+A] extends Any with Each[A] {
   def size: Atomic
-  def apply(idx: Vdex): A
+  def apply(idx: Index): A
 }
 trait Generated[+A] extends Any with Indexed[A] {
   def size = Infinite
 }
-trait Direct[+A] extends Any with Indexed[A] {
+trait Direct[+A] extends Any with Indexed[A] with UseToS {
   def size: Precise
 
-  def applyReverse(idx: Vdex): A  = apply(size.lastIndex - idx.indexValue)
+  def applyReverse(idx: Index): A  = apply(size.lastIndex - idx.indexValue)
   def foreach(f: A => Unit): Unit = ll.foreachDirect(this, f)
   def head: A                     = apply(_0) // depend on this
+  def to_s: String                = showView(Show.ToS) show this
 }
 
 final class Suspend[+A](c: Folded[A]) extends Each[A] {

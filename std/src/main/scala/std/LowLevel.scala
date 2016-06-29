@@ -29,9 +29,29 @@ object ll {
       if (elem == last) return
     }
   }
+  @inline def foreachLongNonEmptyReverse(start: Long, last: Long, f: Long => Unit): Unit = {
+    var elem: Long = start + 1
+    while (true) {
+      elem -= 1
+      f(elem)
+      if (elem == last) return
+    }
+  }
+
+  def foreachReverse[A](xs: View[A], f: A => Unit): Unit = {
+    val ys = xs.toVec
+    var i = ys.size.lastIndex
+    while (i.isValid) {
+      f(ys(i))
+      i -= 1
+    }
+  }
 
   @inline def foreachDirect[A](xs: Direct[A], f: A => Unit): Unit =
     foreachLong(0, xs.size.getLong - 1, n => f(xs(Index(n))))
+
+  @inline def foreachLongReverse(start: Long, last: Long, f: Long => Unit): Unit =
+    if (start >= last) foreachLongNonEmptyReverse(start, last, f)
 
   @inline def foreachLong(start: Long, last: Long, f: Long => Unit): Unit =
     if (start <= last) foreachLongNonEmpty(start, last, f)
@@ -86,9 +106,8 @@ object ll {
   //   res
   // }
   final def foldRight[A, B](xs: View[A], initial: B, f: (A, B) => B): B = {
-    val arr: Array[Ref[A]] = doto(xs.toRefArray)(_.inPlace.reverse)
     var res: B = initial
-    arr.m foreach (x => res = f(x, res))
+    foreachReverse[A](xs, x => res = f(x, res))
     res
   }
 
@@ -113,7 +132,25 @@ object ll {
     }
     dropped
   }
-  def foreachSlice[A](xs: View[A], range: Consecutive[Vdex], f: A => Unit): Unit = {
+  def foreachDrop[A](xs: View[A], n: Precise, f: A => Unit): Unit = {
+    var toDrop = n
+    xs foreach { x =>
+      if (toDrop <= 0) f(x)
+      else toDrop = toDrop - 1
+    }
+  }
+  def foreachTake[A](xs: View[A], n: Precise, f: A => Unit): Unit = {
+    var toTake = n
+    xs foreach { x =>
+      if (toTake <= 0)
+        return
+
+      f(x)
+      toTake -= 1
+    }
+  }
+
+  def foreachSlice[A](xs: View[A], range: SliceRange, f: A => Unit): Unit = {
     var current = 0L
     xs foreach { x =>
       if (range containsLong current) f(x)
@@ -122,11 +159,12 @@ object ll {
     }
   }
 
-  def foreachTakeRight[A](xs: View[A], f: ToUnit[A], n: Precise): Unit = n match {
+  def foreachTakeRight[A](xs: Foreach[A], f: ToUnit[A], n: Atomic): Unit = n match {
     case Precise(0L) => ()
-    case _           => (CBuf[A](n) ++= xs) foreach f
+    case Infinite    => xs foreach f
+    case n: Precise  => (CBuf[A](n) ++= xs) foreach f
   }
-  def foreachDropRight[A](xs: View[A], f: ToUnit[A], n: Precise): Unit = n match {
+  def foreachDropRight[A](xs: Foreach[A], f: ToUnit[A], n: Precise): Unit = n match {
     case Precise(0L) => xs foreach f
     case _           => foldLeft[A, CBuf[A]](xs, CBuf[A](n), (buf, x) => if (buf.isFull) sideEffect(buf, f(buf push x)) else buf += x)
   }
@@ -143,7 +181,7 @@ object ll {
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
     def isFull                      = seen >= cap
-    def apply(index: Vdex): A       = cast(buffer((readPointer + index.getInt) % cap))
+    def apply(index: Index): A      = cast(buffer((readPointer + index.getInt) % cap))
     def size: Precise               = min(capacity, seen)
     def ++=(xs: View[A]): this.type = sideEffect(this, xs foreach setHead)
     def +=(x: A): this.type         = sideEffect(this, setHead(x))

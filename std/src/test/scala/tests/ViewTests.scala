@@ -155,7 +155,7 @@ class IntViewTests {
     same[View[Int]](ints drop 2 take 2, view(3, 4))
     same[View[Int]](ints slice (1 indexUntil 4), view(2, 3, 4))
     same[View[Int]](ints slice (3 nthTo 4), view(3, 4))
-    same[View[Int]](ints.slice(2.index, Size(2)), view(3, 4))
+    same[View[Int]](ints.slice(2.index, 2.size), view(3, 4))
     same[View[Int]](ints.slice(Nth(2), Size(2)), view(2, 3))
   }
 

@@ -4,6 +4,7 @@ package std
 import all._, Show.by
 import java.util.regex.Pattern
 import scala.StringContext.processEscapes
+import StdShow._
 
 abstract class Printing {
   def pstream: PrintStream
@@ -22,18 +23,25 @@ object err extends Printing {
   *  Not overriding toString here to leave open the possibility of
   *  using a synthetic toString, e.g. of case classes.
   */
-trait ShowDirect extends Any { def to_s: String }
-trait ShowSelf extends Any with ShowDirect { override def toString = to_s }
+trait HasToS extends Any {
+  def to_s: String
+}
+trait UseToS extends Any with HasToS {
+  override def toString = to_s
+}
+trait UseDoc extends Any with UseToS {
+  def doc: Doc
+  def to_s: String = doc.pp
+}
+trait ShowSelf extends Any with UseToS
 
 object StdShow extends StdShow
-
-import StdShow._
 
 /** A not very impressive attempt to improve on string
   *  representations.
   */
 sealed abstract class Doc {
-  override def toString = abort("Doc.toString")
+  override def toString = abort("Doc.toString: " + this.pp)
 }
 
 object Doc {
@@ -115,9 +123,9 @@ trait StdShow0 {
   implicit def showUnit: Show[Unit]       = Show.Inherited
 
   implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
-  implicit def showVindex[A]: Show[Vindex[A]]   = by(_.indexValue)
+  implicit def showIndex: Show[Index] = by(_.indexValue)
 }
-trait StdShow1 extends StdShow0 {
+trait StdShow2 extends StdShow0 {
   implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
   implicit def showPset[A: Show] : Show[Pset[A]]             = by(_.basis.asShown.inBraces)
 
@@ -129,12 +137,12 @@ trait StdShow1 extends StdShow0 {
   implicit def showArray[A: Show]: Show[Array[A]]                = by(_.m)
   implicit def showSplit[A: Show, R]: Show[SplitView[A, R]]      = Show(_ app (_.doc <+> "/" <+> _ pp))
 }
-trait StdShow2 extends StdShow1 {
-  implicit def showString: Show[String]       = Show.Inherited
-  implicit def showThrowable: Show[Throwable] = Show.Inherited
+trait StdShow3 extends StdShow2 {
+  implicit def showString: Show[String]                     = Show.Inherited
+  implicit def showThrowable: Show[Throwable]               = Show.Inherited
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
-  implicit def showDirect: Show[ShowDirect]             = Show(_.to_s)
+  implicit def showSelf: Show[ShowSelf]                 = Show(_.to_s)
   implicit def showNth: Show[Nth]                       = by(x => pp"#${x.nthValue}")
   implicit def showOption[A: Show]: Show[Option[A]]     = Show(_.fold("-")(_.pp))
   implicit def showPair[A: Show, B: Show]: Show[A -> B] = Show(_ mkDoc " -> " pp)
@@ -142,24 +150,12 @@ trait StdShow2 extends StdShow1 {
 
   implicit def showLiveView[A, B: Show]: Show[LiveView[A, B, _]] = by(_.lines.joinLines)
 
-  implicit def showSize: Show[Size] = Show[Size] {
-    case Precise(size)         => pp"$size"
-    case Bounded(lo, Infinite) => pp"$lo+"
-    case Bounded(lo, hi)       => pp"[$lo,$hi]"
-    case Infinite              => "<inf>"
-  }
-
-  implicit def showInterval: Show[Interval] = Show {
-    case Interval(start, Infinite) => pp"[$start..)"
-    case Interval(_, Size.Zero)    => "[0,0)"
-    case Interval(start, Size.One) => pp"[$start]"
-    case Interval(start, end)      => pp"[$start..${ end - 1 }]"
-  }
+  implicit def showSize[A <: Size]: Show[A] = by(_.to_s)
 }
-trait StdShow extends StdShow2 {
-//  implicit def showRange[A: Show, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = Show {
-//    case Consecutive(s, None)    => pp"[$s..)"
-//    case Consecutive(s, Some(e)) => pp"[$s..$e]"
-//    case _                       => "[]"
-//  }
+trait StdShow extends StdShow3 {
+  implicit def showInterval: Show[Interval] = by(_.to_s)
+
+  /** Simpler versions of this method signature lead to implicit ambiguity.
+   */
+  implicit def showConsecutive[A, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = by(_.in)
 }

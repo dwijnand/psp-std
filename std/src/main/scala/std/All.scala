@@ -19,6 +19,27 @@ object Unsafe {
 object exp extends AllExplicit
 
 object all extends AllExplicit with AllImplicit {
+  implicit class PspAtomicOps(private val x: Atomic) {
+    def indices: SliceRange = foldInfinite(openIndices, _.indices)
+    def foldSize[A](inf: => A)(f: Precise => A): A = x match {
+      case Infinite   => inf
+      case x: Precise => f(x)
+    }
+    def foldInfinite[A](ifInfinite: => A, ifNot: Precise => A): A = x match {
+      case Infinite   => ifInfinite
+      case x: Precise => ifNot(x)
+    }
+    def foldZero[A](ifZero: => A, ifNot: Atomic => A): A = x match {
+      case Precise(0) => ifZero
+      case _          => ifNot(x)
+    }
+    def foldZeroInfinite[A](ifZero: => A, ifInfinite: => A, ifPrecise: Precise => A): A = x match {
+      case Infinite   => ifInfinite
+      case Precise(0) => ifZero
+      case n: Precise => ifPrecise(n)
+    }
+  }
+
   implicit class PspAnyOps[A](private val x: A) extends AnyVal {
     /** Call this on any value. Produce a view.
      *  If a value of the same type as the original can be
@@ -26,6 +47,11 @@ object all extends AllExplicit with AllImplicit {
      *  won't compile.
      */
     def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
+
+    def self_s: String = x match {
+      case x: HasToS => x.to_s
+      case _         => any_s
+    }
 
     def any_s: String                     = any"$x"
     def id_## : Int                       = java.lang.System.identityHashCode(x)
@@ -138,10 +164,10 @@ object all extends AllExplicit with AllImplicit {
   /** Views of specific type.
    */
   implicit class View2DOps[A](xss: View2D[A]) {
-    def column(vdex: Vdex) = View(xss) flatMap (_ sliceIndex vdex)
-    def transpose          = View(openIndices map column)
-    def flatten            = View(xss) flatMap (x => x)
-    def mmap[B](f: A => B) = View(xss) map (_ map f)
+    def column(vdex: Index) = View(xss) flatMap (_ sliceIndex vdex)
+    def transpose           = View(openIndices map column)
+    def flatten             = View(xss) flatMap (x => x)
+    def mmap[B](f: A => B)  = View(xss) map (_ map f)
 
     def grid_s(implicit z: Show[A]): String = {
       val width = xss.mmap(_.pp.length).flatten.max
