@@ -33,7 +33,7 @@ class CollectionsSpec extends ScalacheckBundle {
       "abc" o (_ map identity),
       "abc" o (_ map (_.toInt.toChar)),
       "abc" o (_ map (_.toInt) map (_.toChar)),
-      "abc" o (_ flatMap (_.show * 3)),
+      "abc" o (_ flatMap (_.pp * 3)),
       "abc" map identity build,
       "abc" map (_.toInt.toChar) build,
       "abc" map (_.toInt) map (_.toChar) build,

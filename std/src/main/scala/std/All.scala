@@ -4,13 +4,8 @@ package std
 import java.io.BufferedInputStream
 
 object Unsafe {
-  implicit def promoteIndex(x: scala.Long) = Index(x)
-  implicit def inheritedShow[A]: Show[A]   = Show.Inherited
-  implicit def showFunction1[A, B] : Show[A => B] = Show {
-
-    case x: LabeledFunction[_, _] => x.to_s
-    case _                        => "<f>"
-  }
+  implicit def promoteIndex(x: scala.Long)  = Index(x)
+  implicit def showOnlyToString[A]: Show[A] = Show.Inherited
 }
 
 /** One import which includes the implicits, one which doesn't.
@@ -48,15 +43,19 @@ object all extends AllExplicit with AllImplicit {
      */
     def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
 
+    def any_s: String                     = any"$x"
+    def id_## : Int                       = java.lang.System.identityHashCode(x)
+    def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
+    def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
+    def meets(pf: A ?=> Any): Bool        = pf isDefinedAt x
+
+    def class_s: String = scalaTypeOf(x)
     def self_s: String = x match {
       case x: HasToS => x.to_s
       case _         => any_s
     }
 
-    def any_s: String                     = any"$x"
-    def id_## : Int                       = java.lang.System.identityHashCode(x)
-    def id_==(y: Any): Boolean            = cast[AnyRef](x) eq cast[AnyRef](y)
-    def matchIf[B: Empty](pf: A ?=> B): B = if (pf isDefinedAt x) pf(x) else emptyValue
+    def dump(): Unit = out dump any"$class_s: $toString"
 
     @inline def ->[B](y: B): Tuple2[A, B] = Tuple2(x, y) // The tupling arrow.
     @inline def |>[B](f: A => B): B       = f(x)         // The famed forward pipe.
@@ -92,20 +91,32 @@ object all extends AllExplicit with AllImplicit {
     }
     def foreach(f: A => Unit): Unit = while (it.hasNext) f(it.next)
   }
-  implicit class PspPartialFunctionOps[A, B](pf: A ?=> B) {
+  implicit class PspScalaPredicateOps[A](private val p: ToBool[A]) {
+    def extractor: ExtractorBool[A] = new ExtractorBool(p)
+  }
+  implicit class PspPartialFunctionOps[A, B](private val pf: A ?=> B) {
+    def extractor: Extractor1[A, B]           = new Extractor1(pf)
     def filter(p: ToBool[A]): A ?=> B         = { case x if p(x) && contains(x) => pf(x) }
     def contains(x: A): Bool                  = pf isDefinedAt x
     def applyOr(x: A, alt: => B): B           = cond(contains(x), pf(x), alt)
     def zapply(x: A)(implicit z: Empty[B]): B = applyOr(x, z.empty)
-    def toPartial: Fun.Partial[A, B]          = Fun partial pf
+    // def toPartial: Fun.Partial[A, B]       = Fun partial pf
   }
 
   implicit class PspFunction1Ops[A, B](private val f: A => B) {
-    def labeled(label: => String): A => B = new LabeledFunction(f, () => label)
+    import ScalaFun._
+
+    def labeled(label: String): M[A, B] = ScalaFun(f) labeled label
+
+    def filter[A1 <: A](q: ToBool[A1]): Partial[A1, B] = f match {
+      case Partial(p, g) => Partial((p: ToBool[A1]) && q, g)
+      case _             => Partial(q, ScalaFun(f))
+    }
   }
   implicit class PspFunction2Ops[A1, A2, R](private val f: (A1, A2) => R) {
-    def toFun1: (A1 -> A2) => R = _ app f
+    def toFun1: (A1 -> A2) => R              = _ app f
     def andThen[S](g: R => S): (A1, A2) => S = (x, y) => g(f(x, y))
+    def swapArgs: (A2, A1) => R              = (a2, a1) => f(a1, a2)
   }
   implicit class PspFunction2OpsSame[A, R](private val f: BinTo[A, R]) {
     def on[B](g: B => A): BinTo[B, R] = (x, y) => f(g(x), g(y))
@@ -213,6 +224,16 @@ object all extends AllExplicit with AllImplicit {
   }
   implicit class PspDocOps(private val lhs: Doc) {
     import Doc._
+
+    def isEmpty: Bool = lhs match {
+      case NoDoc       => true
+      case Group(xs)   => xs.isEmpty
+      case Cat(l, r)   => l.isEmpty && r.isEmpty
+      case Literal("") => true
+      case Shown(x, z) => (z show x).isEmpty
+      case _           => false
+    }
+
     def pp: String         = pp"$lhs"
     def <>(rhs: Doc): Doc  = lhs ~ rhs
     def <+>(rhs: Doc): Doc = lhs ~ SP ~ rhs
@@ -223,26 +244,33 @@ object all extends AllExplicit with AllImplicit {
 
     import Fun._
 
-    def fn: A => B  = x => f(x)
-    def pf: A ?=> B = f.toPartial
+    def fn: ScalaFun.M[A, B]   = f.toFunction
+    def pf: ScalaFun.Partial[A, B] = f.toPartial
 
-    def andThen[C](g: B => C): Fun[A, C]      = AndThen(f, Opaque(g))
     def applyOrElse(x: A, g: A => B): B       = cond(f contains x, f(x), g(x))
-    def compose[C](g: C => A): Fun[C, B]      = AndThen(Opaque(g), f)
     def get(x: A): Option[B]                  = zfold(x)(some)
     def zapply(x: A)(implicit z: Empty[B]): B = zfold(x)(identity)
     def zfold[C: Empty](x: A)(g: B => C): C   = cond(f contains x, g(f(x)), emptyValue)
 
-    def defaulted(g: A => B): Defaulted[A, B] = f match {
-      case Defaulted(_, u) => Defaulted(g, u)
-      case _               => Defaulted(g, f)
+    def andThen[C](g: B => C): Fun[A, C] = (g: Any) match {
+      case ScalaFun.Identity() => cast(f)
+      case _                   =>
+        f match {
+          case ScalaFun.Identity() => cast(ScalaFun(g))
+          case _                   => AndThen(f, g)
+        }
     }
+
+    def labeled(label: String): Fun[A, B]             = Labeled(label, f)
+    def orElse(g: A => B): Fun[A, B]                  = OrElse(f, g)
+    def withDefault(g: A => B): Fun[A, Provenance[B]] = andThen(Provenance actual _) orElse (g andThen Provenance.default)
+
     def filterIn(p: ToBool[A]): Filtered[A, B] = f match {
       case Filtered(q, u) => Filtered(q && p, u)
       case _              => Filtered(p, f)
     }
 
-    def teeIn(g: ToUnit[A]): This                   = compose[A](x => doto(x)(g))
+    def teeIn(g: ToUnit[A]): This                   = Opaque(x => doalso(f(x))(g(x)))
     def tee(g: ToUnit[B]): This                     = andThen[B](x => doto(x)(g))
     def traced(in: A => Unit, out: B => Unit): This = this teeIn in tee out
   }
@@ -282,9 +310,8 @@ object all extends AllExplicit with AllImplicit {
     def m: RView[A, R]      = View(repr)
   }
   implicit class HasShowOps[A](private val lhs: A)(implicit z: Show[A]) {
-    def doc: Doc     = Doc(lhs)
-    def show: String = z show lhs
-    def pp: String   = pp"$doc"
+    def doc: Doc   = Doc(lhs)
+    def pp: String = pp"$doc"
   }
   implicit class HasHeytingOps[A](private val lhs: A)(implicit z: Heyting[A]) {
     def unary_! : A     = z complement lhs
@@ -325,5 +352,6 @@ object all extends AllExplicit with AllImplicit {
     def mapRight[C](f: B => C): A -> C           = _1 -> f(_2)
     def apply[C](f: (A, B) => C): C              = f(_1, _2)
     def toPair: A->B                             = _1 -> _2
+    def swap: B->A                               = _2 -> _1
   }
 }

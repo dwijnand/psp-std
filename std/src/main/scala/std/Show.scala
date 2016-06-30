@@ -140,6 +140,7 @@ trait StdShow2 extends StdShow0 {
 trait StdShow3 extends StdShow2 {
   implicit def showString: Show[String]                     = Show.Inherited
   implicit def showThrowable: Show[Throwable]               = Show.Inherited
+  implicit def showProvenance[A: Show]: Show[Provenance[A]] = by(_.get)
 
   implicit def showClass: Show[jClass]                  = Show(JvmName asScala _ short)
   implicit def showSelf: Show[ShowSelf]                 = Show(_.to_s)

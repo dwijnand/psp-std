@@ -36,7 +36,7 @@ final class Pstring(val self: String) extends AnyVal with ShowSelf {
   def removeFirst(regex: Regex): String             = regex matcher self replaceFirst ""
   def reverseBytes: Array[Byte]                     = bytes.inPlace.reverse
   def reverseChars: String                          = chars.inPlace.reverse.utf8String
-  def sanitize: String                              = this mapChars Fun.partial(isControl, _ => '?')
+  def sanitize: String                              = this mapChars (ScalaFun const '?' filter isControl)
   def splitChar(ch: Char): View[String]             = splitRegex(Regex quote ch.any_s)
   def splitRegex(r: Regex): View[String]            = View(r.pattern split self)
   def stripMargin(ch: Char): String                 = mapLines(_ stripPrefix WS <> ch.r)

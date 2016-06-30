@@ -36,6 +36,7 @@ trait ApiTypes extends ExternalTypes {
   type ToSelf[A]     = A => A
   type ToString[-A]  = A => String
   type ToUnit[-A]    = A => Unit
+  type ToView[A]     = A => View[A]
   type <:<[-A, +B]   = A => B
 }
 
@@ -62,15 +63,15 @@ abstract class ApiValues extends ApiTypes {
   def min[A](l: A, r: A)(implicit z: Order[A]): A             = if (z.less(l, r)) l else r
   def zcond[A](p: Bool, thenp: => A)(implicit z: Empty[A]): A = cond(p, thenp, z.empty)
 
-  def classFilter[A: CTag]: Any ?=> A       = Fun.partial(isInstance[A], cast[A])
-  def classOf[A: CTag](): Class[_ <: A]     = cast(classTag[A].runtimeClass)
-  def classTag[A: CTag]: CTag[A]            = ?[CTag[A]]
-  def isInstance[A: CTag](x: Any): Bool     = classOf[A]() isAssignableFrom x.getClass
-  def newArray[A: CTag](len: Int): Array[A] = new Array[A](len)
+  def classFilter[A: CTag]: ScalaFun.Partial[Any, A] = ScalaFun.Partial(isInstance[A], ScalaFun(cast[A]))
+  def classOf[A: CTag](): Class[_ <: A]              = cast(classTag[A].runtimeClass)
+  def classTag[A: CTag]: CTag[A]                     = ?[CTag[A]]
+  def isInstance[A: CTag](x: Any): Bool              = classOf[A]() isAssignableFrom x.getClass
+  def newArray[A: CTag](len: Int): Array[A]          = new Array[A](len)
 
   def castRef[A](value: A): Ref[A]                       = cast(value)
   def cast[A](value: Any): A                             = value.asInstanceOf[A]
-  def classNameOf(x: Any): String                        = JvmName asScala x.getClass short
+  def scalaTypeOf(x: Any): String                        = JvmName asScala x.getClass scala_s
   def cond[A](p: Bool, thenp: => A, elsep: => A): A      = if (p) thenp else elsep
   def doto[A](x: A)(f: A => Unit): A                     = doalso(x)(f(x))
   def doalso[A](x: A)(exprs: Unit*): A                   = x
@@ -81,6 +82,7 @@ abstract class ApiValues extends ApiTypes {
   def jPath(path: String): jPath                         = jnf.Paths get path
   def jUri(x: String): jUri                              = java.net.URI create x
   def lformat[A](n: Int): A => String                    = stringFormat(cond(n <= 0, "%s", new Pstring("%%-%ds") format n), _)
+  def rformat[A](n: Int): A => String                    = stringFormat(cond(n <= 0, "%s", new Pstring("%%%ds") format n), _)
   def none[A](): Option[A]                               = scala.None
   def nullAs[A]: A                                       = cast(null)
   def pair[A, B](x: A, y: B): Tuple2[A, B]               = Tuple2(x, y)
@@ -90,6 +92,9 @@ abstract class ApiValues extends ApiTypes {
   def some[A](x: A): Option[A]                           = scala.Some(x)
   def swap[A, B](x: A, y: B): B -> A                     = Tuple2(y, x)
   def triple[A, B, C](x: A, y: B, z: C): Tuple3[A, B, C] = new Tuple3(x, y, z)
+
+  def printResult[A: Show](msg: String)(result: A): A = doto(result)(r => log"$msg: $r")
+  def dumpResult[A](msg: String)(result: A): A        = doto(result)(r => log"$msg: ${r.toString}")
 
   /** Safe in the senses that it won't silently truncate values,
     *  and will translate MaxLong to MaxInt instead of -1.
