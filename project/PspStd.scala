@@ -50,8 +50,7 @@ object PspStd {
                scalaVersion :=  "2.11.8",
                organization :=  "org.improving",
                    licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-           triggeredMessage :=  Watched.clearWhenTriggered,
-                 incOptions ~=  (_ withNameHashing false) // supposedly we can remove this after sbt commit 65f7958898
+           triggeredMessage :=  Watched.clearWhenTriggered
   )
 
   def wordSeq(s: String): Vector[String] = scala.Vector(s split "\\s+" filterNot (_ == ""): _*)
