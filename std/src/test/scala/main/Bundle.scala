@@ -22,7 +22,7 @@ object NamedProp {
   implicit def liftPair(x: String -> Prop): NamedProp          = NamedProp(fst(x), snd(x))
 }
 
-trait ScalacheckBundle extends Bundle {
+abstract class ScalacheckBundle extends Bundle {
   def bundle: String
   def props: Direct[NamedProp]
 
