@@ -1,6 +1,8 @@
 package psp
 package std
 
+// import exp._
+
 trait ZeroOne[+A] {
   def zero: A
   def one: A
@@ -18,4 +20,14 @@ object ZeroOne {
 
   implicit val zeroIndex: ZeroOne[Index]     = make(Index(0), Index(1))
   implicit val zeroPrecise: ZeroOne[Precise] = make(Size(0), Size(1))
+}
+
+/** Where a value came from.
+ */
+sealed trait Provenance[+A] { def get: A }
+final case class Actual[A](get: A) extends Provenance[A]
+final case class Default[A](get: A) extends Provenance[A]
+object Provenance {
+  def actual[A](x: A): Provenance[A]  = Actual(x)
+  def default[A](x: A): Provenance[A] = Default(x)
 }

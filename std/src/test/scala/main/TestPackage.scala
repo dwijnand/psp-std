@@ -58,17 +58,18 @@ trait Explicit {
   def expectType[A: CTag](result: A): NamedProp                        = expectType(classOf[A], result.getClass)
   def expectTypes(expected: jClass, found: Each[jClass]): NamedProp    = fp"$expected%15s  >:>  $found%s" -> found.map(c => Prop(expected isAssignableFrom c))
   def expectTypes[A: CTag](results: A*): NamedProp                     = expectTypes(classOf[A], results map (_.getClass) toVec)
-  def expectValue[A: Eq: Show](expected: A)(x: A): NamedProp           = x.show -> (expected =? x)
+  def expectValue[A: Eq: Show](expected: A)(x: A): NamedProp           = x.pp -> (expected =? x)
   def junitAssert(exprs: Boolean*): Unit                               = exprs foreach (org.junit.Assert assertTrue _)
   def junitAssertFalse(exprs: Boolean*): Unit                          = exprs foreach (org.junit.Assert assertFalse _)
   def preNewline(s: String): String                                    = if (s containsChar '\n') "\n" + s.mapLines("| " append _) else s
   def printResultIf[A: Show : Eq](x: A, msg: String)(result: A): A     = doto(result)(r => if (r === x) log"$msg: $r")
-  def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => log"$msg: $r")
+  // def printResult[A: Show](msg: String)(result: A): A                  = doto(result)(r => log"$msg: $r")
   def sameDocAsToString[A: Show](expr: A): Unit                        = same(expr.pp, expr.toString)
   def sameDoc(expr: Doc, expected: Doc): Unit                          = same(pp"$expr", pp"$expected")
   def seqShows[A: Show](expected: String, xs: View[A]): NamedProp      = preNewline(expected) -> (expected =? (xs joinWith ", "))
   def showsAs[A: Show](expected: String, x: A): NamedProp              = preNewline(expected) -> (expected =? pp"$x")
 
+  def differDoc(expr: Doc, unexpected: Doc): Unit = assert(expr.pp != unexpected.pp, pp"Expression should differ from $unexpected")
   def same[A : Eq : Show](expr: A, expected: A): Unit = {
     assert(expr === expected, pp"""
       |Expected: $expected
@@ -118,6 +119,14 @@ trait Implicit extends Explicit {
   implicit class LiftConverter[A](gen: Gen[A]) {
     def to[B](implicit f: A => B): Gen[B] = gen map f
   }
+  implicit class GenViewOps[A](gs: View[Gen[A]]) {
+    def oneOf: Gen[A] = gs match {
+      case View()                => abort("empty")
+      case View(g)               => g
+      case View(g1, g2, gs @ _*) => Gen.oneOf[A](g1, g2, gs.seq: _*)
+    }
+  }
+
   implicit class Gen2Ops[A, B](g: (Gen[A], Gen[B])) {
     def filter(p: (A, B) => Boolean)       = Gen.zip(g._1, g._2) suchThat p.tupled
     def map[C](f: (A, B) => C): Gen[C]     = Gen.zip(g._1, g._2) map f.tupled

@@ -42,7 +42,7 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def indexWhere(p: Pred): Index                      = zipIndex first { case (x, i) if p(x) => i }
   def init: This                                      = self dropRight 1
   def inits: Map2D[A]                                 = self +: zcond(!isEmpty, init.inits)
-  def isEmpty: Bool                                   = size.isZero || !exists(ConstantTrue)
+  def isEmpty: Bool                                   = size.isZero || !exists(ScalaPred.True)
   def last: A                                         = self takeRight 1 head
   def mapIf(pf: A ?=> A): This                        = self map (x => pf.applyOr(x, x))
   def mapLive[B](columns: (A => B)*): Live[B]         = new Live(columns.m)
@@ -52,8 +52,8 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def prepend(that: View[A]): This                    = Joined(View(that), this)
   def reducel(f: BinOp[A]): A                         = tail.foldl(head)(f)
   def reducer(f: BinOp[A]): A                         = init.foldr(last)(f)
-  def slice(r: SliceRange): This                      = zcond(!r.isEmpty, slice(r.head, r.size.preciseOrMaxLong))
-  def slice(start: Index, len: Precise): This         = self drop start.excluding take len
+  def slice(r: SliceRange): This                      = zcond(!r.isEmpty, slice(r.head, r.size))
+  def slice(start: Index, len: Atomic): This          = self drop start.excluding take len
   def sliceIndex(start: Index): This                  = slice(start, _1)
   def sliceWhile(p: Pred, q: Pred): This              = self dropWhile p takeWhile q
   def sort(implicit z: Order[A]): This                = cast(toRefArray.inPlace.sort.m)
@@ -67,6 +67,7 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def tails: Map2D[A]                                 = self +: zcond(!isEmpty, tail.tails)
   def takeToFirst(p: Pred): This                      = self span !p app ((x, y) => x ++ (y take 1))
   def tee(f: ToUnit[A]): This                         = self map (x => doto(x)(f))
+  def transformAt(idx: Index)(f: A => A): This        = splitAt(idx) mapRight (r => zcond(!r.isEmpty, f(r.head) +: r.tail)) join
   def zfirst[B](pf: A ?=> B)(implicit z: Empty[B]): B = find(pf.isDefinedAt) map pf or z.empty
   def zfoldl[B: Empty](f: (B, A) => B): B             = ll.foldLeft(self, emptyValue[B], f)
   def zfoldr[B: Empty](f: (A, B) => B): B             = ll.foldRight(self, emptyValue[B], f)
@@ -83,10 +84,11 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
 
   def build(implicit z: Makes[A, R]): R                        = force[R]
   def force[R](implicit z: Makes[A, R]): R                     = z make self
-  def foreach(f: ToUnit[A]): Unit                              = views.Run.optimized(this)(f)
+  def foreach(f: ToUnit[A]): Unit                              = Run(this)(f)
   def iterator: scIterator[A]                                  = toScalaStream.iterator
   def pairs[B, C](implicit z: IsProduct[A, B, C]): MapTo[B->C] = map(z.split)
   def toArray(implicit z: CTag[A]): Array[A]                   = to[Array]
+  def toPlist: Plist[A]                                        = to[Plist]
   def toPset(implicit hz: Hash[A], ez: Eq[A]): Pset[A]         = to[Pset]
   def toRefArray(): Array[Ref[A]]                              = asRefs.force
   def toStream: Pstream[A]                                     = to[Pstream]
@@ -106,12 +108,12 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def flatMap[B](f: A => View[B]): MapTo[B] = View2(this, FlatMap(f))
   def map[B](f: A => B): MapTo[B]           = View2(this, Mapped(f))
   def reverse: This                         = View0(this, Reverse)
-  def take(n: Precise): This                = View0(this, Take(n))
-  def takeRight(n: Precise): This           = View0(this, TakeRight(n))
+  def take(n: Atomic): This                 = View0(this, Take(n))
+  def takeRight(n: Atomic): This            = View0(this, TakeRight(n))
   def takeWhile(p: Pred): This              = View1(this, TakeWhile(p))
   def withFilter(p: Pred): This             = View1(this, Filter(p))
 
-  def opDoc: Doc = new ViewToDoc(x => fp"$x%-15s")(this)
+  def opDoc: Doc = new ViewToDoc(x => fdoc"$x%-15s")(this)
 }
 
 object View {
@@ -121,19 +123,18 @@ object View {
   }
 
   class ViewToDoc(fmt: Doc => Doc) {
-    import Unsafe.showFunction1
     def apply[A](v: View[A]): Doc = v match {
-      case View0(xs, Drop(n))      => apply(xs) <+> fmt("drop" <+> n)
+      case View0(xs, Drop(n))      => apply(xs) <+> fmt("drop" <+> n.doc)
       case View0(xs, Take(n))      => apply(xs) <+> fmt("take" <+> n)
       case View0(xs, DropRight(n)) => apply(xs) <+> fmt("dropRight" <+> n)
       case View0(xs, TakeRight(n)) => apply(xs) <+> fmt("takeRight" <+> n)
-      case View0(xs, Reverse)      => apply(xs) <+> fmt("reverse")
-      case View1(xs, Filter(p))    => apply(xs) <+> fmt("filter" <+> p)
-      case View1(xs, TakeWhile(p)) => apply(xs) <+> fmt("takeWhile" <+> p)
-      case View1(xs, DropWhile(p)) => apply(xs) <+> fmt("dropWhile" <+> p)
-      case View2(xs, Mapped(g))    => apply(xs) <+> fmt("map" <+> g)
-      case View2(xs, FlatMap(g))   => apply(xs) <+> fmt("flatMap" <+> g)
-      case View2(xs, Collect(pf))  => apply(xs) <+> fmt("collect" <+> pf)
+      case View0(xs, Reverse)      => apply(xs) <+> fmt("reverse".lit)
+      case View1(xs, Filter(p))    => apply(xs) <+> fmt("filter" <+> p.self_s)
+      case View1(xs, TakeWhile(p)) => apply(xs) <+> fmt("takeWhile" <+> p.self_s)
+      case View1(xs, DropWhile(p)) => apply(xs) <+> fmt("dropWhile" <+> p.self_s)
+      case View2(xs, Mapped(g))    => apply(xs) <+> fmt("map" <+> g.self_s)
+      case View2(xs, FlatMap(g))   => apply(xs) <+> fmt("flatMap" <+> g.self_s)
+      case View2(xs, Collect(pf))  => apply(xs) <+> fmt("collect" <+> pf.self_s)
       case Joined(xs, ys)          => apply(xs) <+> fmt("++" <+> apply(ys))
       case IdView(_)               => fmt("[S:" <> v.size <> "]")
     }

@@ -114,7 +114,7 @@ trait StdConstructors {
   def hashFun[A](xs: View[A])(implicit ez: Eq[A], hz: Hash[A]): HashFun[A] = {
     val buf = bufferMap[Long, View[A]]()
     zipMap(xs)(hz.hash) foreach ((x, h) => buf(h) :+= x)
-    Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x)))) defaulted (_ => view())
+    Fun(buf.result mapValues (xs => xs.zfoldl[View[A]]((res, x) => cond(res.m contains x, res, res :+ x)))) orElse (_ => view())
   }
 
   def zipCross[A, B](l: View[A], r: View[B]): Zip[A, B]                            = zipPairs( for (x <- l; y <- r) yield x -> y )

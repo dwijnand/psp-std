@@ -37,7 +37,7 @@ class OperationCounts extends ScalacheckBundle {
   private def less(n: Long)     = ((_: Long) < n) labeled pp"<$n"
   private def multiply(n: Long) = ((_: Long) * n) labeled pp"*$n"
   private def pairup            = ((x: Long) => view(x, x)) labeled pp"=>(x,x)"
-  private def cdivides(n: Long) = Fun.partial(divides(n), (_: Long) / n)
+  private def cdivides(n: Long) = ((_: Long) / n) filter divides(n)
 
   private def mk(fn: LongOp): LongOp = fn
 
