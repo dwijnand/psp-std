@@ -1,7 +1,7 @@
 import psp.PspStd._
 
 lazy val root = (
-  project.root.setup aggregate std dependsOn (std, benchmark) settings (
+  project.root.setup aggregate std dependsOn std settings (
       coursierVerbosity :=  0,
      console in Compile <<= console in Compile in repl,
             run in Test <<= run in Test in std
@@ -15,7 +15,6 @@ lazy val std = project.setup settings (
   parallelExecution in Test :=  false,
         logBuffered in Test :=  false,
          traceLevel in Test :=  30,
-     // libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         libraryDependencies ++= testDependencies map (_ % "test")
 )
 
@@ -33,14 +32,21 @@ lazy val macros = project.noArtifacts dependsOn (std % "compile->compile;test->t
   libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
               version :=  "0.6.2-SNAPSHOT",
          scalaVersion :=  "2.11.8",
+   crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0-RC1"),
          organization :=  "org.improving",
         scalacOptions ++= wordSeq("-language:experimental.macros -Yno-predef")
 )
 
+/*
 lazy val benchmark = project.noArtifacts.setup dependsOn std enablePlugins JmhPlugin settings (
-  libraryDependencies <++= (scalaBinaryVersion) { case "2.11" => Seq(scoverageRuntime) ; case _ => Nil }
+  libraryDependencies <++= (scalaBinaryVersion) {
+    case "2.11" => Seq(scoverageRuntime, jmhAnnotations)
+    case _      => Nil
+  }
 )
 
 addCommandAlias("bench-min", "benchmark/jmh:run -i 1 -wi 1 -f1 -t1")
-addCommandAlias("cover", "; clean ; coverage ; bench-min ; test ; coverageReport")
 addCommandAlias("bench", "benchmark/jmh:run -f1 -t1")
+*/
+
+addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")

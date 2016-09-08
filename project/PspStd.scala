@@ -13,13 +13,13 @@ object PspStd {
   def compileArgs: Seq[String]  = ammoniteArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
   def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
 
-  def ammonite         = "com.lihaoyi"              %       "ammonite-repl"       % "0.6.2" cross CrossVersion.full
-  def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" %             "1.12"
-  def jsr305           = "com.google.code.findbugs" %           "jsr305"          %             "3.0.1"
-  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" %             "1.1.1"
+  def ammonite         = "com.lihaoyi"              %  "ammonite-repl"            % "0.6.2" cross CrossVersion.full
+  def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" % "1.14"
+  def jsr305           = "com.google.code.findbugs" %  "jsr305"                   % "3.0.1"
+  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.1.1"
 
   def testDependencies = Seq(
-    "org.scalacheck" %% "scalacheck"      % "1.13.1",
+    "org.scalacheck" %% "scalacheck"      % "1.13.2",
     "com.novocode"    % "junit-interface" %  "0.11"
   )
 
@@ -45,9 +45,9 @@ object PspStd {
     javacOptions in compile ++= Seq("-nowarn", "-XDignore.symbol.file"),
          logLevel in update :=  Level.Warn,
     publishArtifact in Test :=  false,
-        libraryDependencies +=  jmhAnnotations,
                     version :=  "0.6.2-SNAPSHOT",
                scalaVersion :=  "2.11.8",
+         crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0-RC1"),
                organization :=  "org.improving",
                    licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
            triggeredMessage :=  Watched.clearWhenTriggered
