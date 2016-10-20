@@ -3,8 +3,8 @@ import psp.PspStd._
 lazy val root = (
   project.root.setup aggregate std dependsOn std settings (
       coursierVerbosity :=  0,
-     console in Compile <<= console in Compile in repl,
-            run in Test <<= run in Test in std
+     console in Compile := (console in Compile in repl).value,
+            run in Test := (run in Test in std).evaluated
   )
 )
 
