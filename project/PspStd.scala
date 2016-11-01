@@ -16,10 +16,10 @@ object PspStd {
   def ammonite         = "com.lihaoyi"              %  "ammonite-repl"            % "0.7.8" cross CrossVersion.full
   def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" % "1.15"
   def jsr305           = "com.google.code.findbugs" %  "jsr305"                   % "3.0.1"
-  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.3.0-RC1"
+  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.3.0-RC2"
 
   def testDependencies = Seq(
-    "org.scalacheck" %% "scalacheck"      % "1.13.2",
+    "org.scalacheck" %% "scalacheck"      % "1.13.3",
     "com.novocode"    % "junit-interface" %  "0.11"
   )
 
@@ -47,7 +47,7 @@ object PspStd {
     publishArtifact in Test :=  false,
                     version :=  "0.6.2-SNAPSHOT",
                scalaVersion :=  "2.11.8",
-         crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0-RC1"),
+         crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0"),
                organization :=  "org.improving",
                    licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
            triggeredMessage :=  Watched.clearWhenTriggered
