@@ -55,8 +55,10 @@ object Makes extends StdMakes {
 }
 
 trait StdWalks {
+  // https://github.com/paulp/psp-std/issues/247 is why we can't have nice/weird things like ⇶.
+  // def javaMap[K, V, ⇶[X,Y] <: jMap[X, Y]]: Walks[K->V, K ⇶ V]   = suspended(xs => f => xs.entrySet foreach (kv => f(kv.toPair)))
+  def javaMap[K, V, M[X,Y] <: jMap[X, Y]]: Walks[K->V, M[K, V]]    = suspended(xs => f => xs.entrySet foreach (kv => f(kv.toPair)))
   def javaIterable[A, M[X] <: jIterable[X]]: Walks[A, M[A]]        = suspended(xs => xs.iterator foreach _)
-  def javaMap[K, V, ⇶[X,Y] <: jMap[X, Y]]: Walks[K->V, K ⇶ V]      = suspended(xs => f => xs.entrySet foreach (kv => f(kv.toPair)))
   def pspEach[A, M[X] <: Each[X]]: Walks[A, M[A]]                  = Walks(identity)
   def pspMap[A: Hash, B](xs: (A->B)*): Walks[A->B, Pmap[A, B]]     = suspended(_.pairs.foreach _)
   def pspSet[A, M[X] <: Pset[X]]: Walks[A, M[A]]                   = suspended(_.basis.foreach _)

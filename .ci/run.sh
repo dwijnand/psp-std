@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 #
 
-set -o pipefail
-set -e
+set -euo pipefail
+
+: ${TRAVIS_SCALA_VERSION:=2.11.8}
+
 GREP="egrep --line-buffered"
 SBT="sbt ++$TRAVIS_SCALA_VERSION -no-colors"
 

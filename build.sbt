@@ -32,7 +32,7 @@ lazy val macros = project.noArtifacts dependsOn (std % "compile->compile;test->t
   libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
               version :=  "0.6.2-SNAPSHOT",
          scalaVersion :=  "2.11.8",
-   crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0-RC1"),
+   crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0"),
          organization :=  "org.improving",
         scalacOptions ++= wordSeq("-language:experimental.macros -Yno-predef")
 )
