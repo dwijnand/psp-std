@@ -2,7 +2,6 @@ import psp.PspStd._
 
 lazy val root = (
   project.root.setup aggregate std dependsOn std settings (
-      coursierVerbosity :=  0,
      console in Compile := (console in Compile in repl).value,
             run in Test := (run in Test in std).evaluated
   )
@@ -27,14 +26,10 @@ lazy val repl = project.noArtifacts.setup dependsOn std settings (
       console in Compile := (run in Compile).toTask(ammoniteArgs mkString (" ", " ", "")).value
 )
 
-lazy val macros = project.noArtifacts dependsOn (std % "compile->compile;test->test") settings (
-                 name :=  "psp-macros",
-  libraryDependencies +=  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-              version :=  "0.6.2-SNAPSHOT",
-         scalaVersion :=  "2.11.8",
-   crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0"),
-         organization :=  "org.improving",
-        scalacOptions ++= wordSeq("-language:experimental.macros -Yno-predef")
+lazy val macros = project.noArtifacts dependsOn (std % "compile->compile;test->test") settings universalSettings settings (
+                 name := "psp-macros",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+        scalacOptions += "-language:experimental.macros"
 )
 
 /*
