@@ -9,11 +9,10 @@ trait View[+A] extends Any with Foreach[A] {
 }
 
 final case class IdView[A, R](underlying: Foreach[A]) extends RView[A, R] {
-  override def toString = pp"Id(${ underlying.size })"
+  override def toString = pp"Id(${underlying.size})"
 }
 
-trait RView[A, R] extends View[A] with ViewClasses[A, R] {
-  self =>
+trait RView[A, R] extends View[A] with ViewClasses[A, R] { self =>
 
   def ++(that: View[A]): This                         = Joined(this, View(that))
   def +:(head: A): This                               = self prepend view(head)
@@ -38,7 +37,7 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def forall(p: Pred): Bool                           = !exists(!p)
   def grep(re: Regex)(implicit z: Show[A]): This      = self filter (re isMatch _)
   def head: A                                         = self headOr abort("empty")
-  def headOr(alt: => A): A                            = self match { case HeadTailView(hd, _) => hd ; case _ => alt }
+  def headOr(alt: => A): A                            = self match { case HeadTailView(hd, _) => hd; case _ => alt }
   def indexWhere(p: Pred): Index                      = zipIndex first { case (x, i) if p(x) => i }
   def init: This                                      = self dropRight 1
   def inits: Map2D[A]                                 = self +: zcond(!isEmpty, init.inits)
@@ -80,27 +79,26 @@ trait RView[A, R] extends View[A] with ViewClasses[A, R] {
   def zreducer(f: BinOp[A])(implicit z: Empty[A]): A  = zcond(!isEmpty, reducer(f))
 
   /** Building, converting, forcing.
-   */
-
-  def build(implicit z: Makes[A, R]): R                        = force[R]
-  def force[R](implicit z: Makes[A, R]): R                     = z make self
-  def foreach(f: ToUnit[A]): Unit                              = Run(this)(f)
-  def iterator: scIterator[A]                                  = toScalaStream.iterator
-  def pairs[B, C](implicit z: IsProduct[A, B, C]): MapTo[B->C] = map(z.split)
-  def toArray(implicit z: CTag[A]): Array[A]                   = to[Array]
-  def toPlist: Plist[A]                                        = to[Plist]
-  def toPset(implicit hz: Hash[A], ez: Eq[A]): Pset[A]         = to[Pset]
-  def toRefArray(): Array[Ref[A]]                              = asRefs.force
-  def toStream: Pstream[A]                                     = to[Pstream]
-  def toScalaStream: sciStream[A]                              = to[sciStream]
-  def toVec: Vec[A]                                            = to[Vec]
-  def to[CC[X]](implicit z: Makes[A, CC[A]]): CC[A]            = z make self
+    */
+  def build(implicit z: Makes[A, R]): R                          = force[R]
+  def force[R](implicit z: Makes[A, R]): R                       = z make self
+  def foreach(f: ToUnit[A]): Unit                                = Run(this)(f)
+  def iterator: scIterator[A]                                    = toScalaStream.iterator
+  def pairs[B, C](implicit z: IsProduct[A, B, C]): MapTo[B -> C] = map(z.split)
+  def toArray(implicit z: CTag[A]): Array[A]                     = to[Array]
+  def toPlist: Plist[A]                                          = to[Plist]
+  def toPset(implicit hz: Hash[A], ez: Eq[A]): Pset[A]           = to[Pset]
+  def toRefArray(): Array[Ref[A]]                                = asRefs.force
+  def toStream: Pstream[A]                                       = to[Pstream]
+  def toScalaStream: sciStream[A]                                = to[sciStream]
+  def toVec: Vec[A]                                              = to[Vec]
+  def to[CC[X]](implicit z: Makes[A, CC[A]]): CC[A]              = z make self
 
   def seq: scSeq[A]          = to[scSeq]         // varargs or unapplySeq, usually
   def trav: scTraversable[A] = to[scTraversable] // scala flatMap, usually
 
   /** Reified view ops.
-   */
+    */
   def collect[B](pf: A ?=> B): MapTo[B]     = View2(this, Collect(pf))
   def drop(n: Precise): This                = View0(this, Drop(n))
   def dropRight(n: Precise): This           = View0(this, DropRight(n))

@@ -29,28 +29,27 @@ object PspStd {
   def javaCrossTarget(id: String) = buildBase(_ / "target" / id / s"java_$javaSpecVersion")
 
   /** Watch out Jonesy! It's the ol' double-cross!
-   *  Why, you...
-   *
-   *  Given a path like src/main/scala we want that to explode into something like the
-   *  following, assuming we're currently building with java 1.7 and scala 2.10.
-   *
-   *    src/main/scala
-   *    src/main/scala_2.10
-   *    src/main_1.7/scala
-   *    src/main_1.7/scala_2.10
-   *
-   *  Similarly for main/test, 2.10/2.11, 1.7/1.8.
-   */
-  def doubleCross(config: Configuration) = {
+    *  Why, you...
+    *
+    *  Given a path like src/main/scala we want that to explode into something like the
+    *  following, assuming we're currently building with java 1.7 and scala 2.10.
+    *
+    *    src/main/scala
+    *    src/main/scala_2.10
+    *    src/main_1.7/scala
+    *    src/main_1.7/scala_2.10
+    *
+    *  Similarly for main/test, 2.10/2.11, 1.7/1.8.
+    */
+  def doubleCross(config: Configuration) =
     unmanagedSourceDirectories in config ++= {
       val jappend = Seq("", "_" + javaSpecVersion)
       val sappend = Seq("", "_" + scalaBinaryVersion.value)
       val basis   = (sourceDirectory in config).value
       val parent  = basis.getParentFile
       val name    = basis.getName
-      for (j <- jappend ; s <- sappend) yield parent / s"$name$j" / s"scala$s"
+      for (j <- jappend; s <- sappend) yield parent / s"$name$j" / s"scala$s"
     }
-  }
   implicit class ProjectOps(val p: Project) {
     import p.id
 
@@ -59,10 +58,10 @@ object PspStd {
 
     def root: Project = noArtifacts in file(".")
     def noArtifacts: Project = also(
-                publish := (()),
-           publishLocal := (()),
-         Keys.`package` := file(""),
-             packageBin := file(""),
+      publish           := (()),
+      publishLocal      := (()),
+      Keys.`package`    := file(""),
+      packageBin        := file(""),
       packagedArtifacts := Map()
     )
 
@@ -73,9 +72,9 @@ object PspStd {
 
     def setup(): Project = p also inBoth(doubleCross) also (
       scalacOptions in compile ++= wordSeq("-language:_ -Yno-adapted-args -Ywarn-unused -Ywarn-unused-import"),
-              triggeredMessage :=  Watched.clearWhenTriggered,
-                          name :=  s"psp-$id",
-                        target :=  javaCrossTarget(id).value
+      triggeredMessage         := Watched.clearWhenTriggered,
+      name                     := s"psp-$id",
+      target                   := javaCrossTarget(id).value
     )
   }
 }

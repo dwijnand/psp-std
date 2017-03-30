@@ -45,7 +45,7 @@ sealed abstract class Interval extends UseToS {
     case Interval(_, Size.Zero)    => "[0,0)"
     case Interval(start, Infinite) => pp"[$start..]"
     case Interval(start, Size.One) => pp"[$start]"
-    case Interval(start, len)      => pp"[$start..${ start + len - 1 }]"
+    case Interval(start, len)      => pp"[$start..${start + len - 1}]"
   }
 }
 object Interval {
@@ -61,7 +61,7 @@ object Interval {
   def to(start: Long, end: Long): Closed    = Interval(start, Size(end - start + 1))
   def point(start: Long): Closed            = Interval(start, start + 1)
 
-  final case class Closed private[Interval](startLong: Long, size: Precise) extends Interval {
+  final case class Closed private[Interval] (startLong: Long, size: Precise) extends Interval {
     type This = Closed
 
     def <<(n: Precise): Closed = Closed(startLong - n.getLong, size)
@@ -112,7 +112,7 @@ object Interval {
     def splitAfter(len: Precise): PairOf[Closed] = take(len) -> drop(len)
   }
 
-  final case class Open private[Interval](startLong: Long) extends Interval {
+  final case class Open private[Interval] (startLong: Long) extends Interval {
     type This = Open
 
     def <<(n: Precise): Open = Open(startLong - n.getLong)

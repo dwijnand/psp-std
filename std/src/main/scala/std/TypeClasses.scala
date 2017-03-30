@@ -50,7 +50,6 @@ trait Empty[+A] extends Any with MEmpty[A] {
   def empty: A
 }
 
-
 trait IsProduct[-R, +A, +B] extends Any {
   type Left <: A
   type Right <: B
@@ -66,14 +65,14 @@ trait Productize[R, A, B] extends Any with MakesProduct[R, A, B] with IsProduct[
   type Right = B
 }
 
-sealed trait IsCollection[-R, +A] extends Any
+sealed trait IsCollection[-R, +A]  extends Any
 sealed trait IsIndexed[-R, -I, +A] extends Any with IsCollection[R, A] with MIndexed[R, I, A]
 
 trait IsFolded[-R, +A] extends Any with IsCollection[R, A] {
   def resume(xs: R): Folded[A]
 }
-trait IsPairs[R, +A, +B] extends Any with IsCollection[R, A->B] {
-  def pairs(xs: R): View[A->B]
+trait IsPairs[R, +A, +B] extends Any with IsCollection[R, A -> B] {
+  def pairs(xs: R): View[A -> B]
 }
 trait IsIntIndexed[-R, +A] extends Any with IsIndexed[R, Int, A] {
   def length(x: R): Int
@@ -83,9 +82,8 @@ trait IsFunction[-R, -A, +B] extends Any {
 }
 
 /*************
- * Companions.
+  * Companions.
  *************/
-
 object Order extends RelationCompanion[Order] {
   val Reference: Order[AnyRef]                = apply(_.id_## < _.id_##)
   def Inherited[A <: Comparable[A]]: Order[A] = apply((x, y) => (x compareTo y) < 0)
@@ -120,6 +118,7 @@ object Hash extends UnaryClassCompanion[Hash, Long] {
   }
 }
 object Show extends UnaryClassCompanion[Show, String] {
+
   /** This of course is not implicit as that would defeat the purpose of the endeavor.
     * There is however an implicit universal instance in the Unsafe object.
     */
@@ -150,15 +149,15 @@ object IsIntIndexed {
   def apply[R, A](len: R => Int, get: (R, Int) => A): IsIntIndexed[R, A] = new Impl(len, get)
 
   final class Impl[R, A](len: R => Int, get: (R, Int) => A) extends IsIntIndexed[R, A] {
-    def length(xs: R): Int      = len(xs)
-    def elem(xs: R, i: Int): A  = get(xs, i)
+    def length(xs: R): Int     = len(xs)
+    def elem(xs: R, i: Int): A = get(xs, i)
   }
 }
 object IsPairs {
-  def apply[R, A, B](f: R => View[A->B]): IsPairs[R, A, B] = new Impl(f)
+  def apply[R, A, B](f: R => View[A -> B]): IsPairs[R, A, B] = new Impl(f)
 
-  final class Impl[R, A, B](f: R => View[A->B]) extends IsPairs[R, A, B] {
-    def pairs(xs: R): View[A->B] = f(xs)
+  final class Impl[R, A, B](f: R => View[A -> B]) extends IsPairs[R, A, B] {
+    def pairs(xs: R): View[A -> B] = f(xs)
   }
 }
 object IsFolded {
@@ -172,13 +171,13 @@ object Productize {
   def apply[R, A, B](f: (A, B) => R, l: R => A, r: R => B): Productize[R, A, B] = new Impl(f, l, r)
 
   final class Impl[R, A, B](f: (A, B) => R, l: R => A, r: R => B) extends Productize[R, A, B] {
-    def split(x: R): A->B = l(x) -> r(x)
-    def join(x: A->B): R  = x app f
+    def split(x: R): A -> B = l(x) -> r(x)
+    def join(x: A -> B): R  = x app f
   }
 }
 
 /** Some common boilerplate.
- */
+  */
 trait UnaryClassCompanion[M[X], R] {
   def wrap[A](f: A => R): M[A]
   def unwrap[A](r: M[A]): A => R

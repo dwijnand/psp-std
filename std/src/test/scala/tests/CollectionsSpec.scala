@@ -111,7 +111,7 @@ class CollectionsSpec extends ScalacheckBundle {
     )
   )
 
-  def javaProps = {
+  def javaProps =
     vec[NamedProp](
       expectTypes[jList[AB]](
         jseq build,
@@ -143,9 +143,8 @@ class CollectionsSpec extends ScalacheckBundle {
         jmap.m map fst map paired force
       )
     )
-  }
 
-  def pspProps: Vec[NamedProp] = {
+  def pspProps: Vec[NamedProp] =
     vec(
       expectTypes[Pset[AB]](
         pset build,
@@ -167,5 +166,4 @@ class CollectionsSpec extends ScalacheckBundle {
         pvec.m map fst map paired build
       )
     )
-  }
 }

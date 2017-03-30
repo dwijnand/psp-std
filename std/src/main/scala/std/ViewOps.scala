@@ -6,8 +6,8 @@ import exp._
 import all.{ PspAtomicOps }
 
 sealed trait Op
-sealed trait Op0 extends Op
-sealed trait Op1[A] extends Op
+sealed trait Op0       extends Op
+sealed trait Op1[A]    extends Op
 sealed trait Op2[A, B] extends Op
 
 final case class Joined[A, R](ls: RView[A, R], rs: RView[A, R])   extends RView[A, R]
@@ -21,9 +21,9 @@ final case class Take(n: Atomic)       extends Op0
 final case class TakeRight(n: Atomic)  extends Op0
 final case object Reverse              extends Op0
 
-final case class Filter[A](p: ToBool[A])        extends Op1[A]
-final case class TakeWhile[A](p: ToBool[A])     extends Op1[A]
-final case class DropWhile[A](p: ToBool[A])     extends Op1[A]
+final case class Filter[A](p: ToBool[A])    extends Op1[A]
+final case class TakeWhile[A](p: ToBool[A]) extends Op1[A]
+final case class DropWhile[A](p: ToBool[A]) extends Op1[A]
 
 final case class Mapped[A, B](f: A => B)        extends Op2[A, B]
 final case class FlatMap[A, B](f: A => View[B]) extends Op2[A, B]

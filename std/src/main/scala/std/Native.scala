@@ -25,7 +25,7 @@ final case object Pnil extends Plist[Nothing] {
 }
 
 object Pstream {
-  def empty[A] : Pstream[A] = Psnil()
+  def empty[A]: Pstream[A]                             = Psnil()
   def apply[A](hd: => A, tl: => Pstream[A]): Pscons[A] = new Pscons(hd, tl)
   def unapply[A](x: Pstream[A]): Opt[A -> Pstream[A]] = x match {
     case x: Pscons[A] => some(x.head -> x.tail)
@@ -42,12 +42,12 @@ sealed abstract class Pstream[+A] extends Each[A] {
   }
 }
 final class Pscons[A](h: => A, t: => Pstream[A]) extends Pstream[A] {
-  def size = Size.One.atLeast
+  def size      = Size.One.atLeast
   lazy val head = h
   lazy val tail = t
 }
 final case object Psnil extends Pstream[Nothing] {
-  def size = _0
+  def size                   = _0
   def apply[A](): Pstream[A] = cast(this)
 }
 
@@ -58,7 +58,7 @@ sealed class PunapplySeq[A](it: () => scIterator[A]) extends scSeq[A] {
 }
 
 sealed abstract class Consecutive[+A] extends Indexed[A] with HasToS {
-  type CC [X] <: Consecutive[X]
+  type CC[X] <: Consecutive[X]
 
   def in: Interval
   def map[B](g: A => B): CC[B]
@@ -102,7 +102,7 @@ object Consecutive {
     def apply(vdex: Index): A       = applyLong(in(vdex))
     def foreach(g: A => Unit): Unit = in foreach (applyLong andThen g)
 
-    def map[B](g: A => B): Open[B]  = in map (applyLong andThen g)
+    def map[B](g: A => B): Open[B] = in map (applyLong andThen g)
 
     def drop(n: Precise): Open[A]        = Consecutive(in drop n, applyLong)
     def dropRight(n: Precise): Open[A]   = Consecutive(in dropRight n, applyLong)

@@ -34,15 +34,15 @@ trait ExternalTypes {
   type Nothing = scala.Nothing
 
   // The eight primitive types of the jvm, plus the scala version of void.
-  type Boolean   = scala.Boolean
-  type Byte      = scala.Byte
-  type Char      = scala.Char
-  type Double    = scala.Double
-  type Float     = scala.Float
-  type Int       = scala.Int
-  type Long      = scala.Long
-  type Short     = scala.Short
-  type Unit      = scala.Unit
+  type Boolean = scala.Boolean
+  type Byte    = scala.Byte
+  type Char    = scala.Char
+  type Double  = scala.Double
+  type Float   = scala.Float
+  type Int     = scala.Int
+  type Long    = scala.Long
+  type Short   = scala.Short
+  type Unit    = scala.Unit
 
   // Useful as a lower bound, e.g. def f[A >: Primitive <: AnyVal], if it works..
   type Primitive = Boolean with Char with Byte with Short with Int with Long with Float with Double with Unit

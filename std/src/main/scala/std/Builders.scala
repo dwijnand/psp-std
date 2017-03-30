@@ -23,19 +23,19 @@ trait StdBuilders2 extends StdBuilders1 {
   implicit def walksIsFolded[A, R](implicit iz: IsFolded[R, A]): Walks[A, R] = Walks(Makes fromFolded _)
 }
 trait StdBuilders3 extends StdBuilders2 {
-  implicit def makesJavaMap[K, V]: Makes[K->V, jMap[K, V]]                                            = Makes.javaMap
-  implicit def makesJvmArray[A: CTag]: Makes[A, Array[A]]                                             = Makes.jvmArray
-  implicit def makesJvmString: Makes[Char, String]                                                    = Makes.jvmString
-  implicit def makesPspStream[A]: Makes[A, Pstream[A]]                                                = Makes.pspStream
-  implicit def makesPspList[A]: Makes[A, Plist[A]]                                                    = Makes.pspList
-  implicit def makesPspMap[K : Hash : Eq, V]: Makes[K->V, Pmap[K, V]]                                 = Makes.pspMap
-  implicit def makesPspSet[A : Hash : Eq]: Makes[A, Pset[A]]                                          = Makes.pspSet
-  implicit def makesPspView[A]: Makes[A, View[A]]                                                     = Makes.pspView
-  implicit def makesScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Makes[K->V, That] = Makes.scalaGenericMap
-  implicit def makesScala[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                     = Makes.scalaTraversable
-  implicit def viewsJvmString(xs: String): RView[Char, String]                                        = xs.m
-  implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): RView[A, CC[A]]                          = xs.m
-  implicit def viewsScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): RView[A, CC[A]]           = xs.m
+  implicit def makesJavaMap[K, V]: Makes[K -> V, jMap[K, V]]                                            = Makes.javaMap
+  implicit def makesJvmArray[A: CTag]: Makes[A, Array[A]]                                               = Makes.jvmArray
+  implicit def makesJvmString: Makes[Char, String]                                                      = Makes.jvmString
+  implicit def makesPspStream[A]: Makes[A, Pstream[A]]                                                  = Makes.pspStream
+  implicit def makesPspList[A]: Makes[A, Plist[A]]                                                      = Makes.pspList
+  implicit def makesPspMap[K: Hash: Eq, V]: Makes[K -> V, Pmap[K, V]]                                   = Makes.pspMap
+  implicit def makesPspSet[A: Hash: Eq]: Makes[A, Pset[A]]                                              = Makes.pspSet
+  implicit def makesPspView[A]: Makes[A, View[A]]                                                       = Makes.pspView
+  implicit def makesScalaMap[K, V, That](implicit z: CanBuild[Tuple2[K, V], That]): Makes[K -> V, That] = Makes.scalaGenericMap
+  implicit def makesScala[A, That](implicit z: CanBuild[A, That]): Makes[A, That]                       = Makes.scalaTraversable
+  implicit def viewsJvmString(xs: String): RView[Char, String]                                          = xs.m
+  implicit def viewsPspEach[A, CC[X] <: Each[X]](xs: CC[A]): RView[A, CC[A]]                            = xs.m
+  implicit def viewsScalaCollection[A, CC[X] <: sCollection[X]](xs: CC[A]): RView[A, CC[A]]             = xs.m
 
   implicit def walksPspEach[A, CC[X] <: Each[X]]: Walks[A, CC[A]] = Walks.pspEach
   implicit def walksPspView[A, CC[X] <: View[X]]: Walks[A, CC[A]] = Walks.pspView
@@ -46,8 +46,8 @@ trait StdBuilders3 extends StdBuilders2 {
   implicit def intIndexedScala[A, R <: scIndexedSeq[A]]: IsIntIndexed[R, A]          = IsIntIndexed(_.length, _ apply _)
   implicit def intIndexedString: IsIntIndexed[String, Char]                          = IsIntIndexed(_.length, _ charAt _)
 
-  implicit def walksIntIndexed[A, R](implicit iz: IsIntIndexed[R, A]): Walks[A, R] = Walks(Makes fromIntIndexed _)
-  implicit def walksPairs[A, B, R](implicit pz: IsPairs[R, A, B]): Walks[A->B, R]  = Walks(Makes fromPairs _)
+  implicit def walksIntIndexed[A, R](implicit iz: IsIntIndexed[R, A]): Walks[A, R]  = Walks(Makes fromIntIndexed _)
+  implicit def walksPairs[A, B, R](implicit pz: IsPairs[R, A, B]): Walks[A -> B, R] = Walks(Makes fromPairs _)
 }
 trait StdBuilders extends StdBuilders3 {
   implicit def makesPspDirect[A]: Makes[A, Direct[A]] = Makes.pspDirect[A]
@@ -86,5 +86,5 @@ trait StdEmpty extends StdEmpty0 {
   implicit lazy val emptySize: Empty.Const[Size]                = Empty const _0
   implicit lazy val emptyString: Empty.Const[String]            = Empty const ""
   implicit lazy val emptyUri: Empty.Const[jUri]                 = Empty const jUri("")
-  implicit lazy val emptySliceRange: Empty.Const[SliceRange]      = Empty const (Interval.empty map Index)
+  implicit lazy val emptySliceRange: Empty.Const[SliceRange]    = Empty const (Interval.empty map Index)
 }

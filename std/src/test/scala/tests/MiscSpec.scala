@@ -25,7 +25,7 @@ class MiscTests {
 }
 
 class ArraySpec extends ScalacheckBundle {
-  def bundle = "Array operations"
+  def bundle         = "Array operations"
   val ys: Array[Int] = 0 to 100 toArray
 
   def props = vec(
@@ -54,11 +54,11 @@ class ADTSpec extends ScalacheckBundle {
   }
 
   def props = vec(
-    "size.+ is commutative"   -> commutative[Size](_ + _),
-    "size.max is associative" -> associative[Size](Size.max),
-    "size.max is commutative" -> commutative[Size](Size.max),
-    "size.min is associative" -> associative[Size](Size.min),
-    "size.min is commutative" -> commutative[Size](Size.min),
+    "size.+ is commutative"    -> commutative[Size](_ + _),
+    "size.max is associative"  -> associative[Size](Size.max),
+    "size.max is commutative"  -> commutative[Size](Size.max),
+    "size.min is associative"  -> associative[Size](Size.min),
+    "size.min is commutative"  -> commutative[Size](Size.min),
     "index/nth are consistent" -> forAll((x: Index) => x.indexValue === x.toNth.indexValue),
     "nth/index are consistent" -> forAll((x: Nth) => x.nthValue === x.toIndex.nthValue),
     seqShows("1, 1", vec(xs(_0), xs(Nth(1)))),
@@ -90,7 +90,7 @@ class StringExtensions extends ScalacheckBundle {
 
   def bundle = "String Extensions"
 
-  def s = "123 monkey dog ^^.* hello mother 456"
+  def s                 = "123 monkey dog ^^.* hello mother 456"
   val pf: Char ?=> Char = { case 'a' => 'z' }
 
   def scalaOps(s: String) = new StringOps(s)
@@ -100,7 +100,7 @@ class StringExtensions extends ScalacheckBundle {
 
   def newProp2[B] = new {
     def apply[R](f: (StringOps, B) => R)(g: (String, B) => R)(implicit z1: Arb[B], z2: Eq[R]): Prop =
-    forAll((s: String, x: B) => sameBehavior(f(scalaOps(s), x), g(s, x)))
+      forAll((s: String, x: B) => sameBehavior(f(scalaOps(s), x), g(s, x)))
   }
 
   // dropRight and takeRight have the domain limited because of a scala bug with
@@ -116,10 +116,10 @@ class StringExtensions extends ScalacheckBundle {
     "dropRight"   -> newProp2[Int](_ dropRight _)(_ dropRight _ build)(mostInts, ?),
     // Not quite the same - "0xc".toInt is 12 for us, exception for them. XXX.
     // "toInt"       -> newProp[Int](_.toInt, _.toInt),
-    "tail"        -> newProp[String](_.tail, _.tail.force),
-    "head"        -> newProp(_.head, _.head),
-    "drop"        -> newProp[Char](_.head, _.head),
-    "reverse"     -> newProp[String](_.reverse, _.reverseChars.force),
+    "tail"    -> newProp[String](_.tail, _.tail.force),
+    "head"    -> newProp(_.head, _.head),
+    "drop"    -> newProp[Char](_.head, _.head),
+    "reverse" -> newProp[String](_.reverse, _.reverseChars.force),
     expectValue("")("".capitalize),
     expectValue("Bob")("bob".capitalize),
     expectValue("Bob johnson")("bob johnson".capitalize),
@@ -137,7 +137,7 @@ class GridSpec extends ScalacheckBundle {
   def primePartitionGrid(n: Int)   = primePartition take n map (_ take n)
   def primePartitionGrid_t(n: Int) = primePartition.transpose take n map (_ take n)
 
-  def primePartition6 = sm"""
+  def primePartition6   = sm"""
   |2   4   6   8   10  12
   |3   9   15  21  27  33
   |5   25  35  55  65  85

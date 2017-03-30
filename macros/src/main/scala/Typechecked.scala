@@ -7,13 +7,13 @@ import scala.reflect.macros.blackbox.Context
 import all._
 
 /** TODO - mock the ridiculous scala ast with a clean one with the same structure.
- *  Same thing with positions. Then they will be easy to lift and unlift without
- *  struggling with Universes and Importers and Mirrors and all the crazy bullshit
- *  which made it so easy to stop working on scala in the first place.
- *
- *  So for now it's the high-tech approach of calling toString on the tree and
- *  type and passing those, but at least that lets us print something interesting.
- */
+  *  Same thing with positions. Then they will be easy to lift and unlift without
+  *  struggling with Universes and Importers and Mirrors and all the crazy bullshit
+  *  which made it so easy to stop working on scala in the first place.
+  *
+  *  So for now it's the high-tech approach of calling toString on the tree and
+  *  type and passing those, but at least that lets us print something interesting.
+  */
 sealed trait TypecheckResult {
   def isError: Boolean
   def errorMessage: String
@@ -21,13 +21,13 @@ sealed trait TypecheckResult {
   def tpe: String
 }
 final case class Typed(tree: String, tpe: String) extends TypecheckResult {
-  def isError = false
+  def isError      = false
   def errorMessage = ""
 }
 final case class TypeError(errorMessage: String) extends TypecheckResult {
-  def isError = true
+  def isError      = true
   def tree: String = "<error>"
-  def tpe: String = "<error>"
+  def tpe: String  = "<error>"
 }
 final case class Typechecked(code: String, result: TypecheckResult) {
   def typechecks = !result.isError

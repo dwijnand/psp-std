@@ -3,7 +3,7 @@ package std
 
 import all._, StdShow._
 import java.{ lang => jl }
-import java.util.regex.{ Pattern, Matcher }
+import java.util.regex.{ Matcher, Pattern }
 import jl.Integer.parseInt, jl.Long.parseLong
 import Regex.WS
 import PChar._

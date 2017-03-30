@@ -53,9 +53,11 @@ trait StdRelation1 extends StdRelation0 {
   implicit def walksOrder[A, R](implicit b: Walks[A, R], oz: Order[A]): Order[R] = viewOrder[A] on b.walk
 }
 trait StdRelation2 extends StdRelation1 {
-  implicit def pairEq[A: Eq, B: Eq]: Eq[A->B]             = Eq((x, y) => fst(x) === fst(y) && snd(x) === snd(y))
-  implicit def pairOrder[A: Order, B: Order]: Order[A->B] = Order { case (x1 -> x2) -> (y1 -> y2) => (x1 < y1) || !(y1 < x1) && (x2 < y2) }
-  implicit def pairHash[A: Hash, B: Hash]: Hash[A->B]     = Hash(x => fst(x).hash + snd(x).hash)
+  implicit def pairEq[A: Eq, B: Eq]: Eq[A -> B] = Eq((x, y) => fst(x) === fst(y) && snd(x) === snd(y))
+  implicit def pairOrder[A: Order, B: Order]: Order[A -> B] = Order {
+    case (x1 -> x2) -> (y1 -> y2) => (x1 < y1) || !(y1 < x1) && (x2 < y2)
+  }
+  implicit def pairHash[A: Hash, B: Hash]: Hash[A -> B] = Hash(x => fst(x).hash + snd(x).hash)
 
   implicit def optionHash[A: Hash]: Hash[Opt[A]] = Hash(_.fold(0L)(_.hash))
   implicit def optionOrder[A: Order]: Order[Opt[A]] = Order {

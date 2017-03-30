@@ -1,7 +1,0 @@
-# scala formatting
---style default
---maxColumn 160
---continuationIndentCallSite 2
---alignStripMarginStrings false
---spacesInImportCurlyBraces true
---alignTokens extends;Defn.(Class|Trait|Object),=>;Case,=;Defn.(Va(l|r)|Def|Type),->;Term.ApplyInfix,^^;Term.ApplyInfix,//;.*,

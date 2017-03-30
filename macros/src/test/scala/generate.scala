@@ -4,14 +4,15 @@ package tests
 import psp.std._, all._, StdShow._
 
 /** TODO - actually generate the code via an sbt generator.
- */
+  */
 object Generator {
   val sciList = scala.List
-  def tq    = "\"\"\""
-  def lhses = sciList("\"abc\"", "scala.collection.Seq(1, 2, 3)", "scala.collection.mutable.Seq('a', 'b', 'c')", "Array(true, false, true)")
+  def tq      = "\"\"\""
+  def lhses =
+    sciList("\"abc\"", "scala.collection.Seq(1, 2, 3)", "scala.collection.mutable.Seq('a', 'b', 'c')", "Array(true, false, true)")
   def ops   = sciList("indexOf", "contains")
   def rhses = sciList("59d", "('b': Char)", "1")
-  def envs  = sciList(
+  def envs = sciList(
     "scalaLibraryCode" -> "",
     "pspByEquals"      -> ".byEquals",
     "pspByRef"         -> ".byRef",
@@ -27,7 +28,7 @@ object Generator {
     |package generated
     |
     |object Expressions {
-    |  ${ vals mkString "\n" }
+    |  ${vals mkString "\n"}
     |}"""
 }
 
@@ -63,7 +64,7 @@ object Expressions {
     Array(true, false, true) contains ('b': Char)
     Array(true, false, true) contains 1
   """
-  final val pspByEquals = """
+  final val pspByEquals      = """
     "abc".byEquals indexOf 59d
     "abc".byEquals indexOf ('b': Char)
     "abc".byEquals indexOf 1
@@ -89,7 +90,7 @@ object Expressions {
     Array(true, false, true).byEquals contains ('b': Char)
     Array(true, false, true).byEquals contains 1
   """
-  final val pspByRef = """
+  final val pspByRef         = """
     "abc".byRef indexOf 59d
     "abc".byRef indexOf ('b': Char)
     "abc".byRef indexOf 1

@@ -27,18 +27,17 @@ trait InPlaceCommon[A] extends Any {
   // def <<(n: Int): Array[A]
 }
 
-
 final class InPlacePrimitive[A >: Primitive <: AnyVal](val xs: Array[A]) extends AnyVal with InPlaceCommon[A] {
   def sort: Array[A] = doalso(xs)(
     (xs: Array[_]) match {
-      case xs: Array[Char]    => java.util.Arrays.sort(xs)
-      case xs: Array[Byte]    => java.util.Arrays.sort(xs)
-      case xs: Array[Short]   => java.util.Arrays.sort(xs)
-      case xs: Array[Int]     => java.util.Arrays.sort(xs)
-      case xs: Array[Long]    => java.util.Arrays.sort(xs)
-      case xs: Array[Float]   => java.util.Arrays.sort(xs)
-      case xs: Array[Double]  => java.util.Arrays.sort(xs)
-      case _                  =>
+      case xs: Array[Char]   => java.util.Arrays.sort(xs)
+      case xs: Array[Byte]   => java.util.Arrays.sort(xs)
+      case xs: Array[Short]  => java.util.Arrays.sort(xs)
+      case xs: Array[Int]    => java.util.Arrays.sort(xs)
+      case xs: Array[Long]   => java.util.Arrays.sort(xs)
+      case xs: Array[Float]  => java.util.Arrays.sort(xs)
+      case xs: Array[Double] => java.util.Arrays.sort(xs)
+      case _                 =>
     }
   )
 }

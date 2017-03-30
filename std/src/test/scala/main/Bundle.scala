@@ -9,8 +9,8 @@ trait Bundle extends ShowSelf {
 }
 
 /** Needed because scalacheck doesn't expose the label if you add
- *  labels with the |: operator.
- */
+  *  labels with the |: operator.
+  */
 final class NamedProp(val label: String, p: Prop) {
   def prop: Prop         = p :| label
   def check: Test.Result = Test.check(p)(identity)
@@ -27,15 +27,17 @@ abstract class ScalacheckBundle extends Bundle {
   def props: Direct[NamedProp]
 
   def pass  = Green("\u2713") // check mark
-  def fail  = Red("\u2717")   // cross mark
+  def fail  = Red("\u2717") // cross mark
   def start = Cyan bold bundle
 
-  def runOne(p: NamedProp): Boolean = p.check |> (r =>
-    doto(r.passed) {
-      case true  => log"+ $pass  ${p.label}"
-      case false => log"- $fail  ${p.label}\nFalsified after ${r.succeeded} passed tests\n$r"
-    }
-  )
+  def runOne(p: NamedProp): Boolean =
+    p.check |> (
+        r =>
+          doto(r.passed) {
+            case true  => log"+ $pass  ${p.label}"
+            case false => log"- $fail  ${p.label}\nFalsified after ${r.succeeded} passed tests\n$r"
+          }
+    )
 
   def run(): Boolean = {
     log"\n+ $start"

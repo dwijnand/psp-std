@@ -35,7 +35,7 @@ class StringViewTests {
 class IntViewTests {
   type DView[A] = RView[A, Direct[A]]
   type DVInt    = DView[Int]
-  type VIntInt  = View[Int->Int]
+  type VIntInt  = View[Int -> Int]
 
   val ints: IntRange = 1 to 10
   val ints3: DVInt   = ints take 3
@@ -69,22 +69,22 @@ class IntViewTests {
     def nint = none[Int]()
 
     junitAssert(
-      view(1, 2)    <  view(1, 2, 3),
-      view(1, 2)    <= view(1, 2, 3),
+      view(1, 2) < view(1, 2, 3),
+      view(1, 2) <= view(1, 2, 3),
       view(1, 2, 3) <= view(1, 2, 3),
-      some(1)       <  some(2),
-      some(2)       <= some(2),
-      nint          <  some(1),
-      (nint -> 2)   <  (some(1) -> 0)
+      some(1) < some(2),
+      some(2) <= some(2),
+      nint < some(1),
+      (nint -> 2) < (some(1) -> 0)
     )
     junitAssertFalse(
-      view(1, 2)    >  view(1, 2, 3),
-      view(1, 2)    >= view(1, 2, 3),
-      view(1, 2, 3) >  view(1, 2, 3),
-      some(1)       >= some(2),
-      some(2)       >  some(2),
-      nint          >= some(1),
-      (nint -> 2)   >= (some(1) -> 0)
+      view(1, 2) > view(1, 2, 3),
+      view(1, 2) >= view(1, 2, 3),
+      view(1, 2, 3) > view(1, 2, 3),
+      some(1) >= some(2),
+      some(2) > some(2),
+      nint >= some(1),
+      (nint -> 2) >= (some(1) -> 0)
     )
   }
 
@@ -95,7 +95,7 @@ class IntViewTests {
     same(1 to 2 zip (4 to 5) map (_ + _), view(5, 7))
     same(zip3 map (_ - _), view(1, 1, 1))
     same(zip3 mapLeft (_ * 10) pairs, view(20 -> 1, 40 -> 3, 60 -> 5))
-    same(zip3 mapRight (_ => 0) pairs, view(2 -> 0, 4 -> 0, 6 -> 0))
+    same(zip3 mapRight (_ => 0) pairs, view(2 -> 0, 4  -> 0, 6  -> 0))
     same(splt.collate, view(2, 1, 4, 3, 6, 5))
     same(splt.join, view(2, 4, 6, 1, 3, 5))
     same(zip3 corresponds (_ > _), true)
@@ -170,7 +170,7 @@ class IntViewTests {
   def emptyNeededTests(): Unit = {
     implicit def emptyInt = Empty[Int](0)
 
-    val pf1: Int ?=> String = { case 5 => "bob" }
+    val pf1: Int ?=> String = { case 5  => "bob" }
     val pf2: Int ?=> String = { case 50 => "bob" }
 
     same(ints zfirst pf1, "bob")
@@ -179,8 +179,8 @@ class IntViewTests {
     same(ints zlast, 10)
     same(ints zreducel (_ + _), 55)
     same(ints zreducer (_ + _), 55)
-    same(ints3 zfoldl[Int](_ - _), -6)
-    same(ints3 zfoldr[Int](_ - _), 2)
+    same(ints3 zfoldl [Int] (_ - _), -6)
+    same(ints3 zfoldr [Int] (_ - _), 2)
     same(view[Int]() zreducel (_ + _), 0)
   }
 

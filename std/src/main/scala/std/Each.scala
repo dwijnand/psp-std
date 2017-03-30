@@ -27,7 +27,7 @@ trait Generated[+A] extends Any with Indexed[A] {
 trait Direct[+A] extends Any with Indexed[A] with UseToS {
   def size: Precise
 
-  def applyReverse(idx: Index): A  = apply(size.lastIndex - idx.indexValue)
+  def applyReverse(idx: Index): A = apply(size.lastIndex - idx.indexValue)
   def foreach(f: A => Unit): Unit = ll.foreachDirect(this, f)
   def head: A                     = apply(_0) // depend on this
   def to_s: String                = showView(Show.ToS) show this

@@ -5,7 +5,7 @@ import psp.std._, all._, StdShow._
 
 class SliceSpec extends ScalacheckBundle {
   def bundle = "Slice Operations"
-  def checkSlice[A : Eq : Show](xs: Direct[A], start: Int, end: Int, expect: Direct[A]): Direct[NamedProp] = vec(
+  def checkSlice[A: Eq: Show](xs: Direct[A], start: Int, end: Int, expect: Direct[A]): Direct[NamedProp] = vec(
     pp"$xs.slice($start, $end) === $expect"              -> Prop(xs.o(_ slice (start indexUntil end)) === expect),
     pp"$xs drop $start take ($end - $start) === $expect" -> Prop(xs.o(_ drop start take end - start) === expect)
   )
@@ -79,21 +79,21 @@ class InferenceSpec extends ScalacheckBundle {
 
   def props: Vec[NamedProp] = make(
     vec(ptArray, ptView, ptVector) ++ ptBuild ++ vec(
-      expectType[Array[Char]]   (ss.m map identity force),
-      expectType[String]        (ss o (_ map identity)),
-      expectType[String]        (ss o (_ map identity)),
-      expectType[String]        (ss o (_.m map identity)),
-      expectType[String]        (ss map identity build),
-      expectType[String]        (ss.m map identity force),
-      expectType[View[Char]]    (ss.m map identity),
-      expectType[Pset[Int]]     (xs.m map identity force),
-      expectType[Each[Int]]     (fs o (_ map identity)),
-      expectType[Each[Int]]     (fs.m map identity force),
-      expectType[Direct[Int]]   (ds map identity build),
-      expectType[Direct[Int]]   (ds.m map identity force),
-      expectType[Direct[Int]]   (vs.m map identity force),
-      expectType[sciList[Int]]  (ls map identity),
-      expectType[sciList[Int]]  (ls.m map identity force),
+      expectType[Array[Char]](ss.m map identity force),
+      expectType[String](ss o (_ map identity)),
+      expectType[String](ss o (_ map identity)),
+      expectType[String](ss o (_.m map identity)),
+      expectType[String](ss map identity build),
+      expectType[String](ss.m map identity force),
+      expectType[View[Char]](ss.m map identity),
+      expectType[Pset[Int]](xs.m map identity force),
+      expectType[Each[Int]](fs o (_ map identity)),
+      expectType[Each[Int]](fs.m map identity force),
+      expectType[Direct[Int]](ds map identity build),
+      expectType[Direct[Int]](ds.m map identity force),
+      expectType[Direct[Int]](vs.m map identity force),
+      expectType[sciList[Int]](ls map identity),
+      expectType[sciList[Int]](ls.m map identity force),
       expectType[sciVector[Int]](vs map identity)
     )
   )

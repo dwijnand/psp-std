@@ -60,10 +60,10 @@ class ViewBasic extends ScalacheckBundle {
   case class Bippy(to_s: String, i: Int) extends ShowSelf
 
   // Testing different kinds of "distinct" calls.
-  val s1 = new Bippy("abc", 1)
-  val s2 = new Bippy("abc", 2)
-  val s3 = new Bippy("def", 3)
-  val s4 = new Bippy("def", 3)
+  val s1   = new Bippy("abc", 1)
+  val s2   = new Bippy("abc", 2)
+  val s3   = new Bippy("def", 3)
+  val s4   = new Bippy("def", 3)
   val strs = sciVector(s1, s2, s3, s4)
 
   def xxNumbers: View[Long] = 0.andUp grep """^(.*)\1""".r
@@ -72,7 +72,7 @@ class ViewBasic extends ScalacheckBundle {
 
   lazy val rangeProps = {
     type Triple[A, B, C] = A -> (B -> C)
-    type RTriple = Triple[LongRange, Index, Precise]
+    type RTriple         = Triple[LongRange, Index, Precise]
 
     // A size and and index each no greater than the halfway point lets
     // us formulate lots of relationships without creating out-of-bounds
@@ -82,9 +82,9 @@ class ViewBasic extends ScalacheckBundle {
 
     def pair(r: LongRange) = 0.index upTo half zip (0.size upTo half)
 
-    implicit val arbRange = Arb[LongRange](Gen const (0L until len))
+    implicit val arbRange                = Arb[LongRange](Gen const (0L until len))
     implicit val arbTriple: Arb[RTriple] = arbRange flatMap (r => pair(r) flatMap (x => r -> x))
-    implicit val emptyInt = Empty[Int](MinInt)
+    implicit val emptyInt                = Empty[Int](MinInt)
 
     vec[NamedProp](
       "take/drop vs. slice" -> sameOutcomes[Triple[LongRange, Int, Int], LongRange](

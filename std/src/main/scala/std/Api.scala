@@ -9,24 +9,24 @@ import StdShow._, exp._, all.showsToDoc
 
 trait ApiTypes extends ExternalTypes {
   // Aliases for internal and external types.
-  type ->[+A, +B]         = scala.Product2[A, B]        // A less overconstrained product type.
-  type |[+A, +B]          = scala.Either[A, B]          // The missing sum type.
+  type ->[+A, +B]         = scala.Product2[A, B] // A less overconstrained product type.
+  type |[+A, +B]          = scala.Either[A, B] // The missing sum type.
   type Bool               = scala.Boolean
-  type GTOnce[+A]         = sc.GenTraversableOnce[A]    // This is the beautifully named type at the top of scala collections
+  type GTOnce[+A]         = sc.GenTraversableOnce[A] // This is the beautifully named type at the top of scala collections
   type Id[+X]             = X
-  type Opt[+A]            = scala.Option[A]             // Placeholder
+  type Opt[+A]            = scala.Option[A] // Placeholder
   type Pair[+A, +B]       = A -> B
   type PairOf[+A]         = A -> A
-  type Pair2D[+A, +B]     = Pair[A->B, A->B]
-  type Ref[+A]            = AnyRef with A               // Promotes an A <: Any into an A <: AnyRef.
+  type Pair2D[+A, +B]     = Pair[A -> B, A -> B]
+  type Ref[+A]            = AnyRef with A // Promotes an A <: Any into an A <: AnyRef.
   type Triple[+A, +B, +C] = scala.Product3[A, B, C]
-  type sCollection[+A]    = sc.GenTraversable[A]        // named analogously to jCollection.
+  type sCollection[+A]    = sc.GenTraversable[A] // named analogously to jCollection.
   type HashEqOrder[-A]    = Hash[A] with Eq[A] with Order[A]
   type HashEq[-A]         = Hash[A] with Eq[A]
 
   // Function types.
   type ?=>[-A, +B]   = scala.PartialFunction[A, B] // ?=> associates to the left instead of the right.
-  type BinOp[A]      = BinTo[A, A]                 // binary operation
+  type BinOp[A]      = BinTo[A, A] // binary operation
   type BinTo[-A, +R] = (A, A) => R
   type Relation[-A]  = BinTo[A, Bool]
   type Suspended[+A] = ToUnit[ToUnit[A]]

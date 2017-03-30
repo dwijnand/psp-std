@@ -55,7 +55,7 @@ sealed trait Pair extends NonEmptyChain {
 object Chain {
   def empty: Chain                            = NoChain
   def apply(start: Long, len: Precise): Chain = cond(len.isZero, empty, Band(start, len))
-  def pair(l: Chain, r: Chain): Chain         = (l, r) match {
+  def pair(l: Chain, r: Chain): Chain = (l, r) match {
     case (NoChain, _)                         => r
     case (_, NoChain)                         => l
     case (l: NonEmptyChain, r: NonEmptyChain) => StrictPair(l, r)
@@ -106,8 +106,8 @@ object Chain {
       case Band(start, len) => prefixLength(p) |> (n => pair(self take n, self drop n dropWhile !p filter p))
       case Pair(l, r)       => pair(l filter p, r filter p)
     }
-    def takeWhile(p: ToBool[Long]): Rep  = take(prefixLength(p))
-    def dropWhile(p: ToBool[Long]): Rep  = drop(prefixLength(p))
+    def takeWhile(p: ToBool[Long]): Rep = take(prefixLength(p))
+    def dropWhile(p: ToBool[Long]): Rep = drop(prefixLength(p))
 
     def span(p: ToBool[Long]): PairOf[Rep]    = splitAfter(prefixLength(p))
     def splitAfter(len: Precise): PairOf[Rep] = take(len) -> drop(len)
