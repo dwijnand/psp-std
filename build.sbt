@@ -22,11 +22,12 @@ lazy val macros = project.noArtifacts dependsOn (std % "compile->compile;test->t
         scalacOptions += "-language:experimental.macros"
 )
 
-/*
 lazy val benchmark = project.noArtifacts.setup dependsOn std enablePlugins JmhPlugin
+
+/*
+
+*/
 
 addCommandAlias("bench-min", "benchmark/jmh:run -i 1 -wi 1 -f1 -t1")
 addCommandAlias("bench", "benchmark/jmh:run -f1 -t1")
-*/
-
 addCommandAlias("cover", "; clean ; coverage ; test ; coverageReport")
