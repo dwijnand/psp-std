@@ -52,6 +52,7 @@ trait StdBuilders3 extends StdBuilders2 {
 trait StdBuilders extends StdBuilders3 {
   implicit def makesPspDirect[A]: Makes[A, Direct[A]] = Makes.pspDirect[A]
 }
+object StdBuilders extends StdBuilders
 
 /** Having an Empty[A] instance in scope allows for using methods
   * like zfold, zreduce, zhead, whereupon the implicit empty value

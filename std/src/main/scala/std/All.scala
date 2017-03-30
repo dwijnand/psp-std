@@ -13,7 +13,52 @@ object Unsafe {
   */
 object exp extends AllExplicit
 
-object all extends AllExplicit with AllImplicit {
+trait ShadowPredefImplicits {
+  def ArrowAssoc                 = null
+  def StringCanBuildFrom         = null
+  def any2ArrowAssoc             = null
+  def any2Ensuring               = null
+  def any2stringadd              = null
+  def any2stringfmt              = null
+  def arrayToCharSequence        = null
+  def augmentString              = null
+  def booleanArrayOps            = null
+  def booleanWrapper             = null
+  def byteArrayOps               = null
+  def byteWrapper                = null
+  def charArrayOps               = null
+  def charWrapper                = null
+  def doubleArrayOps             = null
+  def doubleWrapper              = null
+  def exceptionWrapper           = null
+  def fallbackStringCanBuildFrom = null
+  def floatArrayOps              = null
+  def floatWrapper               = null
+  def genericArrayOps            = null
+  def genericWrapArray           = null
+  def intArrayOps                = null
+  def intWrapper                 = null
+  def longArrayOps               = null
+  def longWrapper                = null
+  def refArrayOps                = null
+  def seqToCharSequence          = null
+  def shortArrayOps              = null
+  def shortWrapper               = null
+  def wrapBooleanArray           = null
+  def wrapByteArray              = null
+  def wrapCharArray              = null
+  def wrapDoubleArray            = null
+  def wrapFloatArray             = null
+  def wrapIntArray               = null
+  def wrapLongArray              = null
+  def wrapRefArray               = null
+  def wrapShortArray             = null
+  def wrapString                 = null
+  def wrapUnitArray              = null
+}
+
+object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
+
   implicit class PspAtomicOps(private val x: Atomic) {
     def indices: SliceRange = foldInfinite(openIndices, _.indices)
     def foldSize[A](inf: => A)(f: Precise => A): A = x match {

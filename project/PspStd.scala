@@ -12,10 +12,6 @@ object PspStd {
   def compileArgs: Seq[String]  = baseArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
   def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
 
-  def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" % "1.15"
-  def jsr305           = "com.google.code.findbugs" %  "jsr305"                   % "3.0.1"
-  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.5.0"
-
   def testDependencies = Seq(
     "org.scalacheck" %% "scalacheck"      % "1.13.5",
     "com.novocode"    % "junit-interface" %  "0.11"
@@ -43,7 +39,7 @@ object PspStd {
      scalaOrganization :=  "org.typelevel",
                version :=  "0.6.2-SNAPSHOT",
           scalaVersion :=  "2.12.1",
-         scalacOptions ++= wordSeq("-Ypartial-unification -Yliteral-types -Yno-imports -Yno-predef"),
+         scalacOptions ++= wordSeq("-Ypartial-unification -Yliteral-types"),
               licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
   )
 
