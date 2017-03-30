@@ -7,19 +7,17 @@ object PspStd {
   type TaskOf[A]      = Def.Initialize[Task[A]]
   type InputTaskOf[A] = Def.Initialize[InputTask[A]]
 
-  def junitArgs: Seq[String]    = sys.env.getOrElse("ARGS", "-a -s").split("\\s+").toSeq
-  def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-predef -Yno-adapted-args")
-  def ammoniteArgs: Seq[String] = baseArgs ++ wordSeq("-Yno-imports")
-  def compileArgs: Seq[String]  = ammoniteArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
+  def junitArgs: Seq[String]    = wordSeq("-a -s")
+  def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-adapted-args")
+  def compileArgs: Seq[String]  = baseArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
   def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
 
-  def ammonite         = "com.lihaoyi"              %  "ammonite-repl"            % "0.7.8" cross CrossVersion.full
   def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" % "1.15"
   def jsr305           = "com.google.code.findbugs" %  "jsr305"                   % "3.0.1"
-  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.3.0-RC2"
+  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.5.0"
 
   def testDependencies = Seq(
-    "org.scalacheck" %% "scalacheck"      % "1.13.3",
+    "org.scalacheck" %% "scalacheck"      % "1.13.5",
     "com.novocode"    % "junit-interface" %  "0.11"
   )
 
@@ -40,17 +38,19 @@ object PspStd {
     </developers>
   )
 
-  def commonSettings = compileArgsBoth ++ inBoth(doubleCross) ++ Seq(
-                   pomExtra :=  pspPomExtra,
-    javacOptions in compile ++= Seq("-nowarn", "-XDignore.symbol.file"),
-         logLevel in update :=  Level.Warn,
-    publishArtifact in Test :=  false,
-                    version :=  "0.6.2-SNAPSHOT",
-               scalaVersion :=  "2.11.8",
-         crossScalaVersions :=  Seq(scalaVersion.value, "2.12.0"),
-               organization :=  "org.improving",
-                   licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-           triggeredMessage :=  Watched.clearWhenTriggered
+  def universalSettings = Seq(
+          organization :=  "org.improving",
+     scalaOrganization :=  "org.typelevel",
+               version :=  "0.6.2-SNAPSHOT",
+          scalaVersion :=  "2.12.1",
+         scalacOptions ++= wordSeq("-Ypartial-unification -Yliteral-types -Yno-imports -Yno-predef"),
+              licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+  )
+
+  def commonSettings = universalSettings ++ compileArgsBoth ++ inBoth(doubleCross) ++ Seq(
+                    pomExtra :=  pspPomExtra,
+     javacOptions in compile ++= Seq("-nowarn", "-XDignore.symbol.file"),
+            triggeredMessage :=  Watched.clearWhenTriggered
   )
 
   def wordSeq(s: String): Vector[String] = scala.Vector(s split "\\s+" filterNot (_ == ""): _*)

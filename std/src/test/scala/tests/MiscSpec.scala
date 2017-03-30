@@ -77,8 +77,8 @@ class ADTSpec extends ScalacheckBundle {
     showsAs("0", Index(0)),
     showsAs("0", Index(0).indexValue),
     showsAs("0", Nth(1).indexValue),
-    showsAs("[1..3]", 1 nthTo 3),
-    showsAs("[0..2]", 0 indexUntil 3)
+    showsAs("[ #1, #2, #3 ]", 1 nthTo 3),
+    showsAs("[ 0, 1, 2 ]", 0 indexUntil 3)
   )
 }
 

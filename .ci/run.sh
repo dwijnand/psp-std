@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-: ${TRAVIS_SCALA_VERSION:=2.11.8}
+: ${TRAVIS_SCALA_VERSION:=2.12.1}
 
 GREP="egrep --line-buffered"
 SBT="sbt ++$TRAVIS_SCALA_VERSION -no-colors"
@@ -13,7 +13,7 @@ onRunnerExit() {
   [[ -f project/scoverage.sbt ]] || git checkout HEAD -- project/scoverage.sbt
 }
 
-run211 () {
+runTests () {
   # Look ma I'm testing pipefail.
   if false | cat; then
     echo "Failing pipe didn't fail!" && exit 1
@@ -26,19 +26,6 @@ run211 () {
   $SBT -batch cover
   $SBT -batch macros/test
   codecov
-}
-run212 () {
-  # High fucking tech right here.
-  # https://github.com/scoverage/sbt-scoverage/issues/96
-  trap onRunnerExit EXIT
-  rm ./project/scoverage.sbt
-  $SBT -batch test
-}
-runTests () {
-  case $TRAVIS_SCALA_VERSION in
-    2.12*) run212 ;;
-        *) run211 ;;
-  esac
 }
 
 runTests \

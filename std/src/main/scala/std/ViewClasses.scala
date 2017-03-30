@@ -13,9 +13,11 @@ trait ViewClasses[A, R] {
   type V        = MapTo[A]
   type Zipped   = Zip[A, A]
 
-  def mpartition(mf: View[A] => Pred): Map2D[A] = {
-    def next(self: View[A]): Pstream[MapTo[A]] = mf(self) |> (p => Pstream(self filter p as, next(self filter !p)))
-    next(self).as
+  def mpartition(mf: View[A] => Pred): View[View[A]] = {
+    def next(self: View[A]): Pstream[View[A]] =
+      mf(self) |> (p => Pstream[View[A]](self filter p, next(self filter !p)))
+
+    next(self)
   }
 
   /** When a View is split into two disjoint views.
