@@ -3,20 +3,6 @@ package psp
 import sbt._, Keys._
 
 object PspStd {
-  type SettingOf[A]   = Def.Initialize[A]
-  type TaskOf[A]      = Def.Initialize[Task[A]]
-  type InputTaskOf[A] = Def.Initialize[InputTask[A]]
-
-  def junitArgs: Seq[String]    = wordSeq("-a -s")
-  def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-adapted-args")
-  def compileArgs: Seq[String]  = baseArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
-  def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
-
-  def testDependencies = Seq(
-    "org.scalacheck" %% "scalacheck"      % "1.13.5",
-    "com.novocode"    % "junit-interface" %  "0.11"
-  )
-
   // To sync with Maven central, you need to supply the following information:
   def pspPomExtra = (
     <url>https://github.com/paulp/psp-std</url>
@@ -32,21 +18,6 @@ object PspStd {
         <url>https://github.com/paulp/</url>
       </developer>
     </developers>
-  )
-
-  def universalSettings = Seq(
-          organization :=  "org.improving",
-     scalaOrganization :=  "org.typelevel",
-               version :=  "0.6.2-SNAPSHOT",
-          scalaVersion :=  "2.12.1",
-         scalacOptions ++= wordSeq("-Ypartial-unification -Yliteral-types"),
-              licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
-  )
-
-  def commonSettings = universalSettings ++ compileArgsBoth ++ inBoth(doubleCross) ++ Seq(
-                    pomExtra :=  pspPomExtra,
-     javacOptions in compile ++= Seq("-nowarn", "-XDignore.symbol.file"),
-            triggeredMessage :=  Watched.clearWhenTriggered
   )
 
   def wordSeq(s: String): Vector[String] = scala.Vector(s split "\\s+" filterNot (_ == ""): _*)
@@ -81,16 +52,13 @@ object PspStd {
     }
   }
   implicit class SettingKeyOps[A](val key: SettingKey[A]) {
-    // For a project as obsessed with "map" as is sbt, how did they manage to
-    // fuck up calling "map" on a setting? It is implicitly converted to a Task
-    // or something, and you don't get a setting back.
-    def mapValue[B](f: A => B): SettingOf[B] = Def setting f(key.value)
-  }
-  implicit class KeyPairOps[A, B](val pair: (SettingKey[A], SettingKey[B])) {
-    def mapValue[C](f: (A, B) => C): SettingOf[C] = Def setting f(pair._1.value, pair._2.value)
+    def mapValue[B](f: A => B): Def.Initialize[B] = Def setting f(key.value)
   }
   implicit class ProjectOps(val p: Project) {
     import p.id
+
+    def typelevelArgs = wordSeq("-Ypartial-unification -Yliteral-types")
+    def typelevel     = also(scalaOrganization := "org.typelevel", scalacOptions += "-Ypartial-unification")
 
     def root: Project = noArtifacts in file(".")
     def noArtifacts: Project = also(
@@ -100,16 +68,17 @@ object PspStd {
              packageBin := file(""),
       packagedArtifacts := Map()
     )
-    def allSources = Def task (sources in Test in p).value ++ (sources in Compile in p).value
 
     def also(m: ModuleID, ms: ModuleID*): Project     = also(libraryDependencies ++= m +: ms)
     def deps(ms: ModuleID*): Project                  = also(libraryDependencies ++= ms.toSeq)
     def also(s: Setting[_], ss: Setting[_]*): Project = also(s +: ss.toSeq)
     def also(ss: Seq[Setting[_]]): Project            = p settings (ss: _*)
 
-    def setup(): Project = p also commonSettings also (
-        name :=  s"psp-$id",
-      target := javaCrossTarget(id).value
+    def setup(): Project = p also inBoth(doubleCross) also (
+      scalacOptions in compile ++= wordSeq("-language:_ -Yno-adapted-args -Ywarn-unused -Ywarn-unused-import"),
+              triggeredMessage :=  Watched.clearWhenTriggered,
+                          name :=  s"psp-$id",
+                        target :=  javaCrossTarget(id).value
     )
   }
 }
