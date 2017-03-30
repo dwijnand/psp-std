@@ -7,16 +7,14 @@ object PspStd {
   type TaskOf[A]      = Def.Initialize[Task[A]]
   type InputTaskOf[A] = Def.Initialize[InputTask[A]]
 
-  def junitArgs: Seq[String]    = sys.env.getOrElse("ARGS", "-a -s").split("\\s+").toSeq
+  def junitArgs: Seq[String]    = wordSeq("-a -s")
   def baseArgs: Seq[String]     = wordSeq("-language:_ -Yno-adapted-args")
-  def ammoniteArgs: Seq[String] = baseArgs
-  def compileArgs: Seq[String]  = ammoniteArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
+  def compileArgs: Seq[String]  = baseArgs ++ wordSeq("-Ywarn-unused -Ywarn-unused-import")
   def compileArgsBoth           = inBoth(config => Seq(scalacOptions in compile in config ++= compileArgs))
 
-  def ammonite         = "com.lihaoyi"              %  "ammonite-repl"            % "0.7.8" cross CrossVersion.full
   def jmhAnnotations   = "org.openjdk.jmh"          %  "jmh-generator-annprocess" % "1.15"
   def jsr305           = "com.google.code.findbugs" %  "jsr305"                   % "3.0.1"
-  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.3.0-RC2"
+  def scoverageRuntime = "org.scoverage"            %% "scalac-scoverage-runtime" % "1.5.0"
 
   def testDependencies = Seq(
     "org.scalacheck" %% "scalacheck"      % "1.13.5",
@@ -40,16 +38,12 @@ object PspStd {
     </developers>
   )
 
-  def typelevelArgs = wordSeq("-Ypartial-unification -Yliteral-types")
-
   def universalSettings = Seq(
           organization :=  "org.improving",
      scalaOrganization :=  "org.typelevel",
                version :=  "0.6.2-SNAPSHOT",
           scalaVersion :=  "2.12.1",
-         scalacOptions ++= typelevelArgs,
-         scalacOptions ++= Seq("-Yno-imports", "-Yno-predef"),
-         // scalacOptions ++= Seq("-Ysysdef", "psp._"),
+         scalacOptions ++= wordSeq("-Ypartial-unification -Yliteral-types -Yno-imports -Yno-predef"),
               licenses :=  Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
   )
 
