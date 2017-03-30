@@ -57,6 +57,9 @@ object PspStd {
   implicit class ProjectOps(val p: Project) {
     import p.id
 
+    def typelevelArgs = wordSeq("-Ypartial-unification -Yliteral-types")
+    def typelevel     = also(scalaOrganization := "org.typelevel", scalacOptions += "-Ypartial-unification")
+
     def root: Project = noArtifacts in file(".")
     def noArtifacts: Project = also(
                 publish := (()),

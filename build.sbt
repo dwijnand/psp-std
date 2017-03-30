@@ -13,14 +13,15 @@ lazy val root = (
 )
 
 lazy val std = project.setup settings (
-                description :=  "psp's non-standard standard library",
-        testOptions in Test +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
-        testOptions in Test +=  Tests.Argument(TestFrameworks.JUnit, "-a", "-s"),
-  parallelExecution in Test :=  false,
-        logBuffered in Test :=  false,
-         traceLevel in Test :=  30,
-                   pomExtra :=  pspPomExtra,
-        libraryDependencies ++= Seq(
+  initialCommands in console +=  "import psp._\nimport psp.std._\nimport psp.std.all._\nimport StdShow._",
+                 description :=  "psp's non-standard standard library",
+         testOptions in Test +=  Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1"),
+         testOptions in Test +=  Tests.Argument(TestFrameworks.JUnit, "-a", "-s"),
+   parallelExecution in Test :=  false,
+         logBuffered in Test :=  false,
+          traceLevel in Test :=  30,
+                    pomExtra :=  pspPomExtra,
+         libraryDependencies ++= Seq(
           "org.scalacheck" %% "scalacheck"      % "1.13.5" % Test,
           "com.novocode"    % "junit-interface" %  "0.11" % Test
         )
