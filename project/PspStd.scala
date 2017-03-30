@@ -26,7 +26,7 @@ object PspStd {
 
   def buildBase                   = baseDirectory in ThisBuild
   def javaSpecVersion: String     = sys.props("java.specification.version")
-  def javaCrossTarget(id: String) = buildBase mapValue (_ / "target" / id / s"java_$javaSpecVersion")
+  def javaCrossTarget(id: String) = buildBase(_ / "target" / id / s"java_$javaSpecVersion")
 
   /** Watch out Jonesy! It's the ol' double-cross!
    *  Why, you...
@@ -50,9 +50,6 @@ object PspStd {
       val name    = basis.getName
       for (j <- jappend ; s <- sappend) yield parent / s"$name$j" / s"scala$s"
     }
-  }
-  implicit class SettingKeyOps[A](val key: SettingKey[A]) {
-    def mapValue[B](f: A => B): Def.Initialize[B] = Def setting f(key.value)
   }
   implicit class ProjectOps(val p: Project) {
     import p.id
