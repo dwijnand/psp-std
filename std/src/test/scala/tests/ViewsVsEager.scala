@@ -20,16 +20,16 @@ class OperationCounts extends ScalacheckBundle {
   class Counter(r: LongRange) extends Direct[Long] {
     private var _access: Long = 0L
 
-    def count: Long            = _access
-    def size: Precise          = r.size
+    def count: Long             = _access
+    def size: Precise           = r.size
     def apply(idx: Index): Long = doalso(r(idx))(_access += 1)
   }
   def checkOp(op: LongOp): Bool = synchronized {
-    val c = new Counter(1L to max)
-    val v = op(c)
+    val c            = new Counter(1L to max)
+    val v            = op(c)
     val r: Vec[Long] = v take 3 force;
 
-    err println fp"${c.count}%4s ops for ${ v.opDoc }%-80s // $r%s"
+    err println fp"${c.count}%4s ops for ${v.opDoc}%-80s // $r%s"
     true
   }
 

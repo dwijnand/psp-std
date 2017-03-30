@@ -37,7 +37,7 @@ final class Index private[std] (val indexValue: Long) extends AnyVal with ShowSe
 }
 final class Nth private[std] (val nthValue: Long) extends AnyVal with ShowSelf with Vdex {
   def indexValue: Long = nthValue - 1
-  def to_s = pp"#$nthValue"
+  def to_s             = pp"#$nthValue"
 }
 
 /** A valid index is always non-negative. All negative indices are

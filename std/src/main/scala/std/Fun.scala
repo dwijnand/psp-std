@@ -25,18 +25,18 @@ final case class Pmap[A, +B](keySet: Pset[A], lookup: Fun[A, B]) {
   def zipped: Zip[A, B]             = zipMap(keys)(lookup.fn)
 }
 final case class Pset[A](basis: View[A], table: HashFun[A])(implicit hz: Hash[A], ez: Eq[A]) {
-  def apply(x: A): Bool                           = this contains x
-  def map[B](f: A => B): Pmap[A, B]               = Pmap(this, Fun(f))
-  def mapToSet[B : Eq : Hash](f: A => B): Pset[B] = basis map f toPset
-  def contains(x: A): Bool                        = table(x.hash) exists (_ === x)
+  def apply(x: A): Bool                         = this contains x
+  def map[B](f: A => B): Pmap[A, B]             = Pmap(this, Fun(f))
+  def mapToSet[B: Eq: Hash](f: A => B): Pset[B] = basis map f toPset
+  def contains(x: A): Bool                      = table(x.hash) exists (_ === x)
 }
 
 object Pset {
   def apply[A](xs: View[A])(implicit hz: Hash[A], ez: Eq[A]): Pset[A] = Pset(xs, hashFun(xs))
 }
 
-class ExtractorCombine[A, B](Once: Extractor1[A, A->B], combine: BinOp[B]) {
-  def unapply(x: A): Opt[A->B] = x match {
+class ExtractorCombine[A, B](Once: Extractor1[A, A -> B], combine: BinOp[B]) {
+  def unapply(x: A): Opt[A -> B] = x match {
     case Once(Once(prev, a1), a2) => some(prev -> combine(a1, a2))
     case _                        => none()
   }
@@ -96,14 +96,14 @@ object Fun {
 }
 
 object Pred {
-  def True[A] : ScalaPred.M[A]  = ScalaPred.True
-  def False[A] : ScalaPred.M[A] = ScalaPred.False
+  def True[A]: ScalaPred.M[A]  = ScalaPred.True
+  def False[A]: ScalaPred.M[A] = ScalaPred.False
 }
 
 /** Scala function wrappers, trying to get better strings and equality.
- *  Predicates exist to preserve equality of constant true and constant false,
- *  so the view optimizer can respond appropriately.
- */
+  *  Predicates exist to preserve equality of constant true and constant false,
+  *  so the view optimizer can respond appropriately.
+  */
 object ScalaPred {
   implicit def scalaPredToPsp[A](p: ToBool[A]): M[A] = ScalaPred(p)
 
@@ -120,12 +120,12 @@ object ScalaPred {
       case Id(_)           => "?"
     }
   }
-  final object False                         extends M[Any](_ => false)
-  final object True                          extends M[Any](_ => true)
-  final case class And[-A](p: M[A], q: M[A]) extends M[A](x => p(x) && q(x))
-  final case class Or[-A](p: M[A], q: M[A])  extends M[A](x => p(x) || q(x))
-  final case class Not[-A](p: M[A])          extends M[A](x => !p(x))
-  final case class Id[-A](p: ToBool[A])      extends M[A](p)
+  final object False                                 extends M[Any](_ => false)
+  final object True                                  extends M[Any](_ => true)
+  final case class And[-A](p: M[A], q: M[A])         extends M[A](x => p(x) && q(x))
+  final case class Or[-A](p: M[A], q: M[A])          extends M[A](x => p(x) || q(x))
+  final case class Not[-A](p: M[A])                  extends M[A](x => !p(x))
+  final case class Id[-A](p: ToBool[A])              extends M[A](p)
   final case class Label[-A](label: String, p: M[A]) extends M[A](p)
 
   def apply[A](p: ToBool[A]): M[A] = p match {
@@ -151,12 +151,12 @@ object ScalaFun {
     case x: Partial[A, B] => x
     case _                => Partial(pf.isDefinedAt, apply(pf))
   }
-  def const[A](x: A): Const[A] = Const(x)
+  def const[A](x: A): Const[A]                        = Const(x)
   def compose[A, B, C](f: A => B, g: B => C): M[A, C] = Compose(apply(f), apply(g))
 
   sealed abstract class M[-A, +B](u: A => B) extends (A => B) with InheritedHashEq with ShowSelf {
     def labeled(label: String): M[A, B] = Label(label, this)
-    def apply(x: A): B = u(x)
+    def apply(x: A): B                  = u(x)
     def to_s: String = this match {
       case Compose(f, g)   => any"$f andThen $g"
       case Label(s, _)     => s
@@ -166,9 +166,9 @@ object ScalaFun {
     }
   }
   final case class Compose[-A, B, +C](f: M[A, B], g: M[B, C]) extends M(f andThen g)
-  final case class Id[A, B](f: A => B) extends M(f)
-  final case class Const[A](value: A) extends M[Any, A](_ => value)
-  final case class Label[A, B](label: String, f: M[A, B]) extends M(f)
+  final case class Id[A, B](f: A => B)                        extends M(f)
+  final case class Const[A](value: A)                         extends M[Any, A](_ => value)
+  final case class Label[A, B](label: String, f: M[A, B])     extends M(f)
   final case class Partial[-A, +B](p: ToBool[A], f: M[A, B]) extends M(f) with (A ?=> B) with InheritedHashEq with ShowSelf {
     def isDefinedAt(x: A): Bool = p(x)
     def unapply(x: A): Opt[B]   = cond(p(x), some(f(x)), none())

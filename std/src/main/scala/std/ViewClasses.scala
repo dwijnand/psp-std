@@ -3,8 +3,7 @@ package std
 
 import views._, all._
 
-trait ViewClasses[A, R] {
-  self: RView[A, R] =>
+trait ViewClasses[A, R] { self: RView[A, R] =>
 
   type Map2D[B] = MapTo[MapTo[B]]
   type MapTo[X] = RView[X, R]
@@ -30,25 +29,25 @@ trait ViewClasses[A, R] {
     def collate: V                    = View(pairs flatMap (_.each))
     def cross: Zipped                 = app(zipCross)
     def join: V                       = app(_ ++ _)
-    def mapBoth[B](f: V => B): B->B   = views map2 f
+    def mapBoth[B](f: V => B): B -> B = views map2 f
     def mapEach(f: ToSelf[V]): Split  = Split(f(leftView), f(rightView))
     def mapLeft(f: ToSelf[V]): Split  = Split(f(leftView), rightView)
     def mapRight(f: ToSelf[V]): Split = Split(leftView, f(rightView))
-    def pairs: MapTo[A->A]            = View(zip.pairs)
-    def views: V->V                   = leftView -> rightView
+    def pairs: MapTo[A -> A]          = View(zip.pairs)
+    def views: V -> V                 = leftView -> rightView
     def zip: Zipped                   = app(zipViews(_, _))
   }
 
   /** A derived view based on a sequence of functions.
-   *  Each element in `self` gives rise to a row of elements,
-   *  after applying each function `functions` to the element.
-   */
+    *  Each element in `self` gives rise to a row of elements,
+    *  after applying each function `functions` to the element.
+    */
   class Live[B](functions: View[A => B]) extends (Coords => B) {
-    def isEmpty: Bool             = self.isEmpty || functions.isEmpty
-    def apply(xy: Coords): B      = xy app (rows applyIndex _ applyIndex _)
-    def rows: MapTo[View[B]]      = self map (r => functions map (_ apply r))
+    def isEmpty: Bool              = self.isEmpty || functions.isEmpty
+    def apply(xy: Coords): B       = xy app (rows applyIndex _ applyIndex _)
+    def rows: MapTo[View[B]]       = self map (r => functions map (_ apply r))
     def column(n: Index): MapTo[B] = rows map (_ applyIndex n)
-    def columns: Map2D[B]         = View(openIndices map column)
+    def columns: Map2D[B]          = View(openIndices map column)
 
     def widths(implicit z: Show[B]): MapTo[Int]  = columns map (_ map (_.pp.length) max)
     def lines(implicit z: Show[B]): View[String] = zcond(!isEmpty, widths zip rows map (lformat(_)(_)))
@@ -62,8 +61,7 @@ trait ViewClasses[A, R] {
 }
 
 /** Extractors.
- */
-
+  */
 object SplitView {
   def unapply[A, R](x: SplitView[A, R]) = Some(x.leftView -> x.rightView)
 }

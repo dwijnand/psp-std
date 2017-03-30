@@ -4,14 +4,14 @@ package std
 import all._
 
 /** Holding area for things which should later be made configurable.
- */
+  */
 object Pconfig {
   val renderer: Renderer = new FullRenderer(3L sizeTo 9)
   val logger: Printing   = err
 }
 
 /** Motley objects for which a file of residence is not obvious.
- */
+  */
 final class JvmName(val raw: String) extends ShowSelf {
   def segments: Vec[String] = raw splitChar '.' toVec
   def short: String         = segments.last
@@ -40,7 +40,7 @@ final class ZipIterator[A1, A2](ls: scIterator[A1], rs: scIterator[A2]) extends 
 }
 
 /** Various objects for construction, extraction, alias storage.
- */
+  */
 object Pair {
   def apply[R, A, B](x: A, y: B)(implicit z: MakesProduct[R, A, B]): R     = z.join(pair(x, y))
   def unapply[R, A, B](x: R)(implicit z: IsProduct[R, A, B]): Some[A -> B] = scala.Some(z split x)

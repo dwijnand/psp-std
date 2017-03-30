@@ -47,7 +47,7 @@ sealed abstract class Doc {
 object Doc {
   val SP = " ".lit
 
-  final case object NoDoc extends Doc
+  final case object NoDoc                             extends Doc
   final case class Group(xs: View[Doc])               extends Doc
   final case class Cat(left: Doc, right: Doc)         extends Doc
   final case class Shown[A](value: A, shows: Show[A]) extends Doc
@@ -82,12 +82,11 @@ class FullRenderer(elemRange: SizeRange) extends Renderer {
 final case class StringContext(parts: String*) {
 
   /** TODO. See
-   *  https://github.com/scala/scala/blob/2.12.x/src/compiler/scala/tools/reflect/FormatInterpolator.scala
-   *  Can't see any way to call the standard (type-safe) f-interpolator.
-   *
-   *    private val FormatSpec = """%(?:(\d+)\$)?([-#+ 0,(\<]+)?(\d+)?(\.\d+)?([tT]?[%a-zA-Z])?""".r
-   */
-
+    *  https://github.com/scala/scala/blob/2.12.x/src/compiler/scala/tools/reflect/FormatInterpolator.scala
+    *  Can't see any way to call the standard (type-safe) f-interpolator.
+    *
+    *    private val FormatSpec = """%(?:(\d+)\$)?([-#+ 0,(\<]+)?(\d+)?(\.\d+)?([tT]?[%a-zA-Z])?""".r
+    */
   /** Having args of type Doc* forces all the interpolated values
     * be of a type which is implicitly convertible to Doc.
     */
@@ -102,8 +101,8 @@ final case class StringContext(parts: String*) {
   private def strippedParts: View[String] = escapedParts map (_ mapLines (_.stripMargin))
 
   /** There's one more escaped part than argument, so
-   *  to collate them we tack an empty Doc onto the arg list.
-   */
+    *  to collate them we tack an empty Doc onto the arg list.
+    */
   def doc(args: Doc*): Doc  = escapedParts.asDocs.zip(args :+ Doc.empty).pairs flatMap (_.each) reducel (_ ~ _)
   def fdoc(args: Doc*): Doc = escaped.format(args.map(_.pp): _*)
   def sdoc(args: Doc*): Doc = new scala.StringContext(strippedParts.seq: _*).raw(args: _*).trim
@@ -123,11 +122,11 @@ trait StdShow0 {
   implicit def showUnit: Show[Unit]       = Show.Inherited
 
   implicit def showView[A: Show]: Show[View[A]] = Show(xs => Doc.Group(xs.asDocs).pp)
-  implicit def showIndex: Show[Index] = by(_.indexValue)
+  implicit def showIndex: Show[Index]           = by(_.indexValue)
 }
 trait StdShow2 extends StdShow0 {
-  implicit def showPmap[K: Show, V: Show] : Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
-  implicit def showPset[A: Show] : Show[Pset[A]]             = by(_.basis.asShown.inBraces)
+  implicit def showPmap[K: Show, V: Show]: Show[Pmap[K, V]] = by(_.pairs mapLive (_.pp))
+  implicit def showPset[A: Show]: Show[Pset[A]]             = by(_.basis.asShown.inBraces)
 
   implicit def showJavaMap[K: Show, V: Show]: Show[jMap[K, V]]   = Show(_.m.pairs map (_ mkDoc "=" pp) inBraces)
   implicit def showJavaIterable[A: Show]: Show[jIterable[A]]     = Show(_.m.asShown.inBrackets)
@@ -157,6 +156,6 @@ trait StdShow extends StdShow3 {
   implicit def showInterval: Show[Interval] = by(_.to_s)
 
   /** Simpler versions of this method signature lead to implicit ambiguity.
-   */
-  implicit def showConsecutive[A, CC[X] <: Consecutive[X]] : Show[CC[_ <: A]] = by(_.in)
+    */
+  implicit def showConsecutive[A, CC[X] <: Consecutive[X]]: Show[CC[_ <: A]] = by(_.in)
 }

@@ -2,7 +2,7 @@ package psp
 package std
 
 import all._
-import java.io.{ ByteArrayOutputStream, BufferedInputStream }
+import java.io.{ BufferedInputStream, ByteArrayOutputStream }
 
 object ll {
 
@@ -40,7 +40,7 @@ object ll {
 
   def foreachReverse[A](xs: View[A], f: A => Unit): Unit = {
     val ys = xs.toVec
-    var i = ys.size.lastIndex
+    var i  = ys.size.lastIndex
     while (i.isValid) {
       f(ys(i))
       i -= 1
@@ -173,19 +173,19 @@ object ll {
   private case class CBuf[A](capacity: Precise) extends Direct[A] {
     assert(!capacity.isZero, "CBuf capacity cannot be 0")
 
-    private[this] def cap: Int = capacity.getInt
-    private[this] val buffer = newArray[Any](cap)
-    private[this] var seen = 0L
+    private[this] def cap: Int            = capacity.getInt
+    private[this] val buffer              = newArray[Any](cap)
+    private[this] var seen                = 0L
     private[this] def writePointer: Int   = (seen % cap).toInt
     private[this] def readPointer         = cond(isFull, writePointer, 0)
     private[this] def setHead(x: A): Unit = sideEffect(buffer(writePointer) = x, seen += 1)
 
-    def isFull                      = seen >= cap
-    def apply(index: Index): A      = cast(buffer((readPointer + index.getInt) % cap))
-    def size: Precise               = min(capacity, seen)
+    def isFull                 = seen >= cap
+    def apply(index: Index): A = cast(buffer((readPointer + index.getInt) % cap))
+    def size: Precise          = min(capacity, seen)
     def ++=(xs: View[A]): this.type = sideEffect(this, xs foreach setHead)
     def +=(x: A): this.type         = sideEffect(this, setHead(x))
-    def push(x: A): A               = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
+    def push(x: A): A = if (isFull) sideEffect(this.head, setHead(x)) else abort("push on non-full buffer")
   }
   object Streams {
     final val InputStreamBufferSize = 8192
@@ -202,14 +202,13 @@ object ll {
     def slurp(in: BufferedInputStream, size: Precise): Array[Byte] = {
       val len = size.getLong.toInt
       val buf = newArray[Byte](len)
-      def loop(remaining: Int): Array[Byte] = {
+      def loop(remaining: Int): Array[Byte] =
         if (remaining == 0) buf
         else
           in.read(buf, len - remaining, remaining) match {
             case -1 => buf
             case n  => loop(remaining - n)
           }
-      }
       sideEffect(loop(len), in.close())
     }
   }

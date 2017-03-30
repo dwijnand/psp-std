@@ -31,20 +31,20 @@ object Algebra {
   }
 
   /** TODO: These probably make no sense.
-   */
-  class ProductAlgebra[A, B](implicit ab: BoolAlgebra[A], bb: BoolAlgebra[B]) extends BoolAlgebra[A->B] {
-    def and(x: A->B, y: A->B): A->B = (fst(x) && fst(y)) -> (snd(x) && snd(y))
-    def or(x: A->B, y: A->B): A->B  = (fst(x) || fst(y)) -> (snd(x) || snd(y))
-    def complement(x: A->B): A->B   = !fst(x) -> !snd(x)
-    def zero: A->B                  = ab.zero -> bb.zero
-    def one: A->B                   = ab.one -> bb.one
+    */
+  class ProductAlgebra[A, B](implicit ab: BoolAlgebra[A], bb: BoolAlgebra[B]) extends BoolAlgebra[A -> B] {
+    def and(x: A -> B, y: A -> B): A -> B = (fst(x) && fst(y)) -> (snd(x) && snd(y))
+    def or(x: A -> B, y: A -> B): A -> B  = (fst(x) || fst(y)) -> (snd(x) || snd(y))
+    def complement(x: A -> B): A -> B     = !fst(x)            -> !snd(x)
+    def zero: A -> B                      = ab.zero            -> bb.zero
+    def one: A -> B                       = ab.one             -> bb.one
   }
   class OptionAlgebra[A](elem: A)(implicit ba: BoolAlgebra[A]) extends BoolAlgebra[Opt[A]] {
     val one: Some[A]    = Some(elem)
     val zero: None.type = None
 
-    def and(x: Opt[A], y: Opt[A]): Opt[A] = for (a <- x ; b <- y) yield a && b
-    def or(x: Opt[A], y: Opt[A]): Opt[A]  = (x, y) match {
+    def and(x: Opt[A], y: Opt[A]): Opt[A] = for (a <- x; b <- y) yield a && b
+    def or(x: Opt[A], y: Opt[A]): Opt[A] = (x, y) match {
       case Some(x) -> Some(y) => some(x || y)
       case Some(_) -> None    => x
       case None -> Some(_)    => y
@@ -86,8 +86,8 @@ trait StdAlgebra0 {
   implicit def identityBoolAlgebra: BoolAlgebra[Bool] = Algebra.Identity
 }
 trait StdAlgebra1 extends StdAlgebra0 {
-  implicit def function1BoolAlgebra[A, B: BoolAlgebra]: BoolAlgebra[A => B]          = new Algebra.Fun1
-  implicit def function2BoolAlgebra[A, B, C : BoolAlgebra]: BoolAlgebra[(A, B) => C] = new Algebra.Fun2
+  implicit def function1BoolAlgebra[A, B: BoolAlgebra]: BoolAlgebra[A => B]         = new Algebra.Fun1
+  implicit def function2BoolAlgebra[A, B, C: BoolAlgebra]: BoolAlgebra[(A, B) => C] = new Algebra.Fun2
 }
 trait StdAlgebra extends StdAlgebra1 {
   implicit def predicate1BoolAlgebra[A]: BoolAlgebra[ToBool[A]]         = new Algebra.Predicate1[A]

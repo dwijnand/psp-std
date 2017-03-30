@@ -22,7 +22,7 @@ import all._, Size._
 sealed abstract class Size extends InheritedHashEq with HasToS {
   def atLeast: Size = Range(this, Infinite)
   def atMost: Size  = Range(_0, this)
-  def isZero: Bool  = this match {
+  def isZero: Bool = this match {
     case Precise(0) => true
     case _          => false
   }
@@ -86,9 +86,9 @@ sealed trait Atomic extends Size {
   }
 }
 
-final case object Infinite extends Atomic
-final case class Bounded private[std](lo: Precise, hi: Atomic) extends Size
-final class Precise private[std](val getLong: Long) extends Atomic {
+final case object Infinite                                      extends Atomic
+final case class Bounded private[std] (lo: Precise, hi: Atomic) extends Size
+final class Precise private[std] (val getLong: Long) extends Atomic {
   override def slice(r: SliceRange): Precise = cast(super.slice(r))
 
   def /(n: Long): Precise    = Precise(getLong / n)
@@ -96,7 +96,7 @@ final class Precise private[std](val getLong: Long) extends Atomic {
   def +(n: Long): Precise    = Precise(getLong + n)
   def -(n: Long): Precise    = Precise(getLong - n)
   def +(n: Precise): Precise = Precise(getLong + n.getLong)
-  def -(n: Atomic): Precise  = n match {
+  def -(n: Atomic): Precise = n match {
     case Precise(r) => Precise(getLong - r)
     case Infinite   => _0
   }
@@ -143,6 +143,7 @@ object Size {
   def apply(size: Long): Precise = new Precise(if (size < 0L) 0L else size)
 
   object Range {
+
     /** Preserving associativity/commutativity of Size prevents us from
       *  modifying values to enforce any invariants on Bounded.
       */

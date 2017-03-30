@@ -81,11 +81,12 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
   }
 
   implicit class PspAnyOps[A](private val x: A) extends AnyVal {
+
     /** Call this on any value. Produce a view.
-     *  If a value of the same type as the original can be
-     *  built from the view, it will be. Otherwise it
-     *  won't compile.
-     */
+      *  If a value of the same type as the original can be
+      *  built from the view, it will be. Otherwise it
+      *  won't compile.
+      */
     def o[B](f: A => View[B])(implicit z: Makes[B, A]): A = z make f(x)
 
     def any_s: String                     = any"$x"
@@ -218,7 +219,7 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
   }
 
   /** Views of specific type.
-   */
+    */
   implicit class View2DOps[A](xss: View2D[A]) {
     def column(vdex: Index) = View(xss) flatMap (_ sliceIndex vdex)
     def transpose           = View(openIndices map column)
@@ -256,13 +257,12 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
     def joinString: String            = joinWith("")
   }
 
-  implicit def viewHasEqOps[A : Eq, R](xs: RView[A, R]): xs.EqOps = new xs.EqOps()
+  implicit def viewHasEqOps[A: Eq, R](xs: RView[A, R]): xs.EqOps = new xs.EqOps()
 
   /** Other psp classes.
-   */
-
+    */
   implicit class Pair2DOps[A, B](private val x: Pair2D[A, B]) {
-    def transpose: (A->A) -> (B->B) = pair(
+    def transpose: (A -> A) -> (B -> B) = pair(
       fst(fst(x)) -> fst(snd(x)),
       snd(fst(x)) -> snd(snd(x))
     )
@@ -289,7 +289,7 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
 
     import Fun._
 
-    def fn: ScalaFun.M[A, B]   = f.toFunction
+    def fn: ScalaFun.M[A, B]       = f.toFunction
     def pf: ScalaFun.Partial[A, B] = f.toPartial
 
     def applyOrElse(x: A, g: A => B): B       = cond(f contains x, f(x), g(x))
@@ -299,7 +299,7 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
 
     def andThen[C](g: B => C): Fun[A, C] = (g: Any) match {
       case ScalaFun.Identity() => cast(f)
-      case _                   =>
+      case _ =>
         f match {
           case ScalaFun.Identity() => cast(ScalaFun(g))
           case _                   => AndThen(f, g)
@@ -321,7 +321,7 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
   }
 
   /** Ops directly on type class instances.
-   */
+    */
   implicit class MakesClassOps[A, R](private val z: Makes[A, R]) {
     def apply(xs: A*): R                     = z make Makes.fromArgs(xs: _*)
     def contraMap[Z](g: Z => A): Makes[Z, R] = Makes(xs => z make (xs map g))
@@ -345,14 +345,14 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
   }
 
   /** "Has" implicit methods on values for which a type class is present.
-   */
+    */
   implicit class HasIsProductOpsSame[A, R](private val x: R)(implicit z: IsProduct[R, A, A]) {
     def map2[B](f: A => B): B -> B = z split x mapEach (f, f)
     def each: Direct[A]            = elems(x._1, x._2)
   }
   implicit class HasWalksOps[A, R](val repr: R)(implicit z: Walks[A, R]) {
-    def as[S] : RView[A, S] = View(repr)
-    def m: RView[A, R]      = View(repr)
+    def as[S]: RView[A, S] = View(repr)
+    def m: RView[A, R]     = View(repr)
   }
   implicit class HasShowOps[A](private val lhs: A)(implicit z: Show[A]) {
     def doc: Doc   = Doc(lhs)
@@ -384,8 +384,8 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
     def >=(rhs: A)(implicit y: Eq[A]): Boolean = (lhs > rhs) || (lhs === rhs)
   }
   implicit class HasIsProductOps[R, A, B](private val x: R)(implicit z: IsProduct[R, A, B]) {
-    def _1: A = fst(z split x)
-    def _2: B = snd(z split x)
+    def _1: A                                                        = fst(z split x)
+    def _2: B                                                        = snd(z split x)
     def mkDoc(sep: Doc)(implicit za: Show[A], zb: Show[B]): Doc      = _1.doc ~ sep <> _2
     def mk_s(sep: String)(implicit za: Show[A], zb: Show[B]): String = mkDoc(sep.lit).pp
 
@@ -396,7 +396,7 @@ object all extends AllExplicit with AllImplicit with ShadowPredefImplicits {
     def mapLeft[C](f: A => C): C -> B            = f(_1) -> _2
     def mapRight[C](f: B => C): A -> C           = _1 -> f(_2)
     def apply[C](f: (A, B) => C): C              = f(_1, _2)
-    def toPair: A->B                             = _1 -> _2
-    def swap: B->A                               = _2 -> _1
+    def toPair: A -> B                           = _1 -> _2
+    def swap: B -> A                             = _2 -> _1
   }
 }

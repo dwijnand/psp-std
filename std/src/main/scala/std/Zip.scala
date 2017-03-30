@@ -11,15 +11,15 @@ trait Zip[+A1, +A2] extends Any {
   def rights: View[A2]      // the right element of each pair. Moral equivalent of pairs map snd.
   def pairs: View[A1 -> A2] // the pairs. Moral equivalent of lefts zip rights.
 }
-final class ZipPairs[+A, +B](ps: => View[A->B]) extends Zip[A, B] {
-  def pairs: View[A->B] = ps
-  def lefts: View[A]    = pairs map fst
-  def rights: View[B]   = pairs map snd
+final class ZipPairs[+A, +B](ps: => View[A -> B]) extends Zip[A, B] {
+  def pairs: View[A -> B] = ps
+  def lefts: View[A]      = pairs map fst
+  def rights: View[B]     = pairs map snd
 }
 final class ZipViews[+A, +B](ls: => View[A], rs: => View[B]) extends Zip[A, B] {
-  def pairs: View[A->B] = this map (_ -> _)
-  def lefts: View[A]    = ls
-  def rights: View[B]   = rs
+  def pairs: View[A -> B] = this map (_ -> _)
+  def lefts: View[A]      = ls
+  def rights: View[B]     = rs
 }
 
 object Zip {
@@ -65,5 +65,3 @@ object Zip {
     def force[R](implicit z: Makes[Both, R]): R = z make pairs
   }
 }
-
-

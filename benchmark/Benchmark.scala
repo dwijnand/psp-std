@@ -23,12 +23,12 @@ class ScalaVectorBenchmarker {
 
   @Benchmark
   def scala_apply_sum(): Long = {
-    val xs = elems
+    val xs    = elems
     var total = 0L
-    var i = 0
+    var i     = 0
     while (i < xs.length) {
       total += xs(i)
-      i += 1
+      i     += 1
     }
     total
   }
@@ -71,12 +71,12 @@ class PspVectorBenchmarker {
 
   @Benchmark
   def psp_apply_sum(): Long = {
-    val xs = elems
+    val xs    = elems
     var total = 0L
-    var i = 0
+    var i     = 0
     while (i < xs.size.getInt) {
       total += xs(Index(i))
-      i += 1
+      i     += 1
     }
     total
   }
