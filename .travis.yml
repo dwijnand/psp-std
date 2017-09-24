@@ -1,7 +1,7 @@
 # Use Docker-based container (instead of OpenVZ)
 sudo: false
 language: scala
-scala: 2.12.1
+scala: 2.12.3
 jdk: oraclejdk8
 script: ./.ci/run.sh
 

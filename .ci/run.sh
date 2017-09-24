@@ -3,15 +3,10 @@
 
 set -euo pipefail
 
-: ${TRAVIS_SCALA_VERSION:=2.12.1}
+: ${TRAVIS_SCALA_VERSION:=2.12.3}
 
 GREP="egrep --line-buffered"
 SBT="sbt ++$TRAVIS_SCALA_VERSION -no-colors"
-
-# restore stty settings (echo in particular)
-onRunnerExit() {
-  [[ -f project/scoverage.sbt ]] || git checkout HEAD -- project/scoverage.sbt
-}
 
 runTests () {
   # Look ma I'm testing pipefail.
