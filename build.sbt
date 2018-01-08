@@ -2,7 +2,7 @@ import psp.PspStd._
 
 organization in ThisBuild := "org.improving"
 version in ThisBuild      := "0.6.3-SNAPSHOT"
-scalaVersion in ThisBuild := "2.12.3"
+scalaVersion in ThisBuild := "2.12.4"
 licenses in ThisBuild     := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 
 lazy val root = (
